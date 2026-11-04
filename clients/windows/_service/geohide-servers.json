@@ -1,0 +1,100 @@
+{
+    "version":  1,
+    "sources":  [
+                    {
+                        "region":  "RU",
+                        "url":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/hosts",
+                        "checkedAt":  "2026-11-04T18:35:33.1623262+03:00"
+                    },
+                    {
+                        "region":  "US",
+                        "url":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/us/hosts",
+                        "checkedAt":  "2026-11-04T18:35:33.5668214+03:00"
+                    },
+                    {
+                        "region":  "EU",
+                        "url":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts",
+                        "checkedAt":  "2026-11-04T18:35:34.1168703+03:00"
+                    }
+                ],
+    "servers":  [
+                    {
+                        "region":  "RU",
+                        "address":  "159.194.200.33",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/hosts"
+                    },
+                    {
+                        "region":  "RU",
+                        "address":  "193.233.112.67",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/hosts"
+                    },
+                    {
+                        "region":  "RU",
+                        "address":  "193.233.112.68",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/hosts"
+                    },
+                    {
+                        "region":  "RU",
+                        "address":  "193.233.112.88",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/hosts"
+                    },
+                    {
+                        "region":  "US",
+                        "address":  "107.175.76.134",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/us/hosts"
+                    },
+                    {
+                        "region":  "US",
+                        "address":  "192.255.159.240",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/us/hosts"
+                    },
+                    {
+                        "region":  "US",
+                        "address":  "192.255.159.241",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/us/hosts"
+                    },
+                    {
+                        "region":  "US",
+                        "address":  "192.3.233.253",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/us/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "143.20.64.192",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "31.25.239.132",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "37.221.93.128",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "37.221.93.141",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "45.13.237.213",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "5.175.161.3",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    },
+                    {
+                        "region":  "EU",
+                        "address":  "5.175.161.40",
+                        "origin":  "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/main/hosts/eu/hosts"
+                    }
+                ],
+    "retired":  [
+
+                ]
+}
