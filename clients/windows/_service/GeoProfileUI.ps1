@@ -19,13 +19,13 @@
 function Sync-GeoRegions($Report) {
     if($script:taskBusy -or $Report.running -or $SmokeTest -or $RenderPreview){return}
     $settings=Read-GeoSettings $script:taskRoot
-    if(-not $settings.autoSelect){return}
     $selected=Get-GeoSelection $settings $Report
-    $settings.us=$selected.us;$settings.eu=$selected.eu;$settings.ru=$selected.ru
+    if($settings.autoSelect){$settings.us=$selected.us;$settings.eu=$selected.eu}
+    $settings.ru=$selected.ru
     # Sync all regional templates even if the selected pair did not change:
     # a newly published backup or recovered RU node must also be propagated.
     Save-GeoProfile $script:taskRoot $settings $Report
-    $script:taskUi.GeoUS.Text=$settings.us;$script:taskUi.GeoEU.Text=$settings.eu
+    if($settings.autoSelect){$script:taskUi.GeoUS.Text=$settings.us;$script:taskUi.GeoEU.Text=$settings.eu}
     Load-TaskProfiles -Force
     if(-not $selected.usReady -or -not $selected.euReady){$script:taskUi.GeoStatus.Text+=' · US + EU недоступен: нет проверенного узла одного из регионов'}
 }
