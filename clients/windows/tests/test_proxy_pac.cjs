@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const vm = require('node:vm');
+const assert = require('node:assert/strict');
+const context = vm.createContext({});
+vm.runInContext(fs.readFileSync(process.argv[2], 'utf8'), context, { timeout: 1000 });
+const included = ['chatgpt.com', 'ChatGPT.COM', 'chatgpt.com.', 'webrtc.chatgpt.com', 'codex-cloud-backend.chatgpt.com', 'api.openai.com', 'cdn.oaistatic.com', 'sdmntprfuturezone.oaiusercontent.com'];
+const direct = ['example.com', 'github.com', 'localhost', '127.0.0.1', 'evilchatgpt.com', 'chatgpt.com.attacker.test', 'oaiusercontent.com.attacker.test', 'notopenai.com', 'example.com/chatgpt.com'];
+for (const host of included) assert.equal(context.FindProxyForURL('https://' + host + '/', host), 'PROXY 64.118.155.2:22222', host);
+for (const host of direct) assert.equal(context.FindProxyForURL('https://' + host + '/', host), 'DIRECT', host);
+console.log(`Passed ${included.length + direct.length} PAC routing boundary checks.`);

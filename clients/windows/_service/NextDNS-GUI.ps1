@@ -40,6 +40,7 @@ $script:taskAppLaunchTarget = ''
 $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'Connection.ps1')
 . (Join-Path $PSScriptRoot 'Tray.ps1')
+. (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
 
 function Get-TaskBrush([string]$Color) {
     return [Windows.Media.BrushConverter]::new().ConvertFromString($Color)
@@ -149,7 +150,7 @@ function Load-TaskProfiles([switch]$Force) {
     $script:taskProfileControls = @{}
     foreach ($taskProfile in $script:taskProfiles) {
         $taskCard = [Windows.Controls.Border]::new()
-        $taskCard.Height = 148
+        $taskCard.Height = 190
         $taskCard.Margin = [Windows.Thickness]::new(0,0,12,12)
         $taskCard.Padding = [Windows.Thickness]::new(15,12,15,12)
         $taskCard.CornerRadius = [Windows.CornerRadius]::new(20)
@@ -158,7 +159,7 @@ function Load-TaskProfiles([switch]$Force) {
         $taskCard.Background = Get-TaskBrush '#131E2C'
         $taskCard.ToolTip = $taskProfile.Description
         $taskGrid = [Windows.Controls.Grid]::new()
-        foreach ($taskHeight in @(40,29,13,40)) { $taskRow = [Windows.Controls.RowDefinition]::new(); $taskRow.Height = [Windows.GridLength]::new($taskHeight); $taskGrid.RowDefinitions.Add($taskRow) }
+        foreach ($taskHeight in @(40,29,48,40)) { $taskRow = [Windows.Controls.RowDefinition]::new(); $taskRow.Height = [Windows.GridLength]::new($taskHeight); $taskGrid.RowDefinitions.Add($taskRow) }
         $taskHeading = [Windows.Controls.Grid]::new()
         $taskColumn = [Windows.Controls.ColumnDefinition]::new(); $taskColumn.Width = [Windows.GridLength]::new(70); $taskHeading.ColumnDefinitions.Add($taskColumn)
         $taskColumn = [Windows.Controls.ColumnDefinition]::new(); $taskHeading.ColumnDefinitions.Add($taskColumn)
@@ -177,6 +178,7 @@ function Load-TaskProfiles([switch]$Force) {
         $taskAddressLabel.Text = if ($taskProfile.Addresses.Count -eq 1) { $taskProfile.Addresses[0] } else { 'Карта из ' + $taskProfile.Addresses.Count + ' IP-адресов' }
         $taskAddressLabel.ToolTip = $taskProfile.Addresses -join ', '
         [Windows.Controls.Grid]::SetRow($taskAddressLabel,1); [void]$taskGrid.Children.Add($taskAddressLabel)
+        $taskAvailability = [Windows.Controls.TextBlock]::new(); $taskAvailability.FontSize=11; $taskAvailability.TextWrapping='Wrap'; $taskAvailability.VerticalAlignment='Center'; [Windows.Controls.Grid]::SetRow($taskAvailability,2); [void]$taskGrid.Children.Add($taskAvailability)
         $taskButton = [Windows.Controls.Button]::new(); $taskButton.Content = 'Выбрать'; $taskButton.Tag = $taskProfile.Id; $taskButton.Style = $script:taskWindow.FindResource('ActionButton'); $taskButton.FontSize = 12; $taskButton.Padding = [Windows.Thickness]::new(12,7,12,7); $taskButton.IsEnabled = -not $script:taskBusy
         [Windows.Automation.AutomationProperties]::SetName($taskButton,('Выбрать профиль ' + $taskProfile.Name))
         $taskButton.ToolTip = (Get-TaskRecordsLabel $taskProfile.Count) + '. ' + $taskProfile.Description
@@ -185,8 +187,9 @@ function Load-TaskProfiles([switch]$Force) {
         [Windows.Controls.Grid]::SetRow($taskButton,3); [void]$taskGrid.Children.Add($taskButton)
         $taskCard.Child = $taskGrid
         [void]$script:taskUi.ProfilesPanel.Children.Add($taskCard)
-        $script:taskProfileControls[$taskProfile.Id] = @{Card=$taskCard;Button=$taskButton;Active=$taskActive}
+        $script:taskProfileControls[$taskProfile.Id] = @{Card=$taskCard;Button=$taskButton;Active=$taskActive;Status=$taskAvailability}
     }
+    Update-GeoProfileCards
     $script:taskUi.ProfileCountText.Text = 'Профилей: ' + $script:taskProfiles.Count.ToString() + ' · можно добавить свой .hosts'
 }
 
@@ -239,7 +242,12 @@ function Load-TaskHistory {
 }
 
 function Select-TaskProfile([string]$ProfileId) {
+    if($ProfileId){$availability=Get-GeoProfileAvailability $script:taskRoot $ProfileId $script:geoReport;if(-not $availability.Ready){$script:taskUi.SelectedProfileDetail.Text=$availability.Reason;Update-GeoProfileCards;return}}
     if ($ProfileId) { $script:taskSelectedProfileId = $ProfileId }
+    if($ProfileId -and -not $SmokeTest -and -not $RenderPreview){
+        $prefs=Read-GeoSettings $script:taskRoot
+        if(-not $prefs.PSObject.Properties['preferredProfileId'] -or $prefs.preferredProfileId -ne $ProfileId){$prefs|Add-Member -MemberType NoteProperty -Name preferredProfileId -Value $ProfileId -Force;Write-GeoJson (Join-Path $script:taskRoot 'geohide-settings.json') $prefs}
+    }
     foreach ($taskPair in $script:taskProfileControls.GetEnumerator()) {
         $taskSelected = ($taskPair.Key -eq $script:taskSelectedProfileId)
         $taskPair.Value.Card.BorderBrush = Get-TaskBrush $(if($taskSelected){'#8CC6C5'}elseif($taskPair.Key -eq $script:taskActiveProfileId){'#416B65'}else{'#2D425B'})
@@ -256,23 +264,15 @@ function Select-TaskProfile([string]$ProfileId) {
 }
 
 function Set-TaskPage([string]$Page) {
-    $script:taskPage = $Page
-    $script:taskUi.OverviewPage.Visibility = if($Page -eq 'Overview'){'Visible'}else{'Collapsed'}
-    $script:taskUi.ServersPage.Visibility = if($Page -eq 'Servers'){'Visible'}else{'Collapsed'}
-    $script:taskUi.PageTitle.Text = if($Page -eq 'Overview'){'Обзор подключения'}else{'Серверы и регионы'}
-    $script:taskUi.PageSubtitle.Text = if($Page -eq 'Overview'){'Текущее состояние, причины и следующее действие'}else{'Выберите профиль, затем примените его одним действием'}
-    foreach($taskPair in @{OverviewNavButton='Overview';ServersNavButton='Servers'}.GetEnumerator()) {
-        $script:taskUi[$taskPair.Key].Background = Get-TaskBrush $(if($Page -eq $taskPair.Value){'#254550'}else{'Transparent'})
-        $script:taskUi[$taskPair.Key].Foreground = Get-TaskBrush $(if($Page -eq $taskPair.Value){'#B4F3DD'}else{'#9CAFC8'})
-    }
-    if(-not $script:taskReducedMotion -and -not $SmokeTest -and -not $RenderPreview) {
-        $taskElement = if($Page -eq 'Overview'){$script:taskUi.OverviewPage}else{$script:taskUi.ServersPage}
-        $taskElement.RenderTransform = [Windows.Media.TranslateTransform]::new()
-        $taskFade = [Windows.Media.Animation.DoubleAnimation]::new(0,1,[Windows.Duration]::new([timespan]::FromMilliseconds(180)))
-        $taskSlide = [Windows.Media.Animation.DoubleAnimation]::new(5,0,[Windows.Duration]::new([timespan]::FromMilliseconds(180)))
-        $taskElement.BeginAnimation([Windows.UIElement]::OpacityProperty,$taskFade)
-        $taskElement.RenderTransform.BeginAnimation([Windows.Media.TranslateTransform]::YProperty,$taskSlide)
-    }
+    $script:taskPage=$Page
+    $pages=@{Home='HomePage';Overview='OverviewPage';Servers='ServersPage';Geo='GeoPage';Journal='JournalPage';Settings='SettingsPage'}
+    foreach($key in $pages.Keys){$script:taskUi[$pages[$key]].Visibility=if($Page -eq $key){'Visible'}else{'Collapsed'}}
+    $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг и адреса';Journal='Журнал';Settings='Настройки'}
+    $subtitles=@{Home='GeoRoute';Overview='Понятные действия при проблемах с подключением';Servers='Выберите доступный маршрут';Geo='Доступность узлов RU, US и EU';Journal='История действий и результаты проверок';Settings='Запуск, внешний вид и дополнительные возможности'}
+    $script:taskUi.PageTitle.Text=$titles[$Page];$script:taskUi.PageSubtitle.Text=$subtitles[$Page]
+    $nav=@{HomeNavButton='Home';OverviewNavButton='Overview';ServersNavButton='Servers';JournalNavButton='Journal';SettingsNavButton='Settings'}
+    foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name] -or ($Page -eq 'Geo' -and $name -eq 'ServersNavButton');$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
+    if($Page -eq 'Home'){Update-GeoHome -Force}
 }
 
 function Read-TaskHosts {
@@ -372,7 +372,8 @@ function Update-TaskStatus([switch]$LogChange) {
     }
     try {
         $taskProxy = Get-ItemProperty -LiteralPath 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings' -ErrorAction Stop
-        $script:taskUi.ProxyText.Text = if ($taskProxy.ProxyEnable -eq 1) { 'Прокси Windows включён' } else { 'Прокси Windows выключен' }
+        $taskHttpState=Get-HttpProxyState $script:taskRoot
+        $script:taskUi.ProxyText.Text = if($taskHttpState.Enabled){'Прокси ChatGPT: US'}elseif($taskProxy.ProxyEnable -eq 1){'Другой прокси Windows включён'}else{'Прокси ChatGPT выключен'}
     }
     catch { $script:taskUi.ProxyText.Text = 'Статус прокси недоступен' }
     $script:taskUi.LastReadText.Text = 'hosts · ' + (Get-Date -Format 'HH:mm:ss')
@@ -389,6 +390,7 @@ function Set-TaskBusy([bool]$Value) {
     $script:taskBusy = $Value
     foreach ($taskName in @('ImportButton','CheckButton','CacheButton','RestoreButton','ApplyProfileButton','ClearLogButton')) { $script:taskUi[$taskName].IsEnabled = -not $Value }
     foreach ($taskControl in $script:taskProfileControls.Values) { $taskControl.Button.IsEnabled = -not $Value }
+    Update-GeoProfileCards
     $taskAnyBusy = $Value -or $script:taskHealthRun -or $script:taskCleanupRun
     $script:taskUi.ActivityBar.IsIndeterminate = ($taskAnyBusy -and -not $script:taskReducedMotion)
     $script:taskUi.ActivityBar.Value = if ($taskAnyBusy) { 40 } else { 0 }
@@ -496,11 +498,13 @@ function Complete-TaskAction {
         $script:taskUi.ActionTitle.Foreground = Get-TaskBrush '#F4CD8C'
         $script:taskUi.ActivityDetail.Text = 'Подробности в журнале. Текущее состояние hosts обновлено.'
         Add-TaskLog ('Ошибка: ' + $taskError)
+        if($script:geoApplyRequested -and $taskRun.Mode -eq 'Apply'){$script:geoNotice='Применение не подтверждено: '+$taskError}
         if ($taskRun.Mode -eq 'ClearCache') { Add-TaskLog 'Очистка кеша и проверка — отдельные этапы. Ошибка проверки не означает, что кеш остался прежним.' }
     }
     finally {
         if ($taskRun.Process) { $taskRun.Process.Dispose() }
         [void](Update-TaskStatus -LogChange)
+        if($script:geoApplyRequested -and $taskRun.Mode -eq 'Apply'){$script:geoApplyRequested=$false;Update-GeoEditorState -Force}
         if($taskRun.Mode -ne 'Import') { Start-TaskHealth 'Check' }
         Start-TaskConnection
     }
@@ -509,6 +513,7 @@ function Complete-TaskAction {
 function Start-TaskAction([string]$Mode, [string]$ProfileId = '', [hashtable]$ImportData = $null) {
     if ($script:taskBusy -or $SmokeTest -or $RenderPreview) { return }
     if (-not $ProfileId) { $ProfileId = if ($script:taskActiveProfileId) { $script:taskActiveProfileId } else { $script:taskProfiles[0].Id } }
+    if($Mode -eq 'Apply'){$availability=Get-GeoProfileAvailability $script:taskRoot $ProfileId $script:geoReport;if(-not $availability.Ready){$script:taskUi.GeoEditorStatus.Text=$availability.Reason;Add-TaskLog ('Подключение заблокировано: '+$availability.Reason);return}}
     $taskProfile = @($script:taskProfiles | Where-Object { $_.Id -eq $ProfileId } | Select-Object -First 1)
     $taskProfileName = if ($taskProfile.Count) { $taskProfile[0].Name } else { $ProfileId }
     $taskCaptions = @{Check='Проверяю настройки';ClearCache='Очищаю DNS-кеш и проверяю адреса';Restore='Отключаю управляемые hosts';Apply=('Подключаю ' + $taskProfileName);Import='Добавляю новый сервер'}
@@ -609,7 +614,7 @@ function Update-TaskHealthResult($Result) {
     $taskProbeStrings = @()
     $taskProbeDetails = @()
     foreach($taskProbe in @($Result.probes)) {
-        $taskProbeStrings += $taskProbe.name + ': ' + $(if($taskProbe.httpStatus){'HTTP ' + $taskProbe.httpStatus}else{$taskProbe.status})
+        $taskProbeStrings += $taskProbe.name + ': ' + $(if($taskProbe.tlsValid){'HTTPS ✓'}elseif($taskProbe.status -eq 'error'){'нет соединения'}else{'не подтверждено'})
         $taskProbeDetails += $taskProbe.name + ' · ' + $taskProbe.host + [Environment]::NewLine + $taskProbe.detail
         Add-TaskLog ($taskProbe.name + ': DNS ' + ($taskProbe.dnsIPs -join ', ') + ' · TLS ' + $(if($taskProbe.tlsValid){'подтверждён'}else{'не подтверждён'}) + ' · ' + $(if($taskProbe.httpStatus){'HTTP ' + $taskProbe.httpStatus}else{$taskProbe.status}) + ' · ' + $taskProbe.latencyMs + ' мс. ' + $taskProbe.detail) -Kind $(if($taskProbe.status -in @('warning','error','unknown')){'Problems'}else{'Info'})
     }
@@ -846,9 +851,12 @@ public static class NextDnsWindowChrome {
     $script:taskUi.ReducedMotion.IsChecked = $script:taskReducedMotion
     $script:taskReducedMotion = ($script:taskReducedMotion -or -not [Windows.SystemParameters]::ClientAreaAnimation)
     Load-TaskProfiles -Force
+    Initialize-GeoMonitor
     Load-TaskHistory
+    $initialGeoSettings=Read-GeoSettings $script:taskRoot
+    if($initialGeoSettings.PSObject.Properties['preferredProfileId'] -and @($script:taskProfiles|Where-Object Id -eq $initialGeoSettings.preferredProfileId).Count){$script:taskSelectedProfileId=$initialGeoSettings.preferredProfileId}
     [void](Update-TaskStatus -LogChange)
-    Set-TaskPage 'Overview'
+    Set-TaskPage 'Home'
     if($HealthSnapshotPath -and (Test-Path -LiteralPath $HealthSnapshotPath)) { Update-TaskHealthResult ([IO.File]::ReadAllText($HealthSnapshotPath,[Text.Encoding]::UTF8) | ConvertFrom-Json) }
     Add-TaskLog 'Готово к работе. Проверка настроек не проверяет загрузку файлов в ChatGPT.'
 
@@ -871,6 +879,16 @@ public static class NextDnsWindowChrome {
             $taskServerPreviewPath = if ($PreviewPath) { [IO.Path]::Combine([IO.Path]::GetDirectoryName($PreviewPath),([IO.Path]::GetFileNameWithoutExtension($PreviewPath) + '-servers.png')) } else { Join-Path $script:taskRoot 'GUI-preview-servers.png' }
             Set-TaskPage 'Servers'
             Export-TaskPreview $taskServerPreviewPath
+            Set-TaskPage 'Geo'
+            $geoPreviewPath = [IO.Path]::Combine([IO.Path]::GetDirectoryName($taskServerPreviewPath),([IO.Path]::GetFileNameWithoutExtension($taskServerPreviewPath) + '-geohide.png'))
+            Export-TaskPreview $geoPreviewPath
+            $savedAuto=$script:taskUi.GeoAuto.IsChecked
+            $script:taskUi.GeoManual.IsChecked=$true
+            Update-GeoEditorState -Force
+            Export-TaskPreview ($geoPreviewPath.Replace('.png','-manual.png'))
+            $script:taskUi.GeoAuto.IsChecked=$savedAuto
+            $script:taskUi.GeoManual.IsChecked=-not $savedAuto
+            Update-GeoEditorState -Force
             Set-TaskPage 'Overview'
             $taskImportPreviewPath = if ($PreviewPath) { [IO.Path]::Combine([IO.Path]::GetDirectoryName($PreviewPath),([IO.Path]::GetFileNameWithoutExtension($PreviewPath) + '-import.png')) } else { Join-Path $script:taskRoot 'GUI-preview-import.png' }
             $taskImportBitmap = [Windows.Media.Imaging.RenderTargetBitmap]::new(610,520,96,96,[Windows.Media.PixelFormats]::Pbgra32)
@@ -892,11 +910,16 @@ public static class NextDnsWindowChrome {
     $script:taskUi.CacheButton.Add_Click({ Start-TaskAction 'Check' })
     $script:taskUi.RestoreButton.Add_Click({ Start-TaskAction 'Restore' })
     $script:taskUi.ApplyProfileButton.Add_Click({ Start-TaskAction 'Apply' $script:taskSelectedProfileId })
+    $script:taskUi.HomeNavButton.Add_Click({Set-TaskPage 'Home'})
+    $script:taskUi.HomeToggle.Add_Click({Invoke-GeoHomeToggle})
+    $script:taskUi.JournalNavButton.Add_Click({Set-TaskPage 'Journal'})
+    $script:taskUi.SettingsNavButton.Add_Click({Set-TaskPage 'Settings'})
     $script:taskUi.OverviewNavButton.Add_Click({ Set-TaskPage 'Overview' })
     $script:taskUi.ServersNavButton.Add_Click({ Set-TaskPage 'Servers' })
     $script:taskUi.ChangeServerButton.Add_Click({ Set-TaskPage 'Servers' })
     $script:taskUi.OpenAppButton.Add_Click({ Open-TaskApp })
     $script:taskUi.RepairButton.Add_Click({Open-TaskRepair})
+    $script:taskUi.HttpProxyButton.Add_Click({Open-TaskHttpProxy})
     $script:taskUi.ClearLogButton.Add_Click({ Show-TaskLogMenu })
     $script:taskUi.FilterAllButton.Add_Click({ $script:taskLogFilter='All'; Update-TaskLogView })
     $script:taskUi.FilterErrorsButton.Add_Click({ $script:taskLogFilter='Problems'; Update-TaskLogView })
@@ -920,8 +943,10 @@ public static class NextDnsWindowChrome {
     $script:taskTimer = [Windows.Threading.DispatcherTimer]::new()
     $script:taskTimer.Interval = [timespan]::FromMilliseconds(200)
     $script:taskTimer.Add_Tick({
+        Poll-GeoMonitor
         Poll-TaskHealth
         Poll-TaskConnection
+        Update-GeoHome
         $taskCurrentMotion = (($script:taskUi.ReducedMotion.IsChecked -eq $true) -or -not [Windows.SystemParameters]::ClientAreaAnimation)
         if ($taskCurrentMotion -ne $script:taskReducedMotion) { Set-TaskMotion }
         if ($script:taskRun) {
@@ -957,6 +982,7 @@ public static class NextDnsWindowChrome {
             }
         }
         $script:taskTimer.Start()
+        Start-GeoMonitor -Refresh
         Start-TaskHealth 'Check'
         Start-TaskConnection
         if($Tray){Hide-TaskManager}
@@ -991,7 +1017,7 @@ catch {
     if ($SmokeTest -or $RenderPreview) { Write-Error $taskFailureText; exit 1 }
     try {
         Add-Type -AssemblyName PresentationFramework
-        [void][Windows.MessageBox]::Show(('Не удалось открыть NextDNS.' + [Environment]::NewLine + [Environment]::NewLine + $taskFailureText),'NextDNS',[Windows.MessageBoxButton]::OK,[Windows.MessageBoxImage]::Error)
+        [void][Windows.MessageBox]::Show(('Не удалось открыть GeoRoute.' + [Environment]::NewLine + [Environment]::NewLine + $taskFailureText),'GeoRoute',[Windows.MessageBoxButton]::OK,[Windows.MessageBoxImage]::Error)
     }
     catch { }
     exit 1

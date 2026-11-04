@@ -12,11 +12,11 @@ using System.Windows.Forms;
 using System.Security.Cryptography;
 using System.Security.Principal;
 
-[assembly: AssemblyTitle("NextDNS")]
-[assembly: AssemblyDescription("Native Windows launcher for the NextDNS connection manager")]
-[assembly: AssemblyProduct("NextDNS")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyTitle("GeoRoute")]
+[assembly: AssemblyDescription("GeoRoute — GeoHide profiles and monitoring")]
+[assembly: AssemblyProduct("GeoRoute")]
+[assembly: AssemblyVersion("0.2.0.0")]
+[assembly: AssemblyFileVersion("0.2.0.0")]
 
 namespace NextDNS.Desktop
 {
@@ -105,7 +105,7 @@ namespace NextDNS.Desktop
                     Hashtable versionTable = runspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
                     Version version = versionTable == null ? null : versionTable["PSVersion"] as Version;
                     if (version == null || version.Major != 5 || version.Minor != 1)
-                        throw new InvalidOperationException("Для NextDNS требуется системный Windows PowerShell 5.1.");
+                        throw new InvalidOperationException("Для GeoRoute требуется системный Windows PowerShell 5.1.");
 
                     AppendLog("launcher.log", "Started; runtime=" + version + "; apartment=" + Thread.CurrentThread.GetApartmentState() + "; engine=" + typeof(PSObject).Assembly.Location);
                     using (PowerShell shell = PowerShell.Create())
@@ -138,10 +138,10 @@ namespace NextDNS.Desktop
                 AppendLog("launcher-error.log", diagnostic);
                 if (!smokeTest)
                 {
-                    string message = "Не удалось открыть NextDNS.\r\n\r\n" + exception.Message;
+                    string message = "Не удалось открыть GeoRoute.\r\n\r\n" + exception.Message;
                     if (message.Length > 2400) message = message.Substring(0, 2400);
                     message += "\r\n\r\nПодробности: _service\\launcher-error.log";
-                    MessageBox.Show(message, "NextDNS", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    MessageBox.Show(message, "GeoRoute", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
                 return 1;
             }

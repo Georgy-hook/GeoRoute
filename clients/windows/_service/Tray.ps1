@@ -9,7 +9,16 @@ $script:taskStartupSync=$false
 $script:taskStartupKey='HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $script:taskStartupName='NextDNS Connection Manager'
 . (Join-Path $PSScriptRoot 'BridgeStatus.ps1')
+. (Join-Path $PSScriptRoot 'HttpProxy.ps1')
 $script:taskBridgeAt=[datetime]::MinValue
+
+function Open-TaskHttpProxy {
+    try {
+        $arguments=@('-NoProfile','-ExecutionPolicy','Bypass','-STA','-File',('"'+(Join-Path $script:taskRoot 'HttpProxyDialog.ps1')+'"'))
+        Start-Process -FilePath $script:taskShell -ArgumentList $arguments -WindowStyle Hidden | Out-Null
+        Add-TaskLog 'Открыто управление US-прокси настольного ChatGPT / Dot.'
+    } catch {Add-TaskLog $_.Exception.Message -Kind Problems}
+}
 
 function Show-TaskManager {
     $script:taskWindow.ShowInTaskbar=$true
@@ -58,7 +67,7 @@ function Start-TaskConnection {
     $script:taskConnectionAttempt=Get-Date
     try {
         $script:taskConnectionRun=Start-ConnectionCheck $script:taskRoot
-        if($script:taskTray){$script:taskTray.Text='NextDNS · менеджер работает · проверка DNS';$script:taskTrayStatus.Text='Проверяю DNS в фоне…'}
+
     } catch {
         $script:taskConnectionReport=New-ConnectionReport @()
         Set-TaskConnectionView
@@ -71,19 +80,20 @@ function Set-TaskConnectionView {
     $ready=$report.State -eq 'ready'
     $script:taskUi.HealthTitle.Text=$report.Title
     $script:taskUi.HealthDescription.Text=$report.Next
-    $script:taskUi.HealthBadge.Text=if($ready){'DNS НАСТРОЕН · GIF НЕ ПРОВЕРЕНА'}else{'НУЖНО ВНИМАНИЕ · DNS'}
+    $isProxy=$report.Mode -eq 'http-proxy'
+    $script:taskUi.HealthBadge.Text=if($isProxy){if($ready){'US ПОДТВЕРЖДЁН · HTTPS'}else{'НУЖНО ВНИМАНИЕ · ПРОКСИ'}}elseif($ready){'DNS НАСТРОЕН · GIF НЕ ПРОВЕРЕНА'}else{'НУЖНО ВНИМАНИЕ · DNS'}
     $script:taskUi.HealthBadge.Foreground=Get-TaskBrush $(if($ready){'#98EFD5'}else{'#F1D19B'})
     $script:taskUi.HealthPill.Background=Get-TaskBrush $(if($ready){'#244C43'}else{'#4A3D2A'})
     $at=([datetime]$report.At).ToString('HH:mm:ss')
-    if($script:taskTray) {
-        $script:taskTray.Text='NextDNS · '+$(if($ready){'DNS настроен'}else{'DNS требует проверки'})+' · '+$at
-        $script:taskTrayStatus.Text='Менеджер работает · '+$report.Title
-        $script:taskTrayTime.Text='DNS: '+$at+' · повтор каждые 5 минут'
-        $script:taskTray.Icon=if($ready){$script:taskTrayIcon}else{[Drawing.SystemIcons]::Warning}
+    if($report.Mode -eq 'hosts'){
+        $script:taskUi.HealthBadge.Text=switch($report.State){ready{'СЕРВЕРЫ ОТВЕЧАЮТ'}off{'ВЫКЛЮЧЕНО'}checking{'ПРОВЕРКА СЕРВЕРОВ'}default{'ВЫБРАННЫЙ СЕРВЕР НЕДОСТУПЕН'}}
+        if($report.State -in @('off','checking')){$script:taskUi.HealthPill.Background=Get-TaskBrush '#25364A';$script:taskUi.HealthBadge.Foreground=Get-TaskBrush '#B6C7DE'}
     }
+    Update-GeoHome -Force
+
 }
 function Poll-TaskConnection {
-    if(((Get-Date)-$script:taskBridgeAt).TotalSeconds -ge 5){$script:taskBridgeAt=Get-Date;$script:taskUi.TransportStatusText.Text=(Get-BridgeStatus).Text}
+    if(((Get-Date)-$script:taskBridgeAt).TotalSeconds -ge 5){$script:taskBridgeAt=Get-Date;$script:taskUi.TransportStatusText.Text=(Get-BridgeStatus).Text+[Environment]::NewLine+(Get-HttpProxyState $script:taskRoot).Text}
     if($script:taskConnectionRun) {
         $report=Receive-ConnectionCheck $script:taskConnectionRun
         if($report) {
@@ -92,16 +102,16 @@ function Poll-TaskConnection {
             $script:taskConnectionReport=$report
             Set-TaskConnectionView
             if(-not $old -or $old.State -ne $report.State) {
-                Add-TaskLog ($report.Title+'. '+$report.Next) -Kind $(if($report.State -eq 'ready'){'Info'}else{'Problems'})
+                Add-TaskLog ($report.Title+'. '+$report.Next) -Kind $(if($report.State -in @('ready','off','checking')){'Info'}else{'Problems'})
                 try {
                     $path=Join-Path (Join-Path $script:taskRoot 'run-results') ('gui-health-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,8)+'.json')
-                    @{At=$report.At;Mode='DNS';Status='ok';Message=($report.Title+'. '+$report.Next);AttachmentsVerified=$false}|ConvertTo-Json|Set-Content -LiteralPath $path -Encoding UTF8
+                    @{At=$report.At;Mode=$(if($report.Mode -eq 'http-proxy'){'HTTP-прокси'}else{'DNS'});Status=$(if($report.State -in @('off','checking')){$report.State}elseif($report.State -eq 'ready'){'ok'}else{'error'});Message=($report.Title+'. '+$report.Next);AttachmentsVerified=$false}|ConvertTo-Json|Set-Content -LiteralPath $path -Encoding UTF8
                 } catch {Add-TaskLog 'Не удалось сохранить историю DNS-проверки.' -Kind Problems}
             }
         }
     } elseif(((Get-Date)-$script:taskConnectionAttempt).TotalSeconds -ge 300) {Start-TaskConnection}
     if($script:taskConnectionReport) {
-        $script:taskUi.HealthAtText.Text='DNS · '+([datetime]$script:taskConnectionReport.At).ToString('HH:mm:ss')+$(if($script:taskConnectionRun){' · обновляется…'}else{' · авто: 5 мин'})
+        $script:taskUi.HealthAtText.Text=$(if($script:taskConnectionReport.Mode -eq 'http-proxy'){'US-прокси · '}else{'DNS · '})+([datetime]$script:taskConnectionReport.At).ToString('HH:mm:ss')+$(if($script:taskConnectionRun){' · обновляется…'}else{' · авто: 5 мин'})
     }
     if(('NextDNS.Desktop.DesktopInstance' -as [type]) -and [NextDNS.Desktop.DesktopInstance]::ConsumeActivation()) {Show-TaskManager}
 }
@@ -110,14 +120,15 @@ function Initialize-TaskTray {
     $script:taskTrayIcon=[Drawing.Icon]::new((Join-Path $script:taskRoot 'assets\app.ico'))
     $script:taskTray=[Windows.Forms.NotifyIcon]::new()
     $script:taskTray.Icon=$script:taskTrayIcon
-    $script:taskTray.Text='NextDNS · менеджер работает · проверка DNS'
+    $script:taskTray.Text='GeoRoute · менеджер работает · проверка DNS'
     $script:taskTrayMenu=[Windows.Forms.ContextMenuStrip]::new()
     $script:taskTrayStatus=$script:taskTrayMenu.Items.Add('Менеджер работает · проверка DNS…');$script:taskTrayStatus.Enabled=$false
     $script:taskTrayTime=$script:taskTrayMenu.Items.Add('Проверка каждые 5 минут');$script:taskTrayTime.Enabled=$false
     [void]$script:taskTrayMenu.Items.Add([Windows.Forms.ToolStripSeparator]::new())
-    $open=$script:taskTrayMenu.Items.Add('Открыть NextDNS');$open.Add_Click({Show-TaskManager})
+    $open=$script:taskTrayMenu.Items.Add('Открыть GeoRoute');$open.Add_Click({Show-TaskManager})
     $check=$script:taskTrayMenu.Items.Add('Проверить подключение');$check.Add_Click({Show-TaskManager;Start-TaskConnection;Start-TaskHealth 'Check'})
     $repair=$script:taskTrayMenu.Items.Add('GIF / вложения не работают…');$repair.Add_Click({Open-TaskRepair})
+    $proxy=$script:taskTrayMenu.Items.Add('US-прокси ChatGPT / Dot…');$proxy.Add_Click({Open-TaskHttpProxy})
     [void]$script:taskTrayMenu.Items.Add([Windows.Forms.ToolStripSeparator]::new())
     $quit=$script:taskTrayMenu.Items.Add('Выйти из менеджера');$quit.Add_Click({$script:taskExitRequested=$true;$script:taskWindow.Close()})
     $script:taskTray.ContextMenuStrip=$script:taskTrayMenu
@@ -131,6 +142,7 @@ function Initialize-TaskTray {
     $script:taskUi.ExitManagerButton.Add_Click({$script:taskExitRequested=$true;$script:taskWindow.Close()})
 }
 function Close-TaskTray {
+    if(Get-Command Stop-GeoMonitor -ErrorAction SilentlyContinue){Stop-GeoMonitor}
     Stop-ConnectionCheck $script:taskConnectionRun
     if($script:taskTray){$script:taskTray.Visible=$false;$script:taskTray.Dispose();$script:taskTray=$null}
     if($script:taskTrayMenu){$script:taskTrayMenu.Dispose()}

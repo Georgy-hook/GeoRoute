@@ -6,7 +6,7 @@ if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -n
 $taskService = $PSScriptRoot
 $taskOutputDirectory = if($Bin){Join-Path $taskService 'bin'}else{Split-Path $taskService -Parent}
 New-Item -ItemType Directory -Path $taskOutputDirectory -Force | Out-Null
-$taskOutput = Join-Path $taskOutputDirectory 'NextDNS.exe'
+$taskOutput = Join-Path $taskOutputDirectory 'GeoRoute.exe'
 $taskCompiler = [CodeDom.Compiler.CompilerParameters]::new()
 $taskCompiler.CompilerOptions = '/target:winexe /optimize+ /platform:x64 /win32icon:"' + (Join-Path $taskService 'assets\app.ico') + '" /win32manifest:"' + (Join-Path $taskService 'NextDNS.manifest') + '"'
 $taskCompiler.GenerateExecutable = $true
@@ -18,3 +18,7 @@ if (Test-Path -LiteralPath $taskOutput) { Remove-Item -LiteralPath $taskOutput -
 Add-Type -TypeDefinition ([IO.File]::ReadAllText((Join-Path $taskService 'NextDNS.Launcher.cs'))) -Language CSharp -CompilerParameters $taskCompiler
 Copy-Item -LiteralPath (Join-Path $taskService 'NextDNS.runtime.config') -Destination ($taskOutput + '.config') -Force
 Write-Output ('Built ' + $taskOutput)
+
+# Keep old shortcuts/startup entries compatible during migration.
+Copy-Item -LiteralPath $taskOutput -Destination (Join-Path $taskOutputDirectory 'NextDNS.exe') -Force
+Copy-Item -LiteralPath ($taskOutput+'.config') -Destination (Join-Path $taskOutputDirectory 'NextDNS.exe.config') -Force

@@ -1,0 +1,17 @@
+# GeoRoute
+
+Windows desktop manager for GeoHide routes and endpoint availability. [Русский](README.md).
+
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.exe**. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+
+Wait for the initial checks, choose an available route under **Servers**, then use the single **Enable / Disable** control on the home page and confirm the Windows elevation request. The interface is currently Russian.
+
+The manager refreshes provider lists for US/EU/RU hourly and probes endpoints every two minutes. Regional replacement is independent: an EU outage does not prevent updating US or RU profiles. Unavailable, retired and stale endpoints cannot unlock a managed profile. A mixed US+EU route requires both roles to pass. Healthy choices are retained; manual addresses survive provider refresh.
+
+Automatic selection updates saved profiles. Applying them to Windows requires an explicit connection action and elevation. The ordinary mode manages a marked section of `hosts`, not an all-traffic VPN. Closing the window keeps monitoring in the tray; exiting stops monitoring while applied hosts settings remain. Optional NextDNS Bridge and HTTP proxy features are not enabled automatically.
+
+A green check proves the tested HTTPS transport/configuration only, not an authenticated ChatGPT conversation, a specific GIF download or computer-control session. Availability depends on the local network and GeoHide endpoints.
+
+[Installation guide](docs/INSTALL.ru.md) · [Verification limits](clients/windows/VERIFICATION.md) · [Development](docs/DEVELOPMENT.md) · [Changelog](CHANGELOG.md).
+
+Based on [noVibe/DnsConf](https://github.com/noVibe/DnsConf). The upstream cloud DNS tools remain available separately: [technical manual](DNS-CONFIGURER.md). No NextDNS account or API key is needed for the ordinary desktop hosts mode. GeoRoute is an independent client, not an official GeoHide/NextDNS product.

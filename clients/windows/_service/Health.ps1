@@ -12,6 +12,7 @@ param(
 Set-StrictMode -Version 2
 $ErrorActionPreference='Stop'
 $taskRoot=[IO.Path]::GetFullPath($PSScriptRoot)
+. (Join-Path $PSScriptRoot 'HttpProxy.ps1')
 $taskRunRoot=Join-Path $taskRoot 'run-results'
 $taskUtf8=New-Object Text.UTF8Encoding($false)
 $taskRunRootUnsafe=$false
@@ -171,7 +172,9 @@ function Invoke-Probe([string]$Id) {
         $uri=[uri]('https://'+$hostName+'/')
         $proxy=[Net.WebRequest]::DefaultWebProxy
         $proxyUrl=$null
-        if($null -eq $proxy -or $proxy.IsBypassed($uri)){$record.route='direct (Windows proxy settings)'}else{
+        $httpState=Get-HttpProxyState $taskRoot
+        if($httpState.Enabled){$proxyUrl='http://'+$httpState.Server;$record.route='US HTTP proxy '+$httpState.Server}
+        elseif($null -eq $proxy -or $proxy.IsBypassed($uri)){$record.route='direct (Windows proxy settings)'}else{
             $selected=$proxy.GetProxy($uri)
             if($selected.AbsoluteUri -eq $uri.AbsoluteUri){$record.route='direct (Windows proxy settings)'}else{
                 $safeProxy=New-Object UriBuilder($selected);$safeProxy.UserName='';$safeProxy.Password='';$proxyUrl=$safeProxy.Uri.AbsoluteUri;$record.route='Windows proxy '+$safeProxy.Host+':'+$safeProxy.Port
@@ -179,8 +182,9 @@ function Invoke-Probe([string]$Id) {
         }
         $curl=Get-Command curl.exe -ErrorAction Stop
         $format='HTTP=%{http_code}|IP=%{remote_ip}|TLS=%{ssl_verify_result}|SECONDS=%{time_total}|CF=%header{cf-mitigated}'
-        $arguments=@('-q','--connect-timeout','2','--max-time','3','--silent','--show-error','--head','--output','NUL','--write-out',$format,$uri.AbsoluteUri)
-        if($proxyUrl){$arguments+=@('--proxy',$proxyUrl,'--noproxy','')}else{$arguments+=@('--noproxy','*')}
+        $arguments=@('-q','--tlsv1.3','--connect-timeout','6','--max-time','7','--silent','--show-error','--head','--output','NUL','--write-out',$format,$uri.AbsoluteUri)
+        # Windows PowerShell 5.1 drops empty native arguments. All probe targets are external names.
+        if($proxyUrl){$arguments+=@('--proxy',$proxyUrl,'--noproxy','localhost,127.0.0.1,::1')}else{$arguments+=@('--noproxy','*')}
         $savedPreference=$ErrorActionPreference
         try{$ErrorActionPreference='Continue';$output=@(& $curl.Source @arguments 2>&1|ForEach-Object {"$_"});$exit=$LASTEXITCODE}finally{$ErrorActionPreference=$savedPreference}
         $wireLine=@($output|Where-Object {$_ -match '^HTTP=\d+\|IP='})|Select-Object -Last 1
@@ -192,7 +196,7 @@ function Invoke-Probe([string]$Id) {
             $record.detail='Не удалось установить проверенное HTTPS-соединение за отведённое время.'
         }elseif(-not $wireLine){$record.status='unknown';$record.error='probe_parse_failed';$record.detail='Ответ диагностического клиента не удалось прочитать.'}
         elseif($record.httpStatus -eq 403){$record.status='warning';$record.error=if($wire.CF -eq 'challenge'){'cloudflare_challenge'}else{'http_403'};$record.detail=if($wire.CF -eq 'challenge'){'Cloudflare требует проверку. Доступ к приложению и вложениям не подтверждён.'}else{'Сервер ответил 403 на корневой запрос; доступ к приложению не подтверждён.'}}
-        elseif($record.httpStatus -eq 400 -and $Id -in @('file','filecentral','filewest')){$record.status='ok';$record.detail='Маршрут и TLS доступны. Хранилище отклонило корневой запрос без файла (HTTP 400); скачивание вложения не проверено.'}
+        elseif($record.httpStatus -in @(400,404) -and $Id -in @('file','filecentral','filewest')){$record.status='ok';$record.detail='Маршрут и TLS доступны. Хранилище отклонило корневой запрос без файла (HTTP '+$record.httpStatus+'); скачивание вложения не проверено.'}
         elseif($record.httpStatus -ge 200 -and $record.httpStatus -lt 400){$record.status='ok';$record.detail='Корневой HTTPS-маршрут доступен. Авторизация, сообщения и вложения не проверены.'}
         else{$record.status='warning';$record.error='http_'+$record.httpStatus;$record.detail='HTTPS-соединение установлено, но корневой HTTP-ответ не подтверждает работу приложения.'}
         $record.ok=$record.status -eq 'ok'

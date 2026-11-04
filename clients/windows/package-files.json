@@ -7,6 +7,10 @@
   "GUI-README.txt",
   "GuiWorker.ps1",
   "Health.ps1",
+  "HttpProxy.ps1",
+  "HttpProxyDialog.ps1",
+  "HttpProxyDialog.xaml",
+  "HttpProxyWorker.ps1",
   "ImportDialog.xaml",
   "NetworkSetup.ps1",
   "NextDNS-GUI.ps1",
@@ -45,5 +49,16 @@
   "profiles/eu-primary.hosts",
   "profiles/primary.hosts",
   "profiles/us-eu.hosts",
-  "Восстановление вложений.txt"
+  "Восстановление вложений.txt",
+  "GeoHide.ps1",
+  "GeoHideWorker.ps1",
+  "GeoHideUI.ps1",
+  "geohide-servers.json",
+  "GeoHideHistory.ps1",
+  "assets/ui/flag-RU.png",
+  "assets/ui/flag-DE.png",
+  "GeoAvailability.ps1",
+  "profiles/ru-primary.hosts",
+  "GeoProfileUI.ps1",
+  "Home.ps1"
 ]

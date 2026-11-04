@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^[a-zA-Z0-9.-]+$')][string]$Version='2026.10.28-preview')
+param([string]$PythonExe='python.exe',[ValidatePattern('^[a-zA-Z0-9.-]+$')][string]$Version='0.2.0')
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -9,7 +9,7 @@ $buildRoot=Join-Path $clientRoot '.build'
 $stage=[IO.Path]::GetFullPath((Join-Path $buildRoot ('package-'+[guid]::NewGuid().ToString('N'))))
 if(-not $stage.StartsWith(($buildRoot+'\'),[StringComparison]::OrdinalIgnoreCase)){throw 'Invalid staging path.'}
 $temporary=Join-Path $buildRoot ([IO.Path]::GetFileName($stage)+'.zip')
-$package=Join-Path $stage 'NextDNS'
+$package=Join-Path $stage 'GeoRoute'
 $service=Join-Path $package '_service'
 $source=Join-Path $clientRoot '_service'
 $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -32,7 +32,7 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Service build failed.'}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null
- $archive=Join-Path $output ('NextDNS-Windows-'+$Version+'.zip')
+ $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
  [IO.Compression.ZipFile]::CreateFromDirectory($stage,$temporary,[IO.Compression.CompressionLevel]::Optimal,$false)
  & $PythonExe -I (Join-Path $clientRoot 'tests\verify_package.py') $temporary
  if($LASTEXITCODE -ne 0){throw 'Package validation failed.'}

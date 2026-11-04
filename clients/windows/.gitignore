@@ -5,6 +5,7 @@ _service/bridge/python/
 _service/bridge/NextDNSBridge.exe
 _service/bridge/runtime-hashes.json
 _service/backups/
+_service/state/
 _service/run-results/
 _service/*-state.json
 _service/GUI-settings.json
@@ -12,3 +13,9 @@ _service/*.log
 _service/*.lock
 __pycache__/
 *.pyc
+
+_service/geohide-settings.json
+_service/geohide-monitor.json
+_service/geohide-history.json
+_service/profiles/*.geohide-backup
+_service/*.tmp

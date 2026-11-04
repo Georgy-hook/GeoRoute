@@ -64,8 +64,11 @@ function Disable-LegacyDriver($Backup) {
  Set-ItemProperty -LiteralPath $key -Name Start -Value 4
 }
 function Restore-Network($Backup) {
+ # Resolve every saved adapter before stopping the DNS service or changing any adapter.
+ # A disconnected USB adapter must not leave the current connection pointing at a stopped bridge.
+ $restorePlan=@(foreach($record in $Backup.Adapters){[pscustomobject]@{Record=$record;Adapter=(Get-SavedAdapter $record)}})
  if(Get-OwnService){Stop-Service -Name $serviceName -ErrorAction SilentlyContinue}
- foreach($record in $Backup.Adapters){$adapter=Get-SavedAdapter $record;if(@($record.Servers).Count){Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses @($record.Servers)}else{Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ResetServerAddresses}}
+ foreach($item in $restorePlan){$record=$item.Record;$adapter=$item.Adapter;if(@($record.Servers).Count){Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses @($record.Servers)}else{Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ResetServerAddresses}}
  if($null -ne $Backup.LegacyDriverStart){Set-ItemProperty -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Services\NextDNSEngine' -Name Start -Value ([int]$Backup.LegacyDriverStart)}
  if($Backup.Legacy){
   $startup=switch($Backup.Legacy.StartMode){'Auto'{'Automatic'}'Manual'{'Manual'}default{'Disabled'}}
@@ -84,7 +87,8 @@ function Restore-Network($Backup) {
 }
 function Test-InstalledDNS {
  $nonce='verify-'+[guid]::NewGuid().ToString('N').Substring(0,12)
- $checks=@(@{Host=($nonce+'.oaiusercontent.com');Expected=@('45.13.237.213','37.221.93.128')},@{Host=($nonce+'.chatgpt.com');Expected=@('192.255.159.241','192.255.159.240')},@{Host='example.com';Expected=@()})
+ $routeConfig=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'connection-routes.json') -Raw -Encoding UTF8|ConvertFrom-Json
+ $checks=@($routeConfig.routes|ForEach-Object{@{Host=($nonce+'.'+$_.domain);Expected=@($_.addresses)}})+@(@{Host='example.com';Expected=@()})
  foreach($check in $checks){$task=[Net.Dns]::GetHostAddressesAsync($check.Host);if(-not $task.Wait(10000)){throw 'Проверка DNS Windows не получила ответ.'};$addresses=@($task.Result|ForEach-Object {$_.IPAddressToString});if(-not $addresses.Count){throw 'DNS вернул пустой ответ.'};if($check.Expected.Count -and @($addresses|Where-Object {$_ -notin $check.Expected}).Count){throw 'Профиль NextDNS вернул неожиданный маршрут.'}}
 }
 try {

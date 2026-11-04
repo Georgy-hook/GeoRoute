@@ -40,8 +40,8 @@ function Stop-ConnectionCheck($Run) {
 }
 function Get-ManagerLauncher([string]$Root) {
     $current=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-    if([IO.Path]::GetFileName($current) -ieq 'NextDNS.exe'){return $current}
-    foreach($path in @((Join-Path (Split-Path $Root -Parent) 'NextDNS.exe'),(Join-Path $Root 'bin\NextDNS.exe'))) {
+    if([IO.Path]::GetFileName($current) -in @('GeoRoute.exe','NextDNS.exe')){return $current}
+    foreach($path in @((Join-Path (Split-Path $Root -Parent) 'GeoRoute.exe'),(Join-Path $Root 'bin\GeoRoute.exe'),(Join-Path (Split-Path $Root -Parent) 'NextDNS.exe'),(Join-Path $Root 'bin\NextDNS.exe'))) {
         if(Test-Path -LiteralPath $path){return $path}
     }
     throw 'Не найден NextDNS.exe рядом с интерфейсом.'
