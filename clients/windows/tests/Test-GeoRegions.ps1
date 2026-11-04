@@ -43,6 +43,16 @@ try{
     Save-GeoProfile $temp $settings $onlyEU
     Assert (-not (Get-GeoProfileAvailability $temp 'primary' $onlyEU).Ready) 'No working US must not create a healthy US card'
     Assert (Get-GeoProfileAvailability $temp 'eu-primary' $onlyEU).Ready 'EU-only profile remains usable without US'
+    . (Join-Path $root 'GeoProfileUI.ps1')
+    function Load-TaskProfiles([switch]$Force){}
+    $script:taskRoot=$temp;$script:taskBusy=$false;$SmokeTest=$false;$RenderPreview=$false
+    $script:taskUi=@{GeoUS=[pscustomobject]@{Text='unsaved US draft'};GeoEU=[pscustomobject]@{Text='unsaved EU draft'};GeoStatus=[pscustomobject]@{Text=''}}
+    $settings.autoSelect=$false;$settings.eu='45.13.237.213'
+    Write-GeoJson (Join-Path $temp 'geohide-settings.json') $settings
+    Sync-GeoRegions $report
+    Assert ((Read-GeoSettings $temp).eu -eq '45.13.237.213') 'Manual pair is retained during automatic regional sync'
+    Assert ((Get-GeoProfileAvailability $temp 'eu-primary' $report).Ready) 'EU regional template still updates in manual pair mode'
+    Assert ($script:taskUi.GeoEU.Text -eq 'unsaved EU draft') 'Automatic region refresh preserves unsaved manual input'
     Write-Output 'Regional updates passed: independent US/EU/RU recovery, provider removal/reappearance, mixed-profile rejection, stale checks and attachment failures.'
 }finally{
     $full=[IO.Path]::GetFullPath($temp)

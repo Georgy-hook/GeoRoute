@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([switch]$Bin)
+param([switch]$Bin,[switch]$NoLegacyAlias)
 $ErrorActionPreference = 'Stop'
 if ($PSVersionTable.PSVersion.Major -ne 5 -or $PSVersionTable.PSVersion.Minor -ne 1) { throw 'Собирайте launcher через системный Windows PowerShell 5.1.' }
 $taskService = $PSScriptRoot
@@ -20,5 +20,8 @@ Copy-Item -LiteralPath (Join-Path $taskService 'NextDNS.runtime.config') -Destin
 Write-Output ('Built ' + $taskOutput)
 
 # Keep old shortcuts/startup entries compatible during migration.
+if(-not $NoLegacyAlias){
 Copy-Item -LiteralPath $taskOutput -Destination (Join-Path $taskOutputDirectory 'NextDNS.exe') -Force
 Copy-Item -LiteralPath ($taskOutput+'.config') -Destination (Join-Path $taskOutputDirectory 'NextDNS.exe.config') -Force
+
+}
