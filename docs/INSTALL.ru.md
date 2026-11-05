@@ -2,7 +2,7 @@
 
 ## 1. Скачать
 
-Откройте [готовые релизы](https://github.com/Georgy-hook/GeoRoute/releases/latest) и скачайте файл **GeoRoute-Windows-x64-0.3.1.zip** в разделе Assets. Архивы **Source code** предназначены для разработчиков.
+Откройте [готовые релизы](https://github.com/Georgy-hook/GeoRoute/releases/latest) и скачайте файл **GeoRoute-Windows-x64-0.3.2.zip** в разделе Assets. Архивы **Source code** предназначены для разработчиков.
 
 ## 2. Распаковать
 

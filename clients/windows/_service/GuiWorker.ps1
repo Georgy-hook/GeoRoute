@@ -13,6 +13,7 @@ try {
     }
     else { $taskParameters.ProfileId=[string]$taskRequest.ProfileId; $taskParameters.ExpectedUserSid=[string]$taskRequest.ExpectedUserSid }
     if ($taskRequest.Engine -ne 'Health' -and $taskRequest.Mode -eq 'Import') {
+        foreach($key in @('InputKind','Address','Service')){if($taskRequest.PSObject.Properties[$key]){$taskParameters[$key]=[string]$taskRequest.$key}}
         $taskParameters.SourcePath = [string]$taskRequest.SourcePath
         $taskParameters.Name = [string]$taskRequest.Name
         $taskParameters.CountryCode = [string]$taskRequest.CountryCode

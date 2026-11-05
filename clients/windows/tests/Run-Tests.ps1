@@ -11,6 +11,7 @@ if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
 & (Join-Path $PSScriptRoot 'Test-Home.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoMonitor.ps1')
 & (Join-Path $PSScriptRoot 'Test-Gemini.ps1')
+& (Join-Path $PSScriptRoot 'Test-ProfileCreation.ps1')
 & (Join-Path $PSScriptRoot 'Test-RepairCenter.ps1')
 & (Join-Path $PSScriptRoot 'Test-ConnectionRecovery.ps1')
 & (Join-Path $PSScriptRoot 'Test-HttpProxy.ps1')

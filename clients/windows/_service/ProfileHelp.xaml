@@ -17,20 +17,22 @@
         <Border Background="#1B3440" CornerRadius="14" Padding="16">
           <TextBlock Text="Для обычного подключения ничего добавлять не нужно. В разделе «Серверы» уже есть профили ChatGPT и Gemini. Выберите подходящий и нажмите «Включить» на главной." Foreground="#B6F3DF"/>
         </Border>
-        <TextBlock Text="1. Получите готовый файл" Style="{StaticResource Step}"/>
-        <TextBlock Text="Попросите файл профиля с окончанием .hosts у человека или сервиса, которому доверяете. Сохраните его, например, в «Загрузки». Создавать сервер или разбираться в содержимом файла не требуется. Ключи VPN и архивы ZIP сюда не подходят." Style="{StaticResource Description}"/>
-        <TextBlock Text="2. Выберите файл в GeoRoute" Style="{StaticResource Step}"/>
-        <TextBlock Text="Откройте «Серверы» → «Добавить сервер» → «Выбрать файл…» и найдите сохранённый .hosts. Если он находится внутри ZIP, сначала распакуйте архив." Style="{StaticResource Description}"/>
-        <TextBlock Text="3. Дайте профилю понятное имя" Style="{StaticResource Step}"/>
-        <TextBlock Text="Например, «Мой Gemini». Укажите страну, которую сообщил поставщик файла. Она нужна для подписи и флага — выбор страны сам по себе не переносит сервер в другую страну. Нажмите «Добавить сервер»." Style="{StaticResource Description}"/>
+        <TextBlock Text="1. Откройте создание профиля" Style="{StaticResource Step}"/>
+        <TextBlock Text="Перейдите в «Серверы» → «Добавить сервер». По умолчанию выбран способ «По IP-адресу»: готовить файл не нужно." Style="{StaticResource Description}"/>
+        <TextBlock Text="2. Введите IP и выберите сервис" Style="{StaticResource Step}"/>
+        <TextBlock Text="Укажите IP сервера GeoHide или другого совместимого сервера. Выберите ChatGPT или Gemini. Программа сама добавит адреса выбранного сервиса; для ChatGPT — также известные адреса вложений. Вводите только IP, без http:// и порта." Style="{StaticResource Description}"/>
+        <TextBlock Text="3. Выберите страну и сохраните" Style="{StaticResource Step}"/>
+        <TextBlock Text="Страна нужна для подписи и флага — она не меняет местоположение сервера. Название можно оставить пустым: например, получится «Gemini — Германия». Нажмите «Сохранить профиль»." Style="{StaticResource Description}"/>
         <TextBlock Text="4. Включите подключение" Style="{StaticResource Step}"/>
-        <TextBlock Text="В списке появится новая карточка. Нажмите на ней «Выбрать», вернитесь в «Подключение» и нажмите «Включить». Подтвердите запрос Windows. Можно также нажать «Подключить» в разделе «Серверы». Одно добавление файла подключение не меняет." Style="{StaticResource Description}"/>
-        <TextBlock Text="Если у вас только IP-адрес" Style="{StaticResource Step}"/>
+        <TextBlock Text="В списке появится новая карточка. Нажмите «Выбрать», затем «Включить» на главной и подтвердите Windows. Сохранение профиля само по себе подключение не переключает." Style="{StaticResource Description}"/>
+        <TextBlock Text="Если у вас уже есть файл" Style="{StaticResource Step}"/>
+        <TextBlock Text="В том же окне выберите «Из файла», укажите готовый .hosts, название и страну, затем нажмите «Сохранить профиль». Если файл находится в ZIP, сначала распакуйте архив. Ключ VPN вместо IP или файла .hosts не подходит." Style="{StaticResource Description}"/>
+        <TextBlock Text="Если нужны разные IP для ChatGPT и вложений" Style="{StaticResource Step}"/>
         <TextBlock Text="Для изменения общей пары US + EU откройте «Мониторинг» и разверните «Адреса US + EU» под списком. Выберите «Вручную» и укажите адреса US и EU. Новый адрес сначала сохраните без подключения и проверьте кнопкой «Проверить серверы». Затем нажмите «Сохранить и подключить». Добавление IP в мониторинг само по себе не создаёт профиль." Style="{StaticResource Description}"/>
-        <TextBlock Text="Если файл не добавляется" Style="{StaticResource Step}"/>
+        <TextBlock Text="Если профиль не сохраняется" Style="{StaticResource Step}"/>
         <TextBlock Text="Прочитайте сообщение под полями и передайте его тому, кто дал вам файл. GeoRoute принимает профили только для поддерживаемых сервисов ChatGPT / OpenAI и Gemini. Если файл заканчивается на .txt, попросите версию .hosts. Размер файла — до 1 МБ." Style="{StaticResource Description}"/>
         <Border Background="#2D2A25" CornerRadius="14" Padding="16" Margin="0,20,0,0">
-          <TextBlock Text="Добавление проверяет содержимое файла, но не подтверждает работу чужого сервера. Пользовательские профили не заменяются автоподбором GeoHide. Если такой сервер перестал работать, потребуется новый файл или адрес от его поставщика." Foreground="#F6D595"/>
+          <TextBlock Text="Сохранение проверяет формат IP и доменов, но не подтверждает работу чужого сервера. Пользовательские профили не заменяются автоподбором GeoHide. Если такой сервер перестал работать, потребуется новый файл или адрес от его поставщика." Foreground="#F6D595"/>
         </Border>
       </StackPanel>
     </ScrollViewer>

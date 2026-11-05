@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 — 2026-11-05
+
+- Create a custom profile directly from a public IP, country and service (ChatGPT or Gemini); no user-authored hosts file required.
+- Generate service-specific mappings and an optional automatic name through the existing transactional profile save path, without changing the active connection.
+- Keep file import in a separate input mode, show validation errors beside Save and update the in-app/README guides.
+- Verify real GUI-worker persistence for both services, rejected addresses, IPv6 and the existing file-import path.
+
 ## 0.3.1 — 2026-11-05
 
 - Add an accessible **?** help button beside profile import and inside the import dialog, with an offline, scrollable, plain-language guide.

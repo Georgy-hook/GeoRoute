@@ -9,6 +9,9 @@ param(
     [ValidateSet('Check','Apply','ClearCache','Restore','Import','List')][string]$Mode='Check',
     [string]$ProfileId,
     [string]$SourcePath,
+    [ValidateSet('File','Address')][string]$InputKind='File',
+    [string]$Address,
+    [ValidateSet('ChatGPT','Gemini')][string]$Service='ChatGPT',
     [string]$Name,
     [ValidatePattern('^$|^[A-Za-z]{2}$')][string]$CountryCode,
     [string]$Region,
@@ -20,6 +23,7 @@ Set-StrictMode -Version 2
 $ErrorActionPreference='Stop'
 $taskRoot=$PSScriptRoot
 . (Join-Path $taskRoot 'GeoServices.ps1')
+. (Join-Path $taskRoot 'ProfileCreation.ps1')
 $taskCatalogPath=Join-Path $taskRoot 'profiles.json'
 $taskProfilesRoot=Join-Path $taskRoot 'profiles'
 $taskHostsPath=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
@@ -94,19 +98,7 @@ function Assert-Domain([string]$Domain) {
     if (@($Domain -split '\.' | Where-Object {$_.Length -gt 63}).Count) { throw ('Слишком длинная часть домена: '+$Domain) }
     if ($Domain -notmatch '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -and -not (Test-GeoGeminiDomain $Domain)) { throw ('Профиль содержит посторонний домен: '+$Domain) }
 }
-function Convert-Address([string]$Text) {
-    $address=$null
-    if (-not [Net.IPAddress]::TryParse($Text,[ref]$address)) { throw ('Некорректный IP-адрес: '+$Text) }
-    if ($address.IsIPv4MappedToIPv6) { $address=$address.MapToIPv4() }
-    if ([Net.IPAddress]::IsLoopback($address)) { throw 'Адрес сервера не может быть loopback.' }
-    $bytes=$address.GetAddressBytes()
-    if ($address.AddressFamily -eq [Net.Sockets.AddressFamily]::InterNetwork) {
-        if ($bytes[0] -in @(0,10,127) -or $bytes[0] -ge 224 -or ($bytes[0] -eq 169 -and $bytes[1] -eq 254) -or ($bytes[0] -eq 172 -and $bytes[1] -ge 16 -and $bytes[1] -le 31) -or ($bytes[0] -eq 192 -and $bytes[1] -eq 168) -or ($bytes[0] -eq 100 -and $bytes[1] -ge 64 -and $bytes[1] -le 127)) { throw ('Нужен публичный адрес сервера: '+$Text) }
-    } else {
-        if ($address.Equals([Net.IPAddress]::IPv6Any) -or $address.IsIPv6LinkLocal -or $address.IsIPv6Multicast -or $address.IsIPv6SiteLocal -or (($bytes[0] -band 254) -eq 252)) { throw ('Нужен публичный адрес сервера: '+$Text) }
-    }
-    return $address.ToString().ToLowerInvariant()
-}
+function Convert-Address([string]$Text) { return (Convert-GeoProfileAddress $Text) }
 function Convert-HostsText([string]$Text) {
     if ($Text.Length -gt 1048576 -or $Text.IndexOf([char]0) -ge 0) { throw 'Файл адресов слишком велик или содержит недопустимые символы.' }
     $records=New-Object System.Collections.Generic.List[object]
@@ -342,14 +334,20 @@ try {
             $taskResult.Message='Каталог профилей загружен.'
         }
         'Import' {
-            if (-not $SourcePath -or -not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) { throw 'Выбери существующий файл .hosts.' }
-            if ([IO.Path]::GetExtension($SourcePath) -ine '.hosts' -or (Get-Item -LiteralPath $SourcePath).Length -gt 1048576) { throw 'Нужен файл .hosts размером не больше 1 МиБ.' }
+            $generatedText=$null
+            if($InputKind -eq 'Address'){
+                $generatedText=New-GeoServiceHosts $Address $Service
+                if([string]::IsNullOrWhiteSpace($Name)){$Name=$Service+' — '+$(if($Region){$Region}else{$CountryCode})}
+            }else{
+                if (-not $SourcePath -or -not (Test-Path -LiteralPath $SourcePath -PathType Leaf)) { throw 'Выбери существующий файл .hosts.' }
+                if ([IO.Path]::GetExtension($SourcePath) -ine '.hosts' -or (Get-Item -LiteralPath $SourcePath).Length -gt 1048576) { throw 'Нужен файл .hosts размером не больше 1 МиБ.' }
+            }
             if (-not $Name -or $Name.Trim().Length -gt 120 -or $Name -match '[\x00-\x1f]') { throw 'Укажи имя профиля от 1 до 120 символов.' }
             if (-not $CountryCode) { throw 'Укажи двухбуквенный код страны или региона.' }
             $country=$CountryCode.ToUpperInvariant()
             if (-not $Region) { $Region=$country }
             if ($Region.Length -gt 80 -or $Region -match '[\x00-\x1f]') { throw 'Некорректное название региона.' }
-            $records=Convert-HostsText ([IO.File]::ReadAllText([IO.Path]::GetFullPath($SourcePath)))
+            $records=Convert-HostsText $(if($InputKind -eq 'Address'){$generatedText}else{[IO.File]::ReadAllText([IO.Path]::GetFullPath($SourcePath))})
             $stem=($Name.ToLowerInvariant() -replace '[^a-z0-9]+','-').Trim('-')
             if (-not $stem) { $stem='profile' }
             if ($stem.Length -gt 42) { $stem=$stem.Substring(0,42).TrimEnd('-') }
@@ -357,6 +355,7 @@ try {
             $addresses=@($records | ForEach-Object {$_.Address} | Select-Object -Unique)
             $relative='profiles\'+$newId+'.hosts'
             $entry=[pscustomobject]@{id=$newId;name=$Name.Trim();region=$Region.Trim();countryCode=$country;hostsFile=$relative;address=$(if($addresses.Count -eq 1){$addresses[0]}else{$null});description='Импортирован пользователем. Проверен формат доменов и адресов; сетевой маршрут ещё не проверен.';verifiedAt=$null;domainCount=$records.Count}
+            if($InputKind -eq 'Address'){$entry.description='Создан по IP для '+$Service+'. Сохранение не подтверждает доступность сервера.';$entry|Add-Member -MemberType NoteProperty -Name service -Value $Service}
             [IO.Directory]::CreateDirectory($taskProfilesRoot) | Out-Null
             $destination=Join-Path $taskRoot $relative
             if (Test-Path -LiteralPath $destination) { throw 'ID профиля уже существует; повтори импорт.' }
@@ -394,7 +393,7 @@ try {
             }
             $taskResult.ProfileId=$newId; $taskResult.AddedProfile=$entry; $taskResult.Address=$addresses -join ', '; $taskResult.Addresses=$addresses; $taskResult.ExpectedCount=$records.Count
             $taskResult.Checks.SystemSettingsChanged=$false
-            $taskResult.Message='Профиль добавлен в каталог. Для включения выбери его и нажми «Применить».'
+            $taskResult.Message='Профиль сохранён. Выберите его в «Серверах» и нажмите «Включить» на главной.'
             Write-Host $taskResult.Message
         }
         'Restore' {
