@@ -137,6 +137,11 @@ def main():
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
                                   'files': [{'name': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
                                             for name, data in selected]})
+    audit_files(selected)
+
+
+def audit_files(selected):
+    """Inspect a bounded set of explicitly authorized files without executing them."""
     # Capture the actual official response schema with the scan evidence.
     status, schema = fetch(BASE + '/openapi.json')
     if status != 200:

@@ -1,0 +1,72 @@
+name: Bridge lifecycle candidate audit
+
+on:
+  push:
+    branches: [codex/bridge-lifecycle]
+    paths:
+      - clients/windows/_service/bridge/**
+      - clients/windows/tests/BridgeLifecycleTests.cs
+      - clients/windows/tests/Test-BridgeLifecycle.ps1
+      - clients/windows/tests/test_bridge_protocol.py
+      - tools/scan_bridge_candidate.py
+      - tools/scan_virustotal_release.py
+      - .github/workflows/bridge-candidate-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bridge-candidate-audit
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Verify lifecycle and DNS protocol, then build candidate
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $python=(Get-Command python.exe).Source
+          & clients/windows/tests/Test-BridgeLifecycle.ps1 -PythonExe $python
+          python -m unittest discover -s clients/windows/tests -p test_bridge_protocol.py
+          if($LASTEXITCODE -ne 0){throw 'DNS protocol tests failed'}
+          & clients/windows/_service/bridge/Build.ps1
+          New-Item -ItemType Directory -Path bridge-candidate | Out-Null
+          Copy-Item clients/windows/_service/bridge/NextDNSBridge.exe bridge-candidate/
+          $hash=(Get-FileHash bridge-candidate/NextDNSBridge.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          @{source_commit=$env:GITHUB_SHA;sha256=$hash;lifecycle_scenarios=7;protocol_tests=11;purpose='Fix worker startup, shutdown, and service recovery; no system installation'} | ConvertTo-Json | Set-Content bridge-candidate/manifest.json -Encoding UTF8
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bridge-candidate
+          path: bridge-candidate/
+          retention-days: 30
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/download-artifact@v4
+        with:
+          name: bridge-candidate
+          path: bridge-candidate/
+      - name: Inspect exact tested candidate with VirusTotal
+        env:
+          VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}
+        run: python tools/scan_bridge_candidate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bridge-candidate-virustotal
+          path: scan-results/
+          if-no-files-found: warn
+          retention-days: 30
