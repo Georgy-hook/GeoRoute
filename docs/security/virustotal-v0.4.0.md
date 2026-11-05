@@ -24,7 +24,21 @@ Python уже имел отчёт от 02.11.2026; его существующи
 - **_service/bridge/NextDNSBridge.exe**: `malicious (moderate confidence)`, `ti!BD8091D98F3F`, `Malicious`.
 - **_service/bridge/python/python.exe**: обнаружений в отчёте нет.
 
-Официальный VTAI API возвращает сокращённую сводку. Названия движков и развёрнутые подробности доступны по ссылке полного отчёта VirusTotal. Небольшое число срабатываний требует разбора; оснований автоматически объявлять их ложными нет. Даже отсутствие обнаружений не даёт гарантии безопасности.
+Ответы поиска по SHA-256 в этой процедуре содержат сокращённую сводку. Сохранённые ответы завершённого анализа (`0-analysis.json`, `1-analysis.json`, `2-analysis.json` в артефакте Actions) дополнительно содержат результаты отдельных движков:
+
+| Файл | Движок | Метка |
+|---|---|---|
+| ZIP | Bkav | `W32.Malware.B4FA2B78` |
+| ZIP | Elastic | `malicious (moderate confidence)` |
+| GeoRoute.exe | Bkav | `W32.Malware.B4FA2B78` |
+| GeoRoute.exe | APEX | `Malicious` |
+| NextDNSBridge.exe | Elastic | `malicious (moderate confidence)` |
+| NextDNSBridge.exe | McAfeeD | `ti!BD8091D98F3F` |
+| NextDNSBridge.exe | APEX | `Malicious` |
+
+Небольшое число срабатываний требует разбора; оснований автоматически объявлять их ложными нет. Даже отсутствие обнаружений не даёт гарантии безопасности. [Проверенные изменения и повторные анализы](virustotal-experiments-2026-11-05.md).
+
+[Данные проверки исходных EXE](virustotal-cause-evidence-v0.4.0.json): совпадения CRC32/SHA-256 в метках Bkav/McAfeeD идентифицируют файлы; конкретные правила срабатывания неизвестны.
 
 ## SHA-256 проверенных файлов
 

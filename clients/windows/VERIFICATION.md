@@ -1,4 +1,8 @@
-# Verification — GeoRoute 0.3.0
+# Verification — GeoRoute 0.4.1
+
+Version 0.4.1 launches the same WPF GUI through GeoRoute.cmd and the system PowerShell host. The packaged entry is smoke-tested after copying into a clean staging folder. Mutex/event tests cover single-instance ownership, activation, background startup, repair isolation and release; startup migration tests leave the user's registry untouched.
+
+An additional SCM test runs only in a disposable GitHub Windows runner. It creates a uniquely named temporary LocalService on a test port, checks startup, stop/restart, a startup bind failure, resource cleanup and subsequent recovery, then removes that service. It does not configure adapter DNS. This is not a reboot test on the user's computer. [Exact-file VirusTotal snapshot and coverage](../../docs/security/virustotal-v0.4.1.md).
 
 Current automated checks additionally validate monitor duplicate-launch prevention, per-run isolation, final-result ingestion, startup/timeout/malformed-output recovery, per-row loading without synthetic history failures, Gemini-only availability independent of ChatGPT, exact-domain import validation, trusted redirects and CAPTCHA warnings.
 
