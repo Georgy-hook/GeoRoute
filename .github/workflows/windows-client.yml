@@ -34,6 +34,11 @@ jobs:
         run: .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
       - name: Build portable client
         run: .\clients\windows\Build.ps1 -PythonExe python.exe
+      - name: Verify independent launcher rebuild
+        run: |
+          $archive=@(Get-ChildItem clients/windows/dist -Filter '*.zip')
+          if($archive.Count -ne 1){throw 'Expected one client archive'}
+          .\clients\windows\tests\Test-LauncherReproducibility.ps1 -ArchivePath $archive[0].FullName
       - uses: actions/upload-artifact@v4
         with:
           name: GeoRoute-Windows
