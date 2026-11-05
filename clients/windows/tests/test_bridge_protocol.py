@@ -51,7 +51,7 @@ class Protocol(unittest.TestCase):
    self.assertFalse(x.submit(lambda:None))
  def test_stop_closes_idle_tcp_session(self):
   with tempfile.TemporaryDirectory(prefix='bridge-idle-tcp-') as folder:
-   x=b.Bridge('abcdef',0,folder);ready=threading.Event()
+   x=b.Bridge('abcdef',0,folder);ready=threading.Event();x.boot_probe=lambda:None
    runner=threading.Thread(target=x.start,kwargs={'on_ready':ready.set},daemon=True)
    runner.start();client=None
    try:

@@ -308,6 +308,8 @@ class Bridge:
                           afterReboot=uptime < 600, status='checking', checks=[])
             def save():
                 with self.lock:
+                    if self.stop.is_set():
+                        return
                     self.root.mkdir(parents=True, exist_ok=True)
                     report['at'] = self.now()
                     temporary = self.root / 'boot-check.json.tmp'
