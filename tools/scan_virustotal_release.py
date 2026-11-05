@@ -121,7 +121,11 @@ def main():
     sha256 = hashlib.sha256(archive).hexdigest()
     if status != 200 or asset.get('digest') != 'sha256:' + sha256:
         raise RuntimeError('Downloaded bytes do not match the published GitHub asset digest')
+    save('download-evidence.json', {'sha256': sha256, 'api_digest': asset.get('digest'), 'url': asset['browser_download_url'], 'size': len(archive)})
+    if tag == 'v0.4.0' and sha256 != '9f8a8e8742aebe8d164ba56d8f58d6c401d347fbfeb5d16e63f5fd9730611d3d':
+        raise RuntimeError('Release differs from the locally verified 0.4.0 digest; do not scan replacement bytes')
     with zipfile.ZipFile(io.BytesIO(archive)) as package:
+        save('zip-members.json', package.namelist())
         selected = [(filename, archive)] + [(path, package.read('GeoRoute/' + path)) for path in
                     ('GeoRoute.exe', '_service/bridge/NextDNSBridge.exe', '_service/bridge/python/python.exe')]
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
