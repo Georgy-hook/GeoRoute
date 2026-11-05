@@ -62,6 +62,7 @@ def run_service(name, factory, log):
         try:
             stopping.set()
             report(3)
+            log('Service stop requested')
             if worker is not None:
                 worker.stop.set()
         except Exception as exc:
@@ -376,6 +377,7 @@ class Bridge:
                 for kind in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
                     sock = socket.socket(family, kind)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                    sock.settimeout(.5)
                     sock.bind((ip, self.port))
                     self.sockets.append(sock)
                     if kind == socket.SOCK_DGRAM:
