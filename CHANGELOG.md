@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 — 2026-11-05
+
+- Run the same WPF GUI through `GeoRoute.cmd` and the system PowerShell host, removing custom GUI and DNS-service executable wrappers from the distribution.
+- Preserve single-instance activation, quiet tray startup, repair mode and per-monitor DPI; migrate exact legacy startup commands from the same app directory.
+- Run the optional DNS bridge directly as LocalService in the bundled isolated Python process using Windows SCM APIs, with controlled startup/stop status and cancellation of active connections.
+- Preserve TLS certificate validation and the existing elevated DNS/hosts boundary. No automatic network activation is introduced.
+- Add real SCM integration checks in a disposable Windows runner, single-instance/startup migration checks and a smoke test of the packaged entry point.
+- Record intermediate VirusTotal experiments separately; publish exact-file results and coverage with the release.
+
 ## 0.4.0 — 2026-11-05
 
 - Use four new Image Gen transparent navigation icons for Connect, Monitoring, Journal and Settings, keeping full-resolution lossless PNG sources.

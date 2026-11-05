@@ -35,3 +35,28 @@ jobs:
         with:
           name: GeoRoute-Windows
           path: clients/windows/dist/*
+  audit:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/bridge-lifecycle' && contains(github.event.head_commit.message, '[audit-client]')
+    needs: windows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/download-artifact@v4
+        with:
+          name: GeoRoute-Windows
+          path: client-candidate/
+      - name: Inspect exact client candidate with VirusTotal
+        env:
+          VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}
+        run: python tools/scan_windows_candidate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: client-candidate-virustotal
+          path: scan-results/
+          if-no-files-found: warn
+          retention-days: 30

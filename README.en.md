@@ -2,9 +2,11 @@
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
-**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.exe**. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.cmd** to launch the graphical interface. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
-**VirusTotal snapshot for 0.4.0 (2026-11-05): detections present.** ZIP and `GeoRoute.exe`: **2/71**; `NextDNSBridge.exe`: **3/71**; bundled Python: **0/71** (existing analysis dated 2026-11-02). These findings have not been confirmed as false positives. [Reports, coverage, dates and exact SHA-256 hashes](docs/security/virustotal-v0.4.0.md).
+**VirusTotal snapshot for 0.4.1 (2026-11-05): zero detections (0/71)** for the ZIP and individually checked entry/GUI/Bridge components. Some engines report unsupported types, failures or timeouts; this is not a safety certificate. [Reports, coverage, dates and exact SHA-256 hashes](docs/security/virustotal-v0.4.1.md). [Historical detections and measured experiments](docs/security/virustotal-experiments-2026-11-05.md) remain available.
+
+Version 0.4.1 removes custom EXE wrappers while retaining the WPF GUI, tray and profiles. Close the old app through its tray menu, then launch GeoRoute.cmd. Replace old EXE shortcuts; enabled startup entries belonging to the same app directory are migrated automatically.
 
 Wait for the initial checks, choose an available route under **Servers**, then use the single **Enable / Disable** control on the home page and confirm the Windows elevation request. The interface is currently Russian.
 

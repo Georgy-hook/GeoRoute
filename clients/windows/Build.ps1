@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^[a-zA-Z0-9.-]+$')][string]$Version='0.4.0')
+param([string]$PythonExe='python.exe',[ValidatePattern('^[a-zA-Z0-9.-]+$')][string]$Version='0.4.1')
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -24,12 +24,17 @@ try {
   Copy-Item -LiteralPath $path -Destination $target
  }
  foreach($name in @('Начать здесь.txt','Совместимость с Discord Fix.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
+ Copy-Item -LiteralPath (Join-Path $clientRoot 'GeoRoute.cmd') -Destination $package
  & $PythonExe -I (Join-Path $clientRoot 'tools\prepare_runtime.py') --destination (Join-Path $service 'bridge\python')
  if($LASTEXITCODE -ne 0){throw 'Python runtime packaging failed.'}
- & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $service 'Build-Launcher.ps1') -NoLegacyAlias
- if($LASTEXITCODE -ne 0){throw 'Launcher build failed.'}
- & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $service 'bridge\Build.ps1')
- if($LASTEXITCODE -ne 0){throw 'Service build failed.'}
+ $smoke=Start-Process -FilePath $env:ComSpec -ArgumentList ('/d /s /c ""'+(Join-Path $package 'GeoRoute.cmd')+'" -SmokeTest"') -WindowStyle Hidden -PassThru
+ if(-not $smoke.WaitForExit(30000)){$smoke.Kill();$null=$smoke.WaitForExit(5000);throw 'GUI entry smoke test timed out.'}
+ if($smoke.ExitCode -ne 0){
+  foreach($log in @('launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Get-Content -LiteralPath (Join-Path $service $log) -Tail 12 | Write-Output}}
+  throw 'GUI entry smoke test failed.'
+ }
+ # Only this clean staging copy was tested; diagnostics are not distribution files.
+ foreach($log in @('launcher.log','launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Remove-Item -LiteralPath (Join-Path $service $log) -Force}}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')

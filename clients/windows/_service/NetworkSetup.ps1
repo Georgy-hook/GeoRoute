@@ -10,7 +10,9 @@ $installRoot=Join-Path $env:ProgramFiles 'NextDNS Bridge'
 $dataRoot=Join-Path $env:ProgramData 'NextDNSBridge'
 $backupRoot=Join-Path $dataRoot 'backup'
 $backupFile=Join-Path $backupRoot 'network.json'
-$binary=Join-Path $installRoot 'NextDNSBridge.exe'
+$binary=Join-Path $installRoot 'python\python.exe'
+$serviceCommand='"'+$binary+'" -I -u "'+(Join-Path $installRoot 'bridge.py')+'" --service --profile-file "'+(Join-Path $installRoot 'profile.txt')+'" --data-dir "'+$dataRoot+'"'
+$legacyServiceCommand='"'+(Join-Path $installRoot 'NextDNSBridge.exe')+'"'
 $serviceName='NextDNSBridge'
 $changed=$false
 function Assert-NoReparse([string]$Path) {
@@ -37,7 +39,7 @@ function Write-SetupResult([string]$Status,[string]$Message) {
 }
 function Get-OwnService {
  $service=Get-CimInstance Win32_Service -Filter "Name='NextDNSBridge'"
- if($service -and $service.PathName -cne ('"'+$binary+'"')){throw 'Имя службы NextDNSBridge занято другим приложением.'}
+ if($service -and $service.PathName -cne $serviceCommand -and $service.PathName -cne $legacyServiceCommand){throw 'Имя службы NextDNSBridge занято другим приложением.'}
  return $service
 }
 function Get-SavedAdapter($Record) {
@@ -125,10 +127,18 @@ try {
  foreach($entry in $hashes.PSObject.Properties){$path=[IO.Path]::GetFullPath((Join-Path (Join-Path $source 'python') $entry.Name));$prefix=[IO.Path]::GetFullPath((Join-Path $source 'python'))+'\';if(-not $path.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)){throw 'Некорректный манифест runtime.'};Assert-NoReparse $path;if((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ine $entry.Value){throw 'Файл runtime повреждён: '+$entry.Name}}
  if(Get-OwnService){
   $backup=Read-NetworkBackup;$changed=$true
+  $previousService=Get-OwnService
+  $previousProcess=$null
+  if($previousService.ProcessId -gt 0){$previousProcess=Get-Process -Id $previousService.ProcessId -ErrorAction SilentlyContinue}
   Stop-Service -Name $serviceName
-  foreach($file in @('NextDNSBridge.exe','bridge.py')){Copy-Item -LiteralPath (Join-Path $source $file) -Destination (Join-Path $installRoot $file) -Force}
+  if($previousProcess -and -not $previousProcess.WaitForExit(15000)){throw 'Предыдущий процесс DNS ещё завершается. Повторите обновление позже.'}
+  Copy-Item -LiteralPath (Join-Path $source 'bridge.py') -Destination (Join-Path $installRoot 'bridge.py') -Force
   Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'connection-routes.json') -Destination (Join-Path $installRoot 'routes.json') -Force
   Copy-Item -LiteralPath (Join-Path $source 'python') -Destination $installRoot -Recurse -Force
+  $updated=Get-CimInstance Win32_Service -Filter "Name='NextDNSBridge'"
+  $change=Invoke-CimMethod -InputObject $updated -MethodName Change -Arguments @{PathName=$serviceCommand}
+  if($change.ReturnValue -ne 0){throw 'Не удалось обновить команду запуска службы.'}
+  if(Test-Path -LiteralPath (Join-Path $installRoot 'NextDNSBridge.exe')){Remove-Item -LiteralPath (Join-Path $installRoot 'NextDNSBridge.exe') -Force}
   Set-Service -Name $serviceName -StartupType Automatic
   Start-Service -Name $serviceName
   if(Get-Service NextDNSService -ErrorAction SilentlyContinue){Stop-Service NextDNSService;Set-Service NextDNSService -StartupType Disabled}
@@ -158,12 +168,12 @@ try {
  Protect-Directory $backupRoot 'Backup'
  if(Test-Path -LiteralPath $backupFile){Assert-NoReparse $backupFile;[IO.File]::Move($backupFile,($backupFile+'.'+[guid]::NewGuid().ToString('N')+'.previous'))}
  $backup|ConvertTo-Json -Depth 8|Set-Content -LiteralPath $backupFile -Encoding UTF8
- foreach($file in @('NextDNSBridge.exe','bridge.py')){Copy-Item -LiteralPath (Join-Path $source $file) -Destination (Join-Path $installRoot $file)}
+ Copy-Item -LiteralPath (Join-Path $source 'bridge.py') -Destination (Join-Path $installRoot 'bridge.py')
  Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'connection-routes.json') -Destination (Join-Path $installRoot 'routes.json') -Force
  Copy-Item -LiteralPath (Join-Path $source 'python') -Destination $installRoot -Recurse
  [IO.File]::WriteAllText((Join-Path $installRoot 'profile.txt'),[string]$profiles[0],[Text.UTF8Encoding]::new($false))
  $changed=$true
- New-Service -Name $serviceName -DisplayName 'NextDNS Bridge' -BinaryPathName ('"'+$binary+'"') -StartupType Automatic -Description 'Local DNS to the current NextDNS profile over validated TLS 1.3; starts before Windows sign-in.' -Credential ([Management.Automation.PSCredential]::new('NT AUTHORITY\LocalService',[Security.SecureString]::new()))|Out-Null
+ New-Service -Name $serviceName -DisplayName 'NextDNS Bridge' -BinaryPathName $serviceCommand -StartupType Automatic -Description 'Local DNS to the current NextDNS profile over validated TLS 1.3; starts before Windows sign-in.' -Credential ([Management.Automation.PSCredential]::new('NT AUTHORITY\LocalService',[Security.SecureString]::new()))|Out-Null
  & sc.exe failure $serviceName reset= 86400 actions= restart/5000/restart/15000/restart/30000 | Out-Null
  if($LASTEXITCODE -ne 0){throw 'Не удалось задать восстановление службы.'}
  & sc.exe failureflag $serviceName 1 | Out-Null

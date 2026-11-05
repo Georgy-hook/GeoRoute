@@ -1,0 +1,162 @@
+{
+  "release": "v0.4.1",
+  "source_commit": "820c56ea9065e7674c60356d2db5867e3828ca2a",
+  "workflow_url": "https://github.com/Georgy-hook/GeoRoute/actions/runs/42079438711",
+  "release_url": "https://github.com/Georgy-hook/GeoRoute/releases/tag/v0.4.1",
+  "scope": "Exact ZIP plus launcher, GUI script, instance module, DNS worker and CPython executable; other members not individually submitted. Zero findings are not a safety certificate.",
+  "files": [
+    {
+      "name": "GeoRoute-Windows-x64-0.4.1.zip",
+      "sha256": "538bfd94aaf31136a298f74ac531b0c16c1878138acf80f2c1ea134e98b8fbde",
+      "size": 24692792,
+      "analysis_date": "2026-11-05T17:57:59Z",
+      "state": "completed",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 61,
+        "harmless": 0,
+        "timeout": 2,
+        "confirmed-timeout": 0,
+        "failure": 1,
+        "type-unsupported": 7
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "failure",
+          "timeout",
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/538bfd94aaf31136a298f74ac531b0c16c1878138acf80f2c1ea134e98b8fbde/detection"
+    },
+    {
+      "name": "GeoRoute.cmd",
+      "sha256": "7679c1919d66db8e0dfb5662fe94e44ff6ebd2317fade29729918c80810a2066",
+      "size": 963,
+      "analysis_date": "2026-11-05T17:58:01Z",
+      "state": "completed",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 57,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 1,
+        "type-unsupported": 13
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "failure",
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/7679c1919d66db8e0dfb5662fe94e44ff6ebd2317fade29729918c80810a2066/detection"
+    },
+    {
+      "name": "_service/NextDNS-GUI.ps1",
+      "sha256": "a9c4800ddfabef50dc768d1a804513a62fd86fd5c8d09f5de2fc27a9eabae911",
+      "size": 88272,
+      "analysis_date": "2026-11-05T17:48:25Z",
+      "state": "existing-report",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 58,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 13
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/a9c4800ddfabef50dc768d1a804513a62fd86fd5c8d09f5de2fc27a9eabae911/detection"
+    },
+    {
+      "name": "_service/AppInstance.ps1",
+      "sha256": "8c4a0f723983c4ba07ca32e7207ef121e59d762a8e21f3384199a06efb0f26b6",
+      "size": 1555,
+      "analysis_date": "2026-11-05T17:48:27Z",
+      "state": "existing-report",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 58,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 13
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/8c4a0f723983c4ba07ca32e7207ef121e59d762a8e21f3384199a06efb0f26b6/detection"
+    },
+    {
+      "name": "_service/bridge/bridge.py",
+      "sha256": "76daf366968e2158f4fe21e50e403716f87de5a419aa5c314b8b19b430e6918a",
+      "size": 22011,
+      "analysis_date": "2026-11-05T17:58:03Z",
+      "state": "completed",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 58,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 13
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/76daf366968e2158f4fe21e50e403716f87de5a419aa5c314b8b19b430e6918a/detection"
+    },
+    {
+      "name": "_service/bridge/python/python.exe",
+      "sha256": "d718435b892db4ad5b547d12fec61be7baa7faf7a58d857ea58053be24c7a000",
+      "size": 106208,
+      "analysis_date": "2026-10-31T22:59:16Z",
+      "state": "existing-report",
+      "stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 68,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 3
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "report_url": "https://www.virustotal.com/gui/file/d718435b892db4ad5b547d12fec61be7baa7faf7a58d857ea58053be24c7a000/detection"
+    }
+  ]
+}

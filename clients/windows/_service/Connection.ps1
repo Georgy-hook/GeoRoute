@@ -39,12 +39,14 @@ function Stop-ConnectionCheck($Run) {
     }
 }
 function Get-ManagerLauncher([string]$Root) {
+    $entry=Join-Path (Split-Path $Root -Parent) 'GeoRoute.cmd'
+    if(Test-Path -LiteralPath $entry){return $entry}
     $current=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
     if([IO.Path]::GetFileName($current) -in @('GeoRoute.exe','NextDNS.exe')){return $current}
     foreach($path in @((Join-Path (Split-Path $Root -Parent) 'GeoRoute.exe'),(Join-Path $Root 'bin\GeoRoute.exe'),(Join-Path (Split-Path $Root -Parent) 'NextDNS.exe'),(Join-Path $Root 'bin\NextDNS.exe'))) {
         if(Test-Path -LiteralPath $path){return $path}
     }
-    throw 'Не найден NextDNS.exe рядом с интерфейсом.'
+    throw 'Не найден GeoRoute.cmd рядом с интерфейсом.'
 }
 function Get-ManagerChrome {
     foreach($path in @((Join-Path $env:ProgramFiles 'Google\Chrome\Application\chrome.exe'),(Join-Path ${env:ProgramFiles(x86)} 'Google\Chrome\Application\chrome.exe'),(Join-Path $env:LOCALAPPDATA 'Google\Chrome\Application\chrome.exe'))) {

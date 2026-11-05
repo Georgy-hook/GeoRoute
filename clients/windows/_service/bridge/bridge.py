@@ -17,6 +17,97 @@ import time
 SERVERS = ('45.90.28.0', '45.90.30.0')
 HOST = 'dns.nextdns.io'
 
+
+def run_service(name, factory, log):
+    """Host the DNS worker directly in SCM; no executable wrapper or child process."""
+    from ctypes import wintypes as w
+    api = ctypes.WinDLL('advapi32', use_last_error=True)
+    service_main_type = ctypes.WINFUNCTYPE(None, w.DWORD, ctypes.POINTER(w.LPWSTR))
+    handler_type = ctypes.WINFUNCTYPE(w.DWORD, w.DWORD, w.DWORD, w.LPVOID, w.LPVOID)
+
+    class Status(ctypes.Structure):
+        _fields_ = [(field, w.DWORD) for field in (
+            'service_type', 'state', 'controls', 'win32_exit', 'service_exit', 'checkpoint', 'wait_hint')]
+
+    class Entry(ctypes.Structure):
+        _fields_ = [('name', w.LPWSTR), ('main', service_main_type)]
+
+    api.RegisterServiceCtrlHandlerExW.argtypes = [w.LPCWSTR, handler_type, w.LPVOID]
+    api.RegisterServiceCtrlHandlerExW.restype = w.HANDLE
+    api.SetServiceStatus.argtypes = [w.HANDLE, ctypes.POINTER(Status)]
+    api.SetServiceStatus.restype = w.BOOL
+    api.StartServiceCtrlDispatcherW.argtypes = [ctypes.POINTER(Entry)]
+    api.StartServiceCtrlDispatcherW.restype = w.BOOL
+    status = Status(service_type=0x10)
+    status_lock = threading.Lock()
+    stopping = threading.Event()
+    handle = None
+    worker = None
+    exit_code = 0
+
+    def report(state, error=0):
+        with status_lock:
+            status.state = state
+            status.controls = 5 if state == 4 else 0  # STOP | SHUTDOWN only while running
+            status.win32_exit = error
+            status.checkpoint = status.checkpoint + 1 if state in (2, 3) else 0
+            status.wait_hint = 15000 if state in (2, 3) else 0
+            if not api.SetServiceStatus(handle, ctypes.byref(status)):
+                raise ctypes.WinError(ctypes.get_last_error())
+
+    @handler_type
+    def control(code, event_type, event_data, context):
+        if code not in (1, 5):  # SERVICE_CONTROL_STOP / SHUTDOWN
+            return 0
+        try:
+            log('Service stop requested')
+            stopping.set()
+            report(3)
+            if worker is not None:
+                worker.stop.set()
+            log('Worker stop signalled')
+        except Exception as exc:
+            log('Service control failed: ' + str(exc))
+            return 1067
+        return 0
+
+    @service_main_type
+    def service_main(argc, argv):
+        nonlocal handle, worker, exit_code
+        handle = api.RegisterServiceCtrlHandlerExW(name, control, None)
+        if not handle:
+            exit_code = ctypes.get_last_error()
+            log('Cannot register service handler: ' + str(exit_code))
+            return
+        try:
+            report(2)
+            worker = factory()
+            if stopping.is_set():
+                worker.stop.set()
+
+            def ready():
+                if not stopping.is_set():
+                    report(4)
+                    log('Service started; DNS worker ready')
+
+            worker.start(on_ready=ready)
+            if not stopping.is_set():
+                raise RuntimeError('DNS worker stopped unexpectedly')
+        except Exception as exc:
+            exit_code = 1067  # ERROR_PROCESS_ABORTED; SCM recovery is configured by installer
+            log('DNS worker failed: ' + type(exc).__name__ + ': ' + str(exc))
+        finally:
+            if worker is not None:
+                worker.close()
+            log('Service stopped')
+            report(1, exit_code)
+
+    table = (Entry * 2)(Entry(name, service_main), Entry(None, service_main_type()))
+    if not api.StartServiceCtrlDispatcherW(table):
+        raise ctypes.WinError(ctypes.get_last_error())
+    return exit_code
+
+
 class DoH:
     def __init__(self, profile):
         if not re.fullmatch(r'[a-fA-F0-9]{6}', profile):
@@ -28,9 +119,11 @@ class DoH:
         self.preferred = 0
         self.lock = threading.Lock()
         self.active = set()
+        self.closed = False
 
     def close(self):
         with self.lock:
+            self.closed = True
             for sock in list(self.active):
                 try:
                     sock.shutdown(socket.SHUT_RDWR)
@@ -43,6 +136,9 @@ class DoH:
             first = self.preferred
         last_error = None
         for attempt in range(len(SERVERS)):
+            with self.lock:
+                if self.closed:
+                    raise OSError('DNS worker is stopping')
             index = (first + attempt) % len(SERVERS)
             try:
                 reply = self.request(query, SERVERS[index])
@@ -60,6 +156,9 @@ class DoH:
         raw = socket.create_connection((server, 443), 2.0)
         raw.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         with self.lock:
+            if self.closed:
+                raw.close()
+                raise OSError('DNS worker is stopping')
             self.active.add(raw)
         incoming, outgoing = ssl.MemoryBIO(), ssl.MemoryBIO()
         tls = self.context.wrap_bio(incoming, outgoing, server_side=False, server_hostname=HOST)
@@ -189,6 +288,7 @@ class Bridge:
         self.slots = threading.BoundedSemaphore(64)
         self.sockets = []
         self.lock = threading.RLock()
+        self.sessions = set()
         self.stats = dict(version=1, startedAt=self.now(), at=self.now(), lastSuccessAt=None,
                           successCount=0, failureCount=0, upstream=SERVERS[0], lastError='', running=True)
         ticks = ctypes.windll.kernel32.GetTickCount64
@@ -208,6 +308,8 @@ class Bridge:
                           afterReboot=uptime < 600, status='checking', checks=[])
             def save():
                 with self.lock:
+                    if self.stop.is_set():
+                        return
                     self.root.mkdir(parents=True, exist_ok=True)
                     report['at'] = self.now()
                     temporary = self.root / 'boot-check.json.tmp'
@@ -274,12 +376,13 @@ class Bridge:
         finally:
             self.write_status()
 
-    def start(self):
+    def start(self, on_ready=None):
         try:
             for family, ip in ((socket.AF_INET, '127.0.0.1'), (socket.AF_INET6, '::1')):
                 for kind in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
                     sock = socket.socket(family, kind)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+                    sock.settimeout(.5)
                     sock.bind((ip, self.port))
                     self.sockets.append(sock)
                     if kind == socket.SOCK_DGRAM:
@@ -289,6 +392,8 @@ class Bridge:
                         action = self.tcp
                     threading.Thread(target=action, args=(sock,), daemon=True).start()
             self.write_status()
+            if on_ready is not None:
+                on_ready()
             print('READY', flush=True)
             threading.Thread(target=self.boot_probe, daemon=True).start()
             while not self.stop.wait(30):
@@ -297,6 +402,8 @@ class Bridge:
             self.close()
 
     def submit(self, action, *args):
+        if self.stop.is_set():
+            return False
         if not self.slots.acquire(False):
             return False
         def run():
@@ -304,7 +411,11 @@ class Bridge:
                 action(*args)
             finally:
                 self.slots.release()
-        self.pool.submit(run)
+        try:
+            self.pool.submit(run)
+        except RuntimeError:
+            self.slots.release()
+            return False
         return True
 
     def udp(self, sock):
@@ -337,7 +448,14 @@ class Bridge:
         while not self.stop.is_set():
             try:
                 sock, _ = listener.accept()
+                with self.lock:
+                    if self.stop.is_set():
+                        sock.close()
+                        return
+                    self.sessions.add(sock)
                 if not self.submit(self.tcp_client, sock):
+                    with self.lock:
+                        self.sessions.discard(sock)
                     sock.close()
             except OSError:
                 if not self.stop.is_set():
@@ -355,10 +473,22 @@ class Bridge:
                     sock.sendall(struct.pack('!H', len(response)) + response)
             except (OSError, EOFError):
                 pass
+            finally:
+                with self.lock:
+                    self.sessions.discard(sock)
 
     def close(self):
         self.stop.set()
         for sock in self.sockets:
+            sock.close()
+        with self.lock:
+            sessions = list(self.sessions)
+            self.sessions.clear()
+        for sock in sessions:
+            try:
+                sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
             sock.close()
         self.doh.close()
         self.pool.shutdown(wait=False, cancel_futures=True)
@@ -371,7 +501,40 @@ def main():
     parser.add_argument('--profile-file', required=True)
     parser.add_argument('--port', type=int, default=53)
     parser.add_argument('--data-dir', required=True)
+    parser.add_argument('--service', action='store_true')
+    parser.add_argument('--service-name', default='NextDNSBridge')
     args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error('Port must be between 1 and 65535')
+    if args.service:
+        if not re.fullmatch(r'[A-Za-z0-9_.-]{1,64}', args.service_name):
+            parser.error('Invalid Windows service name')
+        root = Path(args.data_dir)
+
+        def log(message):
+            try:
+                root.mkdir(parents=True, exist_ok=True)
+                path = root / 'service.log'
+                if path.exists() and path.stat().st_size > 256 * 1024:
+                    path.write_text('', encoding='utf-8')
+                with path.open('a', encoding='utf-8') as stream:
+                    stream.write(dt.datetime.now(dt.timezone.utc).isoformat() + ' ' + message + '\n')
+            except OSError:
+                pass
+
+        def factory():
+            profile = Path(args.profile_file).read_text(encoding='utf-8-sig').strip()
+            return Bridge(profile, args.port, args.data_dir)
+
+        # Services report to service.log and SCM, not to a console owned by another process.
+        sys.stdin = open(os.devnull, 'r')
+        sys.stdout = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, 'w')
+        try:
+            return run_service(args.service_name, factory, log)
+        except OSError as exc:
+            log('Cannot connect to Windows Service Control Manager: ' + str(exc))
+            return 1
     profile = Path(args.profile_file).read_text(encoding='utf-8-sig').strip()
     bridge = Bridge(profile, args.port, args.data_dir)
     def control():
@@ -383,4 +546,4 @@ def main():
     bridge.start()
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())

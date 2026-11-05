@@ -1,0 +1,82 @@
+name: Bridge direct-service candidate audit
+
+on:
+  push:
+    branches: [main, codex/bridge-lifecycle]
+    paths:
+      - clients/windows/_service/bridge/**
+      - clients/windows/tests/Test-BridgeService.ps1
+      - clients/windows/tests/test_bridge_protocol.py
+      - tools/scan_bridge_candidate.py
+      - tools/package_bridge_candidate.py
+      - tools/scan_virustotal_release.py
+      - .github/workflows/bridge-candidate-audit.yml
+  pull_request:
+    paths:
+      - clients/windows/_service/bridge/**
+      - clients/windows/tests/Test-BridgeService.ps1
+      - clients/windows/tests/test_bridge_protocol.py
+      - .github/workflows/bridge-candidate-audit.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bridge-candidate-audit
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Package runtime and verify real LocalService lifecycle
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          $python=(Get-Command python.exe).Source
+          $shell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+          python -m unittest discover -s clients/windows/tests -p test_bridge_protocol.py
+          if($LASTEXITCODE -ne 0){throw 'DNS protocol tests failed'}
+          New-Item -ItemType Directory -Path bridge-candidate | Out-Null
+          python -I clients/windows/tools/prepare_runtime.py --destination bridge-candidate/python
+          if($LASTEXITCODE -ne 0){throw 'Runtime packaging failed'}
+          Copy-Item clients/windows/_service/bridge/bridge.py bridge-candidate/
+          & $shell -NoProfile -File clients/windows/tests/Test-BridgeService.ps1 -RuntimeRoot (Resolve-Path bridge-candidate).Path
+          if($LASTEXITCODE -ne 0){throw 'SCM integration failed'}
+          python tools/package_bridge_candidate.py
+          if($LASTEXITCODE -ne 0){throw 'Candidate packaging failed'}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bridge-candidate
+          path: bridge-candidate/
+          retention-days: 30
+  scan:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/bridge-lifecycle' && contains(github.event.head_commit.message, '[audit-bridge]')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - uses: actions/download-artifact@v4
+        with:
+          name: bridge-candidate
+          path: bridge-candidate/
+      - name: Inspect exact tested candidate with VirusTotal
+        env:
+          VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}
+        run: python tools/scan_bridge_candidate.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bridge-candidate-virustotal
+          path: scan-results/
+          if-no-files-found: warn
+          retention-days: 30
