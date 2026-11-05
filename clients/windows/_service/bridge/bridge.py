@@ -23,7 +23,7 @@ def run_service(name, factory, log):
     from ctypes import wintypes as w
     api = ctypes.WinDLL('advapi32', use_last_error=True)
     service_main_type = ctypes.WINFUNCTYPE(None, w.DWORD, ctypes.POINTER(w.LPWSTR))
-    handler_type = ctypes.WINFUNCTYPE(None, w.DWORD)
+    handler_type = ctypes.WINFUNCTYPE(w.DWORD, w.DWORD, w.DWORD, w.LPVOID, w.LPVOID)
 
     class Status(ctypes.Structure):
         _fields_ = [(field, w.DWORD) for field in (
@@ -32,8 +32,8 @@ def run_service(name, factory, log):
     class Entry(ctypes.Structure):
         _fields_ = [('name', w.LPWSTR), ('main', service_main_type)]
 
-    api.RegisterServiceCtrlHandlerW.argtypes = [w.LPCWSTR, handler_type]
-    api.RegisterServiceCtrlHandlerW.restype = w.HANDLE
+    api.RegisterServiceCtrlHandlerExW.argtypes = [w.LPCWSTR, handler_type, w.LPVOID]
+    api.RegisterServiceCtrlHandlerExW.restype = w.HANDLE
     api.SetServiceStatus.argtypes = [w.HANDLE, ctypes.POINTER(Status)]
     api.SetServiceStatus.restype = w.BOOL
     api.StartServiceCtrlDispatcherW.argtypes = [ctypes.POINTER(Entry)]
@@ -56,9 +56,9 @@ def run_service(name, factory, log):
                 raise ctypes.WinError(ctypes.get_last_error())
 
     @handler_type
-    def control(code):
+    def control(code, event_type, event_data, context):
         if code not in (1, 5):  # SERVICE_CONTROL_STOP / SHUTDOWN
-            return
+            return 0
         try:
             log('Service stop requested')
             stopping.set()
@@ -68,11 +68,13 @@ def run_service(name, factory, log):
             log('Worker stop signalled')
         except Exception as exc:
             log('Service control failed: ' + str(exc))
+            return 1067
+        return 0
 
     @service_main_type
     def service_main(argc, argv):
         nonlocal handle, worker, exit_code
-        handle = api.RegisterServiceCtrlHandlerW(name, control)
+        handle = api.RegisterServiceCtrlHandlerExW(name, control, None)
         if not handle:
             exit_code = ctypes.get_last_error()
             log('Cannot register service handler: ' + str(exit_code))
