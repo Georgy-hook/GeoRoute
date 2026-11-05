@@ -8,9 +8,11 @@ param(
     [string]$PreviewPath,
     [ValidateRange(900,2000)][int]$PreviewWidth = 1160,
     [ValidateRange(560,1500)][int]$PreviewHeight = 910,
-    [string]$HealthSnapshotPath
+    [string]$HealthSnapshotPath,
+    [ValidatePattern('^Local\\NextDNS\.Manager\.S-\d+(?:-\d+)+\.[A-F0-9]{24}\.(?:Main|Repair)\.Activate$')][string]$ActivationEvent
 )
 $ErrorActionPreference = 'Stop'
+$script:taskActivationEvent=if($ActivationEvent){[Threading.EventWaitHandle]::OpenExisting($ActivationEvent)}else{$null}
 if($Repair){ & (Join-Path $PSScriptRoot 'RepairCenter.ps1') -SmokeTest:$SmokeTest; return }
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $script:taskShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'

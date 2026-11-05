@@ -2,9 +2,7 @@
 using System.Collections;
 using System.Globalization;
 using System.IO;
-using System.Management.Automation;
-using System.Management.Automation.Host;
-using System.Management.Automation.Runspaces;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text;
 using System.Threading;
@@ -25,13 +23,15 @@ namespace NextDNS.Desktop
     {
         private static Mutex mutex;
         private static EventWaitHandle activation;
+        public static string ActivationName { get; private set; }
         public static bool Acquire(string root, bool repair, bool background)
         {
             string hash;
             using (SHA256 sha = SHA256.Create())
                 hash = BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(Path.GetFullPath(root).ToLowerInvariant()))).Replace("-", "").Substring(0, 24);
             string name = @"Local\NextDNS.Manager." + WindowsIdentity.GetCurrent().User.Value + "." + hash + (repair ? ".Repair" : ".Main");
-            activation = new EventWaitHandle(false, EventResetMode.AutoReset, name + ".Activate");
+            ActivationName = name + ".Activate";
+            activation = new EventWaitHandle(false, EventResetMode.AutoReset, ActivationName);
             bool created;
             mutex = new Mutex(true, name, out created);
             if (!created) { if (!background) activation.Set(); Dispose(); }
@@ -43,24 +43,6 @@ namespace NextDNS.Desktop
             if (activation != null) { activation.Dispose(); activation = null; }
             if (mutex != null) { mutex.Dispose(); mutex = null; }
         }
-    }
-
-    internal sealed class DesktopHost : PSHost
-    {
-        private readonly Guid instanceId = Guid.NewGuid();
-        internal bool ExitRequested { get; private set; }
-        internal int ExitCode { get; private set; }
-        public override Guid InstanceId { get { return instanceId; } }
-        public override string Name { get { return "NextDNS.Desktop"; } }
-        public override Version Version { get { return new Version(1, 0); } }
-        public override PSHostUserInterface UI { get { return null; } }
-        public override CultureInfo CurrentCulture { get { return CultureInfo.CurrentCulture; } }
-        public override CultureInfo CurrentUICulture { get { return CultureInfo.CurrentUICulture; } }
-        public override void SetShouldExit(int exitCode) { ExitCode = exitCode; ExitRequested = true; }
-        public override void EnterNestedPrompt() { throw new PSNotSupportedException("Interactive prompts are not available in this desktop application."); }
-        public override void ExitNestedPrompt() { }
-        public override void NotifyBeginApplication() { }
-        public override void NotifyEndApplication() { }
     }
 
     internal static class Program
@@ -87,49 +69,18 @@ namespace NextDNS.Desktop
                 bool tray = Array.Exists(args, a => string.Equals(a, "-Tray", StringComparison.OrdinalIgnoreCase));
                 if (!smokeTest && !DesktopInstance.Acquire(serviceRoot, repair, tray)) return 0;
 
-                // Use Windows PowerShell 5.1 modules even when launched from a PowerShell 7 terminal.
                 string windowsPowerShell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0");
-                string userModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), @"WindowsPowerShell\Modules");
-                string sharedModules = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"WindowsPowerShell\Modules");
-                Environment.SetEnvironmentVariable("PSModulePath", userModules + ";" + sharedModules + ";" + Path.Combine(windowsPowerShell, "Modules"));
-
-                DesktopHost host = new DesktopHost();
-                InitialSessionState state = InitialSessionState.CreateDefault();
-                state.ExecutionPolicy = Microsoft.PowerShell.ExecutionPolicy.Bypass;
-                using (Runspace runspace = RunspaceFactory.CreateRunspace(host, state))
+                var start = new ProcessStartInfo(Path.Combine(windowsPowerShell, "powershell.exe"), Arguments(script, args));
+                start.WorkingDirectory = serviceRoot;
+                start.UseShellExecute = false;
+                start.CreateNoWindow = true;
+                start.WindowStyle = ProcessWindowStyle.Hidden;
+                AppendLog("launcher.log", "Starting Windows PowerShell 5.1 GUI process");
+                using (Process process = Process.Start(start))
                 {
-                    runspace.ApartmentState = ApartmentState.STA;
-                    runspace.ThreadOptions = PSThreadOptions.UseCurrentThread;
-                    runspace.Open();
-                    runspace.SessionStateProxy.Path.SetLocation(serviceRoot);
-                    Hashtable versionTable = runspace.SessionStateProxy.GetVariable("PSVersionTable") as Hashtable;
-                    Version version = versionTable == null ? null : versionTable["PSVersion"] as Version;
-                    if (version == null || version.Major != 5 || version.Minor != 1)
-                        throw new InvalidOperationException("Для GeoRoute требуется системный Windows PowerShell 5.1.");
-
-                    AppendLog("launcher.log", "Started; runtime=" + version + "; apartment=" + Thread.CurrentThread.GetApartmentState() + "; engine=" + typeof(PSObject).Assembly.Location);
-                    using (PowerShell shell = PowerShell.Create())
-                    {
-                        shell.Runspace = runspace;
-                        // AddCommand executes the saved file and preserves PSScriptRoot/MyInvocation.
-                        shell.AddCommand(script);
-                        BindArguments(shell, args);
-                        var output = shell.Invoke();
-                        foreach (PSObject item in output) if (item != null) AppendLog("launcher.log", item.ToString());
-                        if (shell.HadErrors)
-                        {
-                            StringBuilder errors = new StringBuilder();
-                            foreach (ErrorRecord error in shell.Streams.Error) errors.AppendLine(error.ToString());
-                            // Recoverable probes (e.g. a process is absent) can populate
-                            // Error even with SilentlyContinue. Unhandled terminating
-                            // exceptions are thrown by Invoke; explicit exit is below.
-                            if (errors.Length > 0) AppendLog("launcher.log", "Recovered diagnostics: " + errors.ToString().Trim());
-                        }
-                    }
-                    int exitCode = host.ExitRequested ? host.ExitCode : 0;
-                    AppendLog("launcher.log", "Stopped; exit=" + exitCode);
-                    if (exitCode != 0) AppendLog("launcher-error.log", "The GUI returned exit=" + exitCode + "; see GUI-error.log for application details.");
-                    return exitCode;
+                    process.WaitForExit();
+                    AppendLog("launcher.log", "GUI process stopped; exit=" + process.ExitCode);
+                    return process.ExitCode;
                 }
             }
             catch (Exception exception)
@@ -148,25 +99,44 @@ namespace NextDNS.Desktop
             finally { DesktopInstance.Dispose(); }
         }
 
-        private static void BindArguments(PowerShell shell, string[] args)
+        private static string Quote(string value)
         {
+            var result = new StringBuilder("\"");
+            int slashes = 0;
+            foreach (char c in value)
+            {
+                if (c == '\\') { slashes++; continue; }
+                result.Append('\\', c == '"' ? slashes * 2 + 1 : slashes);
+                result.Append(c);
+                slashes = 0;
+            }
+            result.Append('\\', slashes * 2).Append('"');
+            return result.ToString();
+        }
+
+        private static string Arguments(string script, string[] args)
+        {
+            var result = new StringBuilder("-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File ").Append(Quote(script));
             for (int index = 0; index < args.Length; index++)
             {
                 string argument = args[index];
-                if (string.Equals(argument, "-SmokeTest", StringComparison.OrdinalIgnoreCase)) shell.AddParameter("SmokeTest");
-                else if (string.Equals(argument, "-Tray", StringComparison.OrdinalIgnoreCase)) shell.AddParameter("Tray");
-                else if (string.Equals(argument, "-RenderPreview", StringComparison.OrdinalIgnoreCase)) shell.AddParameter("RenderPreview");
-                else if (string.Equals(argument, "-Repair", StringComparison.OrdinalIgnoreCase)) shell.AddParameter("Repair");
+                if (string.Equals(argument, "-SmokeTest", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(argument, "-Tray", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(argument, "-RenderPreview", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(argument, "-Repair", StringComparison.OrdinalIgnoreCase)) result.Append(' ').Append(argument);
                 else if (string.Equals(argument, "-PreviewPath", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(argument, "-PreviewWidth", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(argument, "-PreviewHeight", StringComparison.OrdinalIgnoreCase) ||
                          string.Equals(argument, "-HealthSnapshotPath", StringComparison.OrdinalIgnoreCase))
                 {
                     if (++index >= args.Length) throw new ArgumentException("Не указано значение " + argument + ".");
-                    shell.AddParameter(argument.Substring(1), args[index]);
+                    result.Append(' ').Append(argument).Append(' ').Append(Quote(args[index]));
                 }
                 else throw new ArgumentException("Неизвестный параметр приложения: " + argument);
             }
+            if (!smokeTest && DesktopInstance.ActivationName != null)
+                result.Append(" -ActivationEvent ").Append(Quote(DesktopInstance.ActivationName));
+            return result.ToString();
         }
 
         private static void AppendLog(string name, string text)

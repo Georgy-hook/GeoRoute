@@ -10,8 +10,8 @@ $zip=[IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($ArchivePath))
 try {
  $entry=@($zip.Entries | Where-Object {$_.FullName.Replace('\','/') -eq 'GeoRoute/GeoRoute.exe'})
  if($entry.Count -ne 1){throw 'Expected exactly one launcher'}
- $input=$entry[0].Open();$sha=[Security.Cryptography.SHA256]::Create()
- try {$expected=[BitConverter]::ToString($sha.ComputeHash($input)).Replace('-','').ToLowerInvariant()}finally{$input.Dispose();$sha.Dispose()}
+ $stream=$entry[0].Open();$sha=[Security.Cryptography.SHA256]::Create()
+ try {$expected=[BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant()}finally{$stream.Dispose();$sha.Dispose()}
 }finally{$zip.Dispose()}
 try {
  $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'

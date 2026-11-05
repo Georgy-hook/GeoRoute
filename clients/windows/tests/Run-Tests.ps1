@@ -4,6 +4,8 @@ param([string]$PythonExe='python.exe')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+& $shell -NoProfile -File (Join-Path $PSScriptRoot 'Test-LauncherProtocol.ps1')
+if($LASTEXITCODE -ne 0){throw 'Launcher protocol tests failed.'}
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_bridge_protocol.py')
 if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
 & (Join-Path $PSScriptRoot 'Test-GeoHide.ps1')

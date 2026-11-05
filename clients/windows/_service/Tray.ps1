@@ -113,7 +113,8 @@ function Poll-TaskConnection {
     if($script:taskConnectionReport) {
         $script:taskUi.HealthAtText.Text=$(if($script:taskConnectionReport.Mode -eq 'http-proxy'){'US-прокси · '}else{'DNS · '})+([datetime]$script:taskConnectionReport.At).ToString('HH:mm:ss')+$(if($script:taskConnectionRun){' · обновляется…'}else{' · авто: 5 мин'})
     }
-    if(('NextDNS.Desktop.DesktopInstance' -as [type]) -and [NextDNS.Desktop.DesktopInstance]::ConsumeActivation()) {Show-TaskManager}
+    if($script:taskActivationEvent -and $script:taskActivationEvent.WaitOne(0)) {Show-TaskManager}
+    elseif(('NextDNS.Desktop.DesktopInstance' -as [type]) -and [NextDNS.Desktop.DesktopInstance]::ConsumeActivation()) {Show-TaskManager}
 }
 function Initialize-TaskTray {
     Add-Type -AssemblyName System.Windows.Forms,System.Drawing

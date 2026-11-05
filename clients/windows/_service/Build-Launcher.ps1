@@ -10,7 +10,7 @@ $taskOutput = Join-Path $taskOutputDirectory 'GeoRoute.exe'
 $taskProject=Join-Path $taskService 'GeoRoute.Launcher.csproj'
 $taskIntermediate=Join-Path (Split-Path $taskService -Parent) '.build\launcher-obj'
 if(-not(Get-Command dotnet.exe -ErrorAction SilentlyContinue)){throw 'Для сборки из исходников установите .NET SDK 10. Готовому приложению SDK не нужен.'}
-& dotnet.exe build $taskProject --configuration Release --no-incremental --output $taskOutputDirectory --nologo --verbosity minimal ('/p:BaseIntermediateOutputPath='+$taskIntermediate.Replace('\','/')+'/') ('/p:PowerShellAssembly='+[Management.Automation.PSObject].Assembly.Location)
+& dotnet.exe build $taskProject --configuration Release --no-incremental --output $taskOutputDirectory --nologo --verbosity minimal ('/p:BaseIntermediateOutputPath='+$taskIntermediate.Replace('\','/')+'/')
 if($LASTEXITCODE -ne 0){throw 'Сборка launcher через .NET SDK завершилась ошибкой.'}
 Copy-Item -LiteralPath (Join-Path $taskService 'NextDNS.runtime.config') -Destination ($taskOutput + '.config') -Force
 Write-Output ('Built ' + $taskOutput)

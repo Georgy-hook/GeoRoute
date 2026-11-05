@@ -15,13 +15,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="NextDNS.Launcher.cs" />
-    <Reference Include="System.Management.Automation">
-      <HintPath>$(PowerShellAssembly)</HintPath>
-      <Private>false</Private>
-    </Reference>
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" PrivateAssets="all" />
   </ItemGroup>
-  <Target Name="ValidatePowerShellReference" BeforeTargets="ResolveReferences">
-    <Error Condition="!Exists('$(PowerShellAssembly)')" Text="Build via Build-Launcher.ps1 from Windows PowerShell 5.1 to resolve its installed engine." />
-  </Target>
 </Project>
