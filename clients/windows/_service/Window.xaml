@@ -564,6 +564,7 @@
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal">
             <Button x:Name="GeoNavButton" Content="Проверки и адреса" Style="{StaticResource ActionButton}" Margin="0,0,10,0" />
+            <Button x:Name="ProfileHelpButton" Content="?" Style="{StaticResource QuietButton}" FontSize="20" MinWidth="38" Margin="0,0,4,0" ToolTip="Как добавить свой профиль" AutomationProperties.Name="Инструкция: как добавить профиль" />
             <Button x:Name="ImportButton" Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Padding="3,0,10,0" Margin="0" Grid.Column="0">
               <StackPanel Orientation="Horizontal">
                 <Image x:Name="ImportIcon" Width="44" Height="44" Margin="0,0,5,0" />

@@ -1,0 +1,39 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Как добавить профиль — GeoRoute" Width="650" Height="730" MinWidth="460" MinHeight="420" WindowStartupLocation="CenterOwner"
+        Background="#0F1825" Foreground="#EEF4FC" FontFamily="Segoe UI" FontSize="14" ShowInTaskbar="False" UseLayoutRounding="True" SnapsToDevicePixels="True">
+  <Window.Resources>
+    <Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="LineHeight" Value="23"/></Style>
+    <Style x:Key="Step" TargetType="TextBlock"><Setter Property="FontSize" Value="16"/><Setter Property="FontWeight" Value="SemiBold"/><Setter Property="Margin" Value="0,20,0,6"/></Style>
+    <Style x:Key="Description" TargetType="TextBlock"><Setter Property="Foreground" Value="#B9CBE0"/><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="LineHeight" Value="23"/></Style>
+  </Window.Resources>
+  <Grid Margin="26" Background="#0F1825">
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <StackPanel Margin="0,0,0,16">
+      <TextBlock Text="Как добавить профиль" FontSize="25" FontWeight="SemiBold"/>
+      <TextBlock Text="Профиль — это готовый список адресов для подключения к сервисам." Style="{StaticResource Description}" Margin="0,8,0,0"/>
+    </StackPanel>
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Margin="0,0,16,16">
+        <Border Background="#1B3440" CornerRadius="14" Padding="16">
+          <TextBlock Text="Для обычного подключения ничего добавлять не нужно. В разделе «Серверы» уже есть профили ChatGPT и Gemini. Выберите подходящий и нажмите «Включить» на главной." Foreground="#B6F3DF"/>
+        </Border>
+        <TextBlock Text="1. Получите готовый файл" Style="{StaticResource Step}"/>
+        <TextBlock Text="Попросите файл профиля с окончанием .hosts у человека или сервиса, которому доверяете. Сохраните его, например, в «Загрузки». Создавать сервер или разбираться в содержимом файла не требуется. Ключи VPN и архивы ZIP сюда не подходят." Style="{StaticResource Description}"/>
+        <TextBlock Text="2. Выберите файл в GeoRoute" Style="{StaticResource Step}"/>
+        <TextBlock Text="Откройте «Серверы» → «Добавить сервер» → «Выбрать файл…» и найдите сохранённый .hosts. Если он находится внутри ZIP, сначала распакуйте архив." Style="{StaticResource Description}"/>
+        <TextBlock Text="3. Дайте профилю понятное имя" Style="{StaticResource Step}"/>
+        <TextBlock Text="Например, «Мой Gemini». Укажите страну, которую сообщил поставщик файла. Она нужна для подписи и флага — выбор страны сам по себе не переносит сервер в другую страну. Нажмите «Добавить сервер»." Style="{StaticResource Description}"/>
+        <TextBlock Text="4. Включите подключение" Style="{StaticResource Step}"/>
+        <TextBlock Text="В списке появится новая карточка. Нажмите на ней «Выбрать», вернитесь в «Подключение» и нажмите «Включить». Подтвердите запрос Windows. Можно также нажать «Подключить» в разделе «Серверы». Одно добавление файла подключение не меняет." Style="{StaticResource Description}"/>
+        <TextBlock Text="Если у вас только IP-адрес" Style="{StaticResource Step}"/>
+        <TextBlock Text="Для изменения общей пары US + EU откройте «Мониторинг» и разверните «Адреса US + EU» под списком. Выберите «Вручную» и укажите адреса US и EU. Новый адрес сначала сохраните без подключения и проверьте кнопкой «Проверить серверы». Затем нажмите «Сохранить и подключить». Добавление IP в мониторинг само по себе не создаёт профиль." Style="{StaticResource Description}"/>
+        <TextBlock Text="Если файл не добавляется" Style="{StaticResource Step}"/>
+        <TextBlock Text="Прочитайте сообщение под полями и передайте его тому, кто дал вам файл. GeoRoute принимает профили только для поддерживаемых сервисов ChatGPT / OpenAI и Gemini. Если файл заканчивается на .txt, попросите версию .hosts. Размер файла — до 1 МБ." Style="{StaticResource Description}"/>
+        <Border Background="#2D2A25" CornerRadius="14" Padding="16" Margin="0,20,0,0">
+          <TextBlock Text="Добавление проверяет содержимое файла, но не подтверждает работу чужого сервера. Пользовательские профили не заменяются автоподбором GeoHide. Если такой сервер перестал работать, потребуется новый файл или адрес от его поставщика." Foreground="#F6D595"/>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+    <Button Grid.Row="2" x:Name="CloseProfileHelpButton" Content="Понятно" IsCancel="True" IsDefault="True" HorizontalAlignment="Right" MinWidth="125" Margin="0,16,0,0"/>
+  </Grid>
+</Window>

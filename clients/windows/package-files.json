@@ -65,5 +65,6 @@
   "GeoProbe.ps1",
   "GeoMonitorState.ps1",
   "profiles/gemini-us.hosts",
-  "profiles/gemini-eu.hosts"
+  "profiles/gemini-eu.hosts",
+  "ProfileHelp.xaml"
 ]
