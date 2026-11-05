@@ -22,7 +22,7 @@ with zipfile.ZipFile(bundle, 'w', zipfile.ZIP_DEFLATED) as archive:
         archive.write(root / name, 'NextDNSBridge/' + name)
 selected = ['NextDNSBridge-bundle.zip', 'bridge.py', 'python/python.exe']
 manifest = {'source_commit': os.environ['GITHUB_SHA'], 'purpose': 'Direct SCM Python service; no native wrapper or child process',
-            'scm_scenarios': 4, 'protocol_tests': 13, 'files': []}
+            'scm_scenarios': 4, 'protocol_tests': 14, 'files': []}
 for name in selected:
     content = (root / name).read_bytes()
     manifest['files'].append({'name': name, 'sha256': hashlib.sha256(content).hexdigest(), 'size': len(content)})

@@ -39,6 +39,8 @@ try {
   $process=Get-Process -Id $service.ProcessId
   $tcp=[Net.Sockets.TcpClient]::new()
   $tcp.Connect('127.0.0.1',$port)
+  $control=Get-Service -Name $name
+  Write-Output ('SCM before stop: '+$control.Status+'; CanStop='+$control.CanStop)
   Stop-Service -Name $name
   $null=Wait-ServiceState 'Stopped'
   if(-not $process.WaitForExit(6000)){throw 'Service process remained alive after stop'}
@@ -65,6 +67,8 @@ try {
  if(-not $process.WaitForExit(6000)){throw 'Recovery process did not stop'}
  Write-Output '4 SCM integration scenarios passed: LocalService startup, restart, startup failure cleanup, and recovery. No DNS settings changed.'
 } catch {
+ $cause=$_.Exception
+ while($cause){Write-Output ($cause.GetType().FullName+': '+$cause.Message);if($cause -is [ComponentModel.Win32Exception]){Write-Output ('Native error: '+$cause.NativeErrorCode)};$cause=$cause.InnerException}
  if(Test-Path -LiteralPath (Join-Path $data 'service.log')){Get-Content -LiteralPath (Join-Path $data 'service.log') -Tail 12 | Write-Output}
  throw
 } finally {

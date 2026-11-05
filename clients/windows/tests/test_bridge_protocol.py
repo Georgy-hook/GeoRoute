@@ -1,4 +1,4 @@
-import importlib.util,ssl,struct,tempfile,unittest
+import importlib.util,socket,ssl,struct,tempfile,threading,time,unittest
 from pathlib import Path
 spec=importlib.util.spec_from_file_location('bridge',Path(__file__).parents[1]/'_service/bridge/bridge.py')
 b=importlib.util.module_from_spec(spec);spec.loader.exec_module(b)
@@ -49,6 +49,24 @@ class Protocol(unittest.TestCase):
   with tempfile.TemporaryDirectory(prefix='bridge-stopping-') as folder:
    x=b.Bridge('abcdef',5355,folder);x.close()
    self.assertFalse(x.submit(lambda:None))
+ def test_stop_closes_idle_tcp_session(self):
+  with tempfile.TemporaryDirectory(prefix='bridge-idle-tcp-') as folder:
+   x=b.Bridge('abcdef',0,folder);ready=threading.Event()
+   runner=threading.Thread(target=x.start,kwargs={'on_ready':ready.set},daemon=True)
+   runner.start();client=None
+   try:
+    self.assertTrue(ready.wait(3),'Listeners did not start')
+    listener=next(s for s in x.sockets if s.family==socket.AF_INET and s.type==socket.SOCK_STREAM)
+    client=socket.create_connection(listener.getsockname(),2)
+    deadline=time.monotonic()+2
+    while not x.sessions and time.monotonic()<deadline:time.sleep(.01)
+    self.assertTrue(x.sessions,'TCP session was not accepted')
+    x.stop.set();runner.join(3)
+    self.assertFalse(runner.is_alive(),'Worker did not stop with an idle TCP session')
+    self.assertFalse(x.stats['running'])
+   finally:
+    if client is not None:client.close()
+    x.close();runner.join(3)
  def test_servfail_preserves_query(self):
   result=b.failure(QUERY);self.assertEqual(result[:2],QUERY[:2]);self.assertEqual(result[12:],QUERY[12:]);self.assertEqual(result[3]&15,2);self.assertTrue(result[2]&128);self.assertEqual(result[4:12],QUERY[4:12])
  def test_concurrency_is_bounded(self):

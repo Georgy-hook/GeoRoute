@@ -60,11 +60,12 @@ def run_service(name, factory, log):
         if code not in (1, 5):  # SERVICE_CONTROL_STOP / SHUTDOWN
             return
         try:
+            log('Service stop requested')
             stopping.set()
             report(3)
-            log('Service stop requested')
             if worker is not None:
                 worker.stop.set()
+            log('Worker stop signalled')
         except Exception as exc:
             log('Service control failed: ' + str(exc))
 
