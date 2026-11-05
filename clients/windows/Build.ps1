@@ -26,7 +26,7 @@ try {
  foreach($name in @('Начать здесь.txt','Совместимость с Discord Fix.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
  & $PythonExe -I (Join-Path $clientRoot 'tools\prepare_runtime.py') --destination (Join-Path $service 'bridge\python')
  if($LASTEXITCODE -ne 0){throw 'Python runtime packaging failed.'}
- & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $service 'Build-Launcher.ps1') -NoLegacyAlias
+ & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source 'Build-Launcher.ps1') -NoLegacyAlias -OutputDirectory $package
  if($LASTEXITCODE -ne 0){throw 'Launcher build failed.'}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null

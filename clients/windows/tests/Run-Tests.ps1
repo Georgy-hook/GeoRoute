@@ -17,6 +17,7 @@ if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
 & (Join-Path $PSScriptRoot 'Test-ConnectionRecovery.ps1')
 & (Join-Path $PSScriptRoot 'Test-HttpProxy.ps1')
 & (Join-Path $PSScriptRoot 'Test-NetworkRestore.ps1')
+& (Join-Path $PSScriptRoot 'Test-BridgeMigration.ps1')
 foreach($script in @('NextDNS-GUI.ps1','RepairCenter.ps1','HttpProxyDialog.ps1')){
  & $shell -NoProfile -ExecutionPolicy Bypass -STA -File (Join-Path (Join-Path $root '_service') $script) -SmokeTest
  if($LASTEXITCODE -ne 0){throw ('UI smoke failed: '+$script)}

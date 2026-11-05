@@ -1,7 +1,6 @@
 [
   "BridgeStatus.ps1",
   "BrowserRecovery.ps1",
-  "Build-Launcher.ps1",
   "Connection.ps1",
   "ConnectionWorker.ps1",
   "GUI-README.txt",
@@ -14,9 +13,6 @@
   "ImportDialog.xaml",
   "NetworkSetup.ps1",
   "NextDNS-GUI.ps1",
-  "NextDNS.Launcher.cs",
-  "NextDNS.manifest",
-  "NextDNS.runtime.config",
   "Profiles.ps1",
   "RepairCenter.ps1",
   "RepairCenter.xaml",
