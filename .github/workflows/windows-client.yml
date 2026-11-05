@@ -27,9 +27,6 @@ jobs:
         with:
           python-version: '3.14'
           architecture: x64
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '10.0.x'
       - name: Protocol, recovery and UI checks
         run: .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
       - name: Build portable client

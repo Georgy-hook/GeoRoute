@@ -12,6 +12,10 @@ param(
     [ValidatePattern('^Local\\NextDNS\.Manager\.S-\d+(?:-\d+)+\.[A-F0-9]{24}\.(?:Main|Repair)\.Activate$')][string]$ActivationEvent
 )
 $ErrorActionPreference = 'Stop'
+if(-not('GeoRouteDpi' -as [type])){
+ Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GeoRouteDpi { [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr value); public static void Enable(){try{SetThreadDpiAwarenessContext(new IntPtr(-4));}catch(EntryPointNotFoundException){}} }'
+}
+[GeoRouteDpi]::Enable()
 $script:taskActivationEvent=if($ActivationEvent){[Threading.EventWaitHandle]::OpenExisting($ActivationEvent)}else{$null}
 if($Repair){ & (Join-Path $PSScriptRoot 'RepairCenter.ps1') -SmokeTest:$SmokeTest; return }
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path

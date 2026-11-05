@@ -12,7 +12,7 @@ def check(path):
         assert archive.testzip() is None
         names = archive.namelist()
         assert len(names) == len(set(names))
-        required = ['GeoRoute/GeoRoute.exe', 'GeoRoute/GeoRoute.exe.config',
+        required = ['GeoRoute/GeoRoute.exe',
                     'GeoRoute/_service/bridge/bridge.py',
                     'GeoRoute/_service/bridge/python/python.exe',
                     'GeoRoute/_service/bridge/python/LICENSE.txt',
