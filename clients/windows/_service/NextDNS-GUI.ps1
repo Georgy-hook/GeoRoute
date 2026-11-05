@@ -267,11 +267,11 @@ function Set-TaskPage([string]$Page) {
     $script:taskPage=$Page
     $pages=@{Home='HomePage';Overview='OverviewPage';Servers='ServersPage';Geo='GeoPage';Journal='JournalPage';Settings='SettingsPage'}
     foreach($key in $pages.Keys){$script:taskUi[$pages[$key]].Visibility=if($Page -eq $key){'Visible'}else{'Collapsed'}}
-    $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг и адреса';Journal='Журнал';Settings='Настройки'}
+    $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг';Journal='Журнал';Settings='Настройки'}
     $subtitles=@{Home='GeoRoute';Overview='Понятные действия при проблемах с подключением';Servers='Выберите доступный маршрут';Geo='Доступность узлов RU, US и EU';Journal='История действий и результаты проверок';Settings='Запуск, внешний вид и дополнительные возможности'}
     $script:taskUi.PageTitle.Text=$titles[$Page];$script:taskUi.PageSubtitle.Text=$subtitles[$Page]
-    $nav=@{HomeNavButton='Home';OverviewNavButton='Overview';ServersNavButton='Servers';JournalNavButton='Journal';SettingsNavButton='Settings'}
-    foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name] -or ($Page -eq 'Geo' -and $name -eq 'ServersNavButton');$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
+    $nav=@{HomeNavButton='Home';OverviewNavButton='Overview';ServersNavButton='Servers';MonitorNavButton='Geo';JournalNavButton='Journal';SettingsNavButton='Settings'}
+    foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name];$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
     if($Page -eq 'Home'){Update-GeoHome -Force}
 }
 
@@ -882,6 +882,14 @@ public static class NextDnsWindowChrome {
             Set-TaskPage 'Geo'
             $geoPreviewPath = [IO.Path]::Combine([IO.Path]::GetDirectoryName($taskServerPreviewPath),([IO.Path]::GetFileNameWithoutExtension($taskServerPreviewPath) + '-geohide.png'))
             Export-TaskPreview $geoPreviewPath
+            $previewReport=$script:geoReport
+            $previewCatalog=Get-Content -LiteralPath (Join-Path $script:taskRoot 'geohide-servers.json') -Raw -Encoding UTF8|ConvertFrom-Json
+            Set-GeoMonitorBusy $true
+            Update-GeoRows (New-GeoPendingReport $previewCatalog.servers 'preview')
+            Export-TaskPreview ($geoPreviewPath.Replace('.png','-loading.png'))
+            Set-GeoMonitorBusy $false
+            if($previewReport){Update-GeoRows $previewReport}else{$script:geoReport=$null}
+            $script:taskWindow.FindName('GeoPage').ScrollToBottom()
             $savedAuto=$script:taskUi.GeoAuto.IsChecked
             $script:taskUi.GeoManual.IsChecked=$true
             Update-GeoEditorState -Force
@@ -1002,7 +1010,7 @@ public static class NextDnsWindowChrome {
             $script:taskUi.ActivityDetail.Text = 'Дождитесь завершения действия, затем закройте окно.'
             Add-TaskLog 'Окно останется открытым до завершения текущего действия.'
         }
-        else { $script:taskClosing = $true; $script:taskTimer.Stop();Close-TaskTray }
+        else { $script:taskClosing = $true; $script:taskTimer.Stop();Stop-GeoMonitor;Close-TaskTray }
     })
     $script:taskWindow.Add_Closed({$script:taskApplication.Shutdown()})
     Initialize-TaskTray

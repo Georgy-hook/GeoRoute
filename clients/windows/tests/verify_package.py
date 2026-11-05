@@ -15,7 +15,10 @@ def check(path):
         required = ['GeoRoute/GeoRoute.exe', 'GeoRoute/GeoRoute.exe.config',
                     'GeoRoute/_service/bridge/NextDNSBridge.exe',
                     'GeoRoute/_service/bridge/python/python.exe',
-                    'GeoRoute/_service/bridge/python/LICENSE.txt']
+                    'GeoRoute/_service/bridge/python/LICENSE.txt',
+                    'GeoRoute/_service/GeoServices.ps1', 'GeoRoute/_service/GeoMonitorState.ps1',
+                    'GeoRoute/_service/GeoProbe.ps1',
+                    'GeoRoute/_service/profiles/gemini-eu.hosts', 'GeoRoute/_service/profiles/gemini-us.hosts']
         assert all(name in names for name in required)
         for name in names:
             parts = PurePosixPath(name).parts

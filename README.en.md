@@ -1,12 +1,14 @@
 # GeoRoute
 
-Windows desktop manager for GeoHide routes and endpoint availability. [Русский](README.md).
+Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
 **[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.exe**. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
 Wait for the initial checks, choose an available route under **Servers**, then use the single **Enable / Disable** control on the home page and confirm the Windows elevation request. The interface is currently Russian.
 
 The manager refreshes provider lists for US/EU/RU hourly and probes endpoints every two minutes. Regional replacement is independent: an EU outage does not prevent updating US or RU profiles. Unavailable, retired and stale endpoints cannot unlock a managed profile. A mixed US+EU route requires both roles to pass. Healthy choices are retained; manual addresses survive provider refresh.
+
+Monitoring has its own sidebar entry, overall and per-server loading indicators, and a single active scan. Gemini-only US/EU profiles are independent of ChatGPT; the combined route sends Gemini through EU. Google CAPTCHA redirects are shown as requiring user action, not as fully healthy model access or a transport outage. No account, Gmail or broad Google-domain routing is added.
 
 Automatic selection updates saved profiles. Applying them to Windows requires an explicit connection action and elevation. The ordinary mode manages a marked section of `hosts`, not an all-traffic VPN. Closing the window keeps monitoring in the tray; exiting stops monitoring while applied hosts settings remain. Optional NextDNS Bridge and HTTP proxy features are not enabled automatically.
 

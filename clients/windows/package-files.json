@@ -60,5 +60,10 @@
   "GeoAvailability.ps1",
   "profiles/ru-primary.hosts",
   "GeoProfileUI.ps1",
-  "Home.ps1"
+  "Home.ps1",
+  "GeoServices.ps1",
+  "GeoProbe.ps1",
+  "GeoMonitorState.ps1",
+  "profiles/gemini-us.hosts",
+  "profiles/gemini-eu.hosts"
 ]

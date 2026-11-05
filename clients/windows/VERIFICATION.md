@@ -1,6 +1,10 @@
-# Verification — GeoRoute 0.2.0
+# Verification — GeoRoute 0.3.0
+
+Current automated checks additionally validate monitor duplicate-launch prevention, per-run isolation, final-result ingestion, startup/timeout/malformed-output recovery, per-row loading without synthetic history failures, Gemini-only availability independent of ChatGPT, exact-domain import validation, trusted redirects and CAPTCHA warnings.
 
 Current automated checks validate regional replacement independently, mixed-profile rejection on failed EU, stale and removed endpoints, manual save/connect boundaries, hosts application state, off/checking/ready/unavailable home states, DNS protocol framing, recovery plans, WPF loading and portable package layout. They do not modify system hosts/DNS or close browsers.
+
+Gemini checks use unauthenticated HTTPS requests to the page and API root. A Google CAPTCHA redirect is displayed as requiring user action; neither this redirect nor an API-root 404 proves a signed-in model response. No cookies, credentials or model messages are used by monitoring.
 
 Live server checks are specific to the local network and timestamp. HTTP 404 at a file-host root confirms transport only. No release claim is made that a logged-in ChatGPT conversation, a specific GIF or computer-control session works on every network. A Windows service restart is not a reboot test. The UI distinguishes a saved profile from an applied configuration.
 

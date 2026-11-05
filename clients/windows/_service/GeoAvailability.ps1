@@ -1,15 +1,18 @@
 ﻿#Requires -Version 5.1
-function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region) {
+. (Join-Path $PSScriptRoot 'GeoServices.ps1')
+function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[ValidateSet('ChatGPT','Gemini','Combined')][string]$Service='ChatGPT') {
     return @($Report.rows|Where-Object {
         $node=$_
         $fresh=$true
-        if($node.PSObject.Properties['CheckedAt']){$fresh=((Get-Date)-[datetime]$node.CheckedAt).TotalMinutes -lt 5}
-        $fresh -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})
+        if($node.PSObject.Properties['CheckedAt']){$checked=[datetime]::MinValue;$fresh=[datetime]::TryParse([string]$node.CheckedAt,[ref]$checked) -and ((Get-Date)-$checked).TotalMinutes -lt 5}
+        $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
+        $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
     }|Sort-Object Address -Unique)
 }
 function Get-GeoProfileRegion($Profile) {
     if($Profile.PSObject.Properties['managedRegion']){return [string]$Profile.managedRegion}
     if($Profile.id -eq 'us-eu' -or $Profile.name -match '^(US|США).*(EU|Европ)'){return 'US+EU'}
+    if($Profile.id -eq 'gemini-us'){return 'US'};if($Profile.id -eq 'gemini-eu'){return 'EU'}
     switch([string]$Profile.id){primary{return 'US'}alternate{return 'US'}eu-primary{return 'EU'}eu-alternate{return 'EU'}ru-primary{return 'RU'}}
     return ''
 }
@@ -26,10 +29,11 @@ function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
         $parts=($line -split '#',2)[0].Trim() -split '\s+'
         if($parts.Count -lt 2){continue}
         foreach($domain in $parts[1..($parts.Count-1)]){
+            $gemini=Test-GeoGeminiDomain $domain
             $files=$domain -eq 'oaiusercontent.com' -or $domain.EndsWith('.oaiusercontent.com')
-            $role=if($region -eq 'US+EU'){if($files){'EU'}else{'US'}}else{$region}
-            $key=$role+'|'+$parts[0]
-            if(-not $requirements.ContainsKey($key)){$requirements[$key]=[pscustomobject]@{Role=$role;Address=$parts[0];Files=$files}}
+            $role=if($region -eq 'US+EU'){if($files -or $gemini){'EU'}else{'US'}}else{$region}
+            $key=$role+'|'+$parts[0]+'|'+$(if($gemini){'Gemini'}else{'ChatGPT'})
+            if(-not $requirements.ContainsKey($key)){$requirements[$key]=[pscustomobject]@{Role=$role;Address=$parts[0];Files=$files;Service=$(if($gemini){'Gemini'}else{'ChatGPT'})}}
             if($files){$requirements[$key].Files=$true}
         }
     }
@@ -37,10 +41,10 @@ function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
     return (Test-GeoRequirements @($requirements.Values) $Report)
 }
 function Get-GeoPairAvailability([string]$US,[string]$EU,$Report) {
-    return (Test-GeoRequirements @([pscustomobject]@{Role='US';Address=$US;Files=$false},[pscustomobject]@{Role='EU';Address=$EU;Files=$true}) $Report)
+    return (Test-GeoRequirements @([pscustomobject]@{Role='US';Address=$US;Files=$false},[pscustomobject]@{Role='EU';Address=$EU;Files=$true},[pscustomobject]@{Role='EU';Address=$EU;Files=$false;Service='Gemini'}) $Report)
 }
 function Test-GeoRequirements([object[]]$Needs,$Report) {
-    $issues=@()
+    $issues=@();$warnings=@()
     foreach($need in $Needs){
         $rows=@($Report.rows|Where-Object {$_.Region -eq $need.Role -and $_.Address -eq $need.Address}|Select-Object -First 1)
         $prefix=$need.Role+' '+$need.Address+': '
@@ -48,11 +52,13 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
         $row=$rows[0];$checked=[datetime]::MinValue
         if(-not [datetime]::TryParse([string]$row.CheckedAt,[ref]$checked) -or ((Get-Date)-$checked).TotalMinutes -gt 5){$issues+=$prefix+'проверка устарела';continue}
         if($row.SourceActive -eq $false){$issues+=$prefix+'удалён из списка GeoHide';continue}
+        if($row.CheckState -in @('Queued','Checking','Interrupted')){$issues+=$prefix+'проверка ещё не завершена';continue}
+        if($need.Service -eq 'Gemini'){if(-not $row.GeminiReady){$issues+=$prefix+'Gemini: HTTPS страницы / API недоступен'}elseif($row.GeminiChallenge){$warnings+='Gemini: Google просит CAPTCHA — откройте Gemini в браузере после подключения'};continue}
         $eligible=switch($need.Role){US{$row.EligibleUS}EU{$row.EligibleEU}RU{$row.EligibleRU}}
         if(-not $eligible){$issues+=$prefix+'не прошёл проверку региона / HTTPS';continue}
         if($need.Files -and (-not $row.FilesTLS -or $row.FilesHTTP -notin @(200,204,301,302,400,401,404,405))){$issues+=$prefix+'HTTPS вложений недоступен'}
     }
-    return [pscustomobject]@{Ready=($issues.Count -eq 0);Managed=$true;Reason=$(if($issues.Count){$issues -join '; '}else{'Все необходимые узлы проверены · можно подключить'});State=$(if($issues.Count){'unavailable'}else{'ready'})}
+    return [pscustomobject]@{Ready=($issues.Count -eq 0);Managed=$true;Reason=$(if($issues.Count){$issues -join '; '}elseif($warnings.Count){$warnings -join '; '}else{'Все необходимые узлы проверены · можно подключить'});State=$(if($issues.Count){'unavailable'}elseif($warnings.Count){'attention'}else{'ready'})}
 }
 
 function Set-GeoRegionCatalog($Catalog,[string]$Region,[string[]]$Addresses,[string]$Origin) {

@@ -11,12 +11,16 @@
         if($parts.Count -lt 2){continue}
         $row=@($Report.rows|Where-Object Address -eq $parts[0]|Select-Object -First 1)
         if(-not $row.Count){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Адреса применены в Windows. Ожидаю актуальную сетевую проверку.'}}
-        $key=$row[0].Region+'|'+$parts[0]
-        if(-not $needs.ContainsKey($key)){$needs[$key]=[pscustomobject]@{Role=$row[0].Region;Address=$parts[0];Files=$false}}
-        if(@($parts|Select-Object -Skip 1|Where-Object {$_ -eq 'oaiusercontent.com' -or $_.EndsWith('.oaiusercontent.com')}).Count){$needs[$key].Files=$true}
+        foreach($domain in $parts[1..($parts.Count-1)]){
+            $gemini=Test-GeoGeminiDomain $domain
+            $key=$row[0].Region+'|'+$parts[0]+'|'+$(if($gemini){'Gemini'}else{'ChatGPT'})
+            if(-not $needs.ContainsKey($key)){$needs[$key]=[pscustomobject]@{Role=$row[0].Region;Address=$parts[0];Files=$false;Service=$(if($gemini){'Gemini'}else{'ChatGPT'})}}
+            if($domain -eq 'oaiusercontent.com' -or $domain.EndsWith('.oaiusercontent.com')){$needs[$key].Files=$true}
+        }
     }
     if(-not $needs.Count){return [pscustomobject]@{On=$true;State='error';Title='Настройка требует восстановления';Detail='Управляемый hosts пуст. Откройте «Помощь».'}}
     $result=Test-GeoRequirements @($needs.Values) $Report
+    if($result.Ready -and $result.State -eq 'attention'){return [pscustomobject]@{On=$true;State='attention';Title='Подключено · проверка Google';Detail=$result.Reason}}
     if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Серверы GeoHide отвечают. Подключение настроено.'}}
     if($Report.running -or $result.Reason -like '*устарела*'){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Ожидаю завершения проверки текущего маршрута.'}}
     return [pscustomobject]@{On=$true;State='unavailable';Title='Сервер недоступен';Detail='Выбранный сервер не отвечает. Откройте «Серверы» и выберите доступный маршрут.'}

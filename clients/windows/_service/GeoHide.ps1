@@ -21,9 +21,10 @@ function Get-GeoSelection($Settings,$Report) {
     $selected=[ordered]@{ready=$false}
     foreach($region in @('US','EU','RU')){
         $pool=@(Get-GeoPool $Report $region)
+        if($region -eq 'EU'){$combined=@(Get-GeoPool $Report EU Combined);if($combined.Count){$pool=$combined}}
         $key=$region.ToLowerInvariant();$current=[string]$Settings.$key
         $selected[$key]=if(@($pool|Where-Object Address -eq $current).Count){$current}elseif($pool.Count){$pool[0].Address}else{$current}
-        $selected[$key+'Ready']=($pool.Count -gt 0)
+        $selected[$key+'Ready']=if($region -eq 'EU'){$combined.Count -gt 0}else{$pool.Count -gt 0}
     }
     $selected.ready=$selected.usReady -and $selected.euReady
     return [pscustomobject]$selected
@@ -38,11 +39,13 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
     $path=Join-Path $Root $profile.hostsFile
     $lines=@(Get-Content -LiteralPath $path -Encoding UTF8)
     $new=@('# GeoHide US + EU; addresses managed by the monitoring page.')
+    $existing=@(foreach($line in $lines){$p=($line -split '#',2)[0].Trim() -split '\s+';if($p.Count -ge 2){$p[1..($p.Count-1)]}})
+    $lines+=@(Get-GeoGeminiDomains|Where-Object {$_ -notin $existing}|ForEach-Object {$Settings.eu+' '+$_})
     foreach($line in $lines){
         $parts=($line -split '#',2)[0].Trim() -split '\s+'
         if($parts.Count -lt 2){continue}
         foreach($domain in $parts[1..($parts.Count-1)]){
-            $address=if($domain -eq 'oaiusercontent.com' -or $domain.EndsWith('.oaiusercontent.com')){$Settings.eu}else{$Settings.us}
+            $address=if((Test-GeoGeminiDomain $domain) -or $domain -eq 'oaiusercontent.com' -or $domain.EndsWith('.oaiusercontent.com')){$Settings.eu}else{$Settings.us}
             $new+=($address+' '+$domain)
         }
     }
@@ -56,7 +59,9 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
         $temp=$path+'.tmp'
         [IO.File]::WriteAllText($temp,$content,[Text.UTF8Encoding]::new($false))
         [IO.File]::Replace($temp,$path,[NullString]::Value)
-        $profile.description='GeoHide: US '+$Settings.us+'; все известные адреса oaiusercontent.com через EU '+$Settings.eu+'. Меняется подготовленный профиль; примените его кнопкой. Скачивание конкретной GIF проверяется отдельно.'
+        $profile.name='US + EU — ChatGPT + Gemini'
+        $profile|Add-Member -MemberType NoteProperty -Name domainCount -Value ($new.Count-1) -Force
+        $profile.description='Gemini и файлы через EU. GeoHide: US '+$Settings.us+'; все известные адреса oaiusercontent.com через EU '+$Settings.eu+'. Меняется подготовленный профиль; примените его кнопкой. Скачивание конкретной GIF проверяется отдельно.'
         $profile.verifiedAt=$null
         Write-GeoJson $catalogPath $catalog
     }
@@ -96,9 +101,22 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
         $entry.verifiedAt=$null
         $entry.description='GeoHide '+$ip+'. Адрес управляется вкладкой мониторинга; конкретные вложения проверяются отдельно.'
     }
+    foreach($region in @('US','EU')){
+        $id='gemini-'+$region.ToLowerInvariant()
+        $entry=@($catalog.Profiles|Where-Object id -eq $id|Select-Object -First 1)
+        $pool=@(Get-GeoPool $Report $region Gemini)
+        $ip=if($pool.Count){$current=if($entry.Count){[string]$entry[0].address}else{''};if($current -in @($pool|ForEach-Object Address)){$current}else{$pool[0].Address}}elseif($entry.Count){$entry[0].address}else{$Settings.($region.ToLowerInvariant())}
+        if(-not (Test-GeoAddress $ip)){continue}
+        $relative='profiles/'+$id+'.hosts'
+        $geminiText=('# Gemini only; GeoHide '+$region+"`r`n")+((@(Get-GeoGeminiDomains|ForEach-Object {$ip+' '+$_})) -join "`r`n")+"`r`n"
+        $geminiPath=Join-Path $Root $relative
+        if(-not (Test-Path -LiteralPath $geminiPath) -or [IO.File]::ReadAllText($geminiPath) -ne $geminiText){[IO.File]::WriteAllText($geminiPath,$geminiText,[Text.UTF8Encoding]::new($false))}
+        if(-not $entry.Count){$catalog.Profiles+=@([pscustomobject]@{id=$id;name=('Gemini — '+$region);region=$region;countryCode=$region;hostsFile=$relative;address=$ip;description='Только Gemini. HTTPS страницы и API проверяются отдельно от ChatGPT.';verifiedAt=$null;domainCount=@(Get-GeoGeminiDomains).Count;managedRegion=$region})}else{$entry[0].address=$ip}
+    }
     Write-GeoJson $catalogPath $catalog
     $routes=Get-Content -LiteralPath (Join-Path $Root 'connection-routes.json') -Raw -Encoding UTF8|ConvertFrom-Json
-    foreach($route in $routes.routes){$route.addresses=@($(if($route.domain -eq 'oaiusercontent.com'){$Settings.eu}else{$Settings.us}))}
+    foreach($domain in @(Get-GeoGeminiDomains)){if(-not @($routes.routes|Where-Object domain -eq $domain).Count){$routes.routes+=@([pscustomobject]@{domain=$domain;label='Gemini';addresses=@($Settings.eu)})}}
+    foreach($route in $routes.routes){$route.addresses=@($(if((Test-GeoGeminiDomain $route.domain) -or $route.domain -eq 'oaiusercontent.com'){$Settings.eu}else{$Settings.us}))}
     Write-GeoJson (Join-Path $Root 'connection-routes.json') $routes
     Write-GeoJson (Join-Path $Root 'geohide-settings.json') $Settings
 }
