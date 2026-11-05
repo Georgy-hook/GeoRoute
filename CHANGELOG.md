@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-11-05
+
+- Add an accessible **?** help button beside profile import and inside the import dialog, with an offline, scrollable, plain-language guide.
+- Document the profile file format, supported domains, import limits and custom-profile update behavior in README.
+- Align the file picker and size check with the backend: `.hosts` only, up to 1 MiB.
+
 ## 0.3.0 — 2026-11-05
 
 - Add Monitoring to the sidebar and move the manual-address editor below results in a collapsed section.

@@ -723,6 +723,25 @@ function Export-TaskPreview([string]$Path) {
     Write-Output ('Preview saved: ' + $Path)
 }
 
+function New-TaskProfileHelp($Owner) {
+    [xml]$helpXaml=[IO.File]::ReadAllText((Join-Path $script:taskRoot 'ProfileHelp.xaml'))
+    $reader=[Xml.XmlNodeReader]::new($helpXaml)
+    try{$help=[Windows.Markup.XamlReader]::Load($reader)}finally{$reader.Close()}
+    if($Owner -and $Owner.IsLoaded){$help.Owner=$Owner}
+    $help.Height=[Math]::Min(730,[Windows.SystemParameters]::WorkArea.Height-40)
+    $help.Width=[Math]::Min(650,[Windows.SystemParameters]::WorkArea.Width-40)
+    Register-TaskDarkTitleBar $help
+    Register-TaskDialogKeys $help
+    $close=$help.FindName('CloseProfileHelpButton')
+    $close.Style=$script:taskWindow.FindResource('ActionButton')
+    $close.Add_Click({param($sender,$eventArgs) [Windows.Window]::GetWindow($sender).DialogResult=$true})
+    return $help
+}
+function Show-TaskProfileHelp($Owner=$script:taskWindow) {
+    $help=New-TaskProfileHelp $Owner
+    [void]$help.ShowDialog()
+}
+
 function Show-TaskImportDialog {
     if ($script:taskBusy) { return }
     [xml]$taskDialogXaml = [IO.File]::ReadAllText((Join-Path $script:taskRoot 'ImportDialog.xaml'))
@@ -741,16 +760,18 @@ function Show-TaskImportDialog {
     $script:taskImport.Ui.CancelImportButton.IsCancel = $true
     $script:taskImport.Ui.ConfirmImportButton.Background = Get-TaskBrush '#91F2D2'
     $script:taskImport.Ui.ConfirmImportButton.Foreground = Get-TaskBrush '#0C2823'
+    $script:taskImport.Ui.ImportHelpButton.Style=$script:taskWindow.FindResource('QuietButton')
+    $script:taskImport.Ui.ImportHelpButton.Add_Click({Show-TaskProfileHelp $script:taskImport.Window})
     $script:taskImport.Ui.BrowseFileButton.Add_Click({
         $taskPicker = [Microsoft.Win32.OpenFileDialog]::new()
         $taskPicker.Title = 'Выберите файл настройки hosts'
-        $taskPicker.Filter = 'Настройка hosts (*.hosts)|*.hosts|Текстовый файл (*.txt)|*.txt|Все файлы (*.*)|*.*'
+        $taskPicker.Filter = 'Профиль GeoRoute (*.hosts)|*.hosts'
         $taskPicker.CheckFileExists = $true
         $taskPicker.Multiselect = $false
         if ($taskPicker.ShowDialog($script:taskImport.Window)) {
             try {
                 $taskFileInfo = [IO.FileInfo]::new($taskPicker.FileName)
-                if ($taskFileInfo.Length -gt 2MB) { throw 'Файл слишком большой. Выберите hosts размером до 2 МБ.' }
+                if ($taskFileInfo.Extension -ine '.hosts' -or $taskFileInfo.Length -gt 1MB) { throw 'Выберите файл .hosts размером не больше 1 МиБ.' }
                 $taskMap = @(Get-TaskMap ([IO.File]::ReadAllText($taskPicker.FileName)))
                 if ($taskMap.Count -eq 0) { throw 'В файле не найдены адреса и домены.' }
                 $script:taskImport.SourcePath = $taskPicker.FileName
@@ -869,6 +890,7 @@ public static class NextDnsWindowChrome {
         try { $taskImportWindow = [Windows.Markup.XamlReader]::Load($taskImportReader) } finally { $taskImportReader.Close() }
         $taskImportWindow.FindName('DialogImportIcon').Source = Get-TaskImage 'icon-import.png'
         foreach ($taskName in @('BrowseFileButton','ConfirmImportButton','CancelImportButton')) { $taskImportWindow.FindName($taskName).Style = $script:taskWindow.FindResource('ActionButton') }
+        $taskImportWindow.FindName('ImportHelpButton').Style=$script:taskWindow.FindResource('QuietButton')
         $taskImportWindow.FindName('ConfirmImportButton').Background = Get-TaskBrush '#91F2D2'
         $taskImportWindow.FindName('ConfirmImportButton').Foreground = Get-TaskBrush '#0C2823'
         $taskImportWindow.Content.Measure([Windows.Size]::new(610,520))
@@ -907,12 +929,28 @@ public static class NextDnsWindowChrome {
             try { $taskImportEncoder.Save($taskImportStream) } finally { $taskImportStream.Dispose() }
             Write-Output ('Import preview saved: ' + $taskImportPreviewPath)
         }
+        $help=New-TaskProfileHelp $script:taskWindow
+        $help.Content.Measure([Windows.Size]::new(630,690))
+        $help.Content.Arrange([Windows.Rect]::new(0,0,630,690))
+        $help.Content.UpdateLayout()
+        if($RenderPreview){
+            $helpBitmap=[Windows.Media.Imaging.RenderTargetBitmap]::new(630,690,96,96,[Windows.Media.PixelFormats]::Pbgra32)
+            $helpBitmap.Render($help.Content)
+            $helpEncoder=[Windows.Media.Imaging.PngBitmapEncoder]::new()
+            $helpEncoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($helpBitmap))
+            $helpPath=[IO.Path]::ChangeExtension($taskImportPreviewPath,$null).TrimEnd('.')+'-help.png'
+            $helpStream=[IO.File]::Open($helpPath,[IO.FileMode]::Create)
+            try{$helpEncoder.Save($helpStream)}finally{$helpStream.Dispose()}
+            Write-Output ('Profile help preview saved: '+$helpPath)
+        }
+        $help.Close()
         $taskImportWindow.Close()
-        Write-Output ('Smoke test OK: main and import WPF/XAML loaded; ' + $script:taskUi.Count + ' named controls; ' + $script:taskProfiles.Count + ' profiles; no backend action started.')
+        Write-Output ('Smoke test OK: main, import and profile help WPF/XAML loaded; ' + $script:taskUi.Count + ' named controls; ' + $script:taskProfiles.Count + ' profiles; no backend action started.')
         $script:taskWindow.Close()
         exit 0
     }
 
+    $script:taskUi.ProfileHelpButton.Add_Click({Show-TaskProfileHelp})
     $script:taskUi.ImportButton.Add_Click({ Show-TaskImportDialog })
     $script:taskUi.CheckButton.Add_Click({ Start-TaskAction 'ClearCache' })
     $script:taskUi.CacheButton.Add_Click({ Start-TaskAction 'Check' })
