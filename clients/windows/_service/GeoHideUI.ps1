@@ -48,7 +48,7 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoEU.ItemsSource=@($Report.rows|Where-Object Region -eq 'EU'|ForEach-Object Address)
     $settings=Read-GeoSettings $script:taskRoot
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
-    $script:taskUi.GeoStatus.Text=('US готовы: '+$us.Count+' / '+@($Report.rows|Where-Object Region -eq 'US').Count+' · EU готовы: '+$eu.Count+' · '+$Report.interface+' · Gemini: '+@($Report.rows|Where-Object GeminiReady).Count+' маршрутов (CAPTCHA: '+@($Report.rows|Where-Object GeminiChallenge).Count+')'+' · '+([datetime]$Report.at).ToString('HH:mm:ss')+$(if($Report.running){' · проверка продолжается'}else{' · авто: 2 мин'}))
+    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · автоматическая проверка через 2 мин'}
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}

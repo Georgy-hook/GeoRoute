@@ -1,0 +1,63 @@
+[
+  {
+    "asset": "nav-connect-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": true,
+    "references": [
+      "icon-servers.png"
+    ],
+    "prompt": "Production raster asset for GeoRoute Windows WPF desktop app. Use the attached existing server icon ONLY as the material and lighting reference, not as an edit target. Create ONE NEW standalone icon. Cohesive premium soft 3D object, dark gunmetal beveled edges, frosted aquamarine glass, luminous mint accent, realistic soft highlights from top left, almost frontal with slight elevated view. Bold simple silhouette legible at 32 px; avoid tiny details, hairlines, text, lettering, logos, background tiles, framing square, scene, cast shadow outside object. Centered generously in a square canvas, object fills 78 percent of canvas, complete unclipped edges, transparent background, clean alpha. Smooth high-resolution antialiased contours, no pixel art. Subject: a round physical power/connect button. A thick mint illuminated universal power symbol on a charcoal circular button with a silver gunmetal rim."
+  },
+  {
+    "asset": "nav-monitor-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": true,
+    "references": [
+      "icon-servers.png"
+    ],
+    "prompt": "Production raster asset for GeoRoute Windows WPF desktop app. Use the attached existing server icon ONLY as the material and lighting reference, not as an edit target. Create ONE NEW standalone icon. Cohesive premium soft 3D object, dark gunmetal beveled edges, frosted aquamarine glass, luminous mint accent, realistic soft highlights from top left, almost frontal with slight elevated view. Bold simple silhouette legible at 32 px; avoid tiny details, hairlines, text, lettering, logos, background tiles, framing square, scene, cast shadow outside object. Centered generously in a square canvas, object fills 78 percent of canvas, complete unclipped edges, transparent background, clean alpha. Smooth high-resolution antialiased contours, no pixel art. Subject: a compact desktop monitoring display: one thick dark metallic screen housing with frosted dark glass and a single strong mint signal waveform on the screen. Short broad pedestal. No grids of data."
+  },
+  {
+    "asset": "nav-journal-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": true,
+    "references": [
+      "icon-servers.png"
+    ],
+    "prompt": "Production raster asset for GeoRoute Windows WPF desktop app. Use the attached existing server icon ONLY as the material and lighting reference, not as an edit target. Create ONE NEW standalone icon. Cohesive premium soft 3D object, dark gunmetal beveled edges, frosted aquamarine glass, luminous mint accent, realistic soft highlights from top left, almost frontal with slight elevated view. Bold simple silhouette legible at 32 px; avoid tiny details, hairlines, text, lettering, logos, background tiles, framing square, scene, cast shadow outside object. Centered generously in a square canvas, object fills 78 percent of canvas, complete unclipped edges, transparent background, clean alpha. Smooth high-resolution antialiased contours, no pixel art. Subject: an upright slim logbook with a metallic dark spine and a glass mint cover; three broad horizontal mint list strokes and one small circular status dot. Clearly a journal/document, not a server."
+  },
+  {
+    "asset": "nav-settings-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": true,
+    "references": [
+      "icon-servers.png"
+    ],
+    "prompt": "Production raster asset for GeoRoute Windows WPF desktop app. Use the attached existing server icon ONLY as the material and lighting reference, not as an edit target. Create ONE NEW standalone icon. Cohesive premium soft 3D object, dark gunmetal beveled edges, frosted aquamarine glass, luminous mint accent, realistic soft highlights from top left, almost frontal with slight elevated view. Bold simple silhouette legible at 32 px; avoid tiny details, hairlines, text, lettering, logos, background tiles, framing square, scene, cast shadow outside object. Centered generously in a square canvas, object fills 78 percent of canvas, complete unclipped edges, transparent background, clean alpha. Smooth high-resolution antialiased contours, no pixel art. Subject: one solid thick eight-tooth settings cog, brushed dark titanium body, mint glass circular center and mint inner rim. Strong readable mechanical silhouette."
+  },
+  {
+    "asset": "network-orbit-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": true,
+    "references": [
+      "icon-servers.png"
+    ],
+    "prompt": "A premium 3D UI spot illustration, isolated on truly transparent background, for GeoRoute network utility. Three compact brushed dark titanium server modules float around one large frosted aquamarine glass orbital ring with luminous mint seams, one tiny amber status accent. Strong sculptural composition, large clean objects, sophisticated product render, restrained light, complete unclipped edges and generous transparent margin, no words, no typography, no logos, no dashboard screenshots, no floor, no opaque backdrop. Match the attached existing icon ONLY for material and mint/metal style. Landscape composition suitable for the right side of a dark desktop app header, 3:2."
+  },
+  {
+    "asset": "georoute-design-reference-v1.png",
+    "tool": "image_gen.imagegen",
+    "date": "2026-11-05",
+    "transparent": false,
+    "references": [
+      "georoute-0.3-installed-servers-geohide.png",
+      "georoute-create-ip-import.png"
+    ],
+    "prompt": "High fidelity UI redesign reference for the existing GeoRoute Windows desktop application. Use the two attached screenshots as layout and functionality references. Create a coherent refined design board showing TWO separate full screens side by side: left the Monitoring page with sidebar, regional cards and a server table; right the Create profile modal with fields IP address, service ChatGPT/Gemini, country, optional name, Save. Preserve recognizable Russian UI labels, real controls and information hierarchy. Art direction: obsidian/navy panels, softly rounded 18-24px cards, precise typography, muted blue-gray text, mint accent primary action, small premium glass-and-titanium 3D navigation icons matching current asset aesthetic. Add a tasteful sculptural server-orbit illustration in the Monitoring header right, and a compact mint service icon near the profile form title. Keep the table dominant and readable, use clear grouping, compact metadata, airy alignment. Settings/log section visual language should be implied by consistent sidebar icons. No neon cyberpunk, no excessive glow, no purple gradients, no giant decorative art displacing controls. This is a design reference to implement with native accessible WPF controls, not a replacement screenshot background. Professional product design presentation, crisp. Wide landscape."
+  }
+]

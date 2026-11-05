@@ -65,6 +65,7 @@
       <Setter Property="FontSize" Value="12" />
     </Style>
     <Style x:Key="NavButton" TargetType="Button" BasedOn="{StaticResource ActionButton}">
+      <Setter Property="FontSize" Value="13"/>
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="Transparent" />
       <Setter Property="Foreground" Value="#A4B7CE" />
@@ -162,10 +163,35 @@
         </Setter.Value>
       </Setter>
     </Style>
+    <Style x:Key="PageCard" TargetType="Border">
+      <Setter Property="CornerRadius" Value="24"/><Setter Property="Padding" Value="22"/>
+      <Setter Property="BorderBrush" Value="#2A4256"/><Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Background"><Setter.Value><LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#182E3C" Offset="0"/><GradientStop Color="#121F30" Offset="1"/></LinearGradientBrush></Setter.Value></Setter>
+    </Style>
+    <Style x:Key="SettingsToggle" TargetType="CheckBox">
+      <Setter Property="Foreground" Value="#E1ECF7"/><Setter Property="FontSize" Value="13"/>
+      <Setter Property="Cursor" Value="Hand"/><Setter Property="Margin" Value="0,5"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="CheckBox">
+        <Border x:Name="ToggleSurface" Background="#132332" BorderBrush="#2B4054" BorderThickness="1" CornerRadius="14" Padding="15,14">
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <ContentPresenter VerticalAlignment="Center" Margin="0,0,16,0"/>
+            <Border x:Name="Track" Grid.Column="1" Width="44" Height="24" CornerRadius="12" Background="#35495C">
+              <Ellipse x:Name="Thumb" Width="16" Height="16" Margin="4" HorizontalAlignment="Left" Fill="#D9E8F6"/>
+            </Border>
+          </Grid>
+        </Border>
+        <ControlTemplate.Triggers>
+          <Trigger Property="IsChecked" Value="True"><Setter TargetName="Track" Property="Background" Value="#91F2D2"/><Setter TargetName="Thumb" Property="HorizontalAlignment" Value="Right"/><Setter TargetName="Thumb" Property="Fill" Value="#173A35"/></Trigger>
+          <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="ToggleSurface" Property="BorderBrush" Value="#537D88"/></Trigger>
+          <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="ToggleSurface" Property="BorderBrush" Value="#91F2D2"/></Trigger>
+          <Trigger Property="IsEnabled" Value="False"><Setter TargetName="ToggleSurface" Property="Opacity" Value="0.45"/></Trigger>
+        </ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
   </Window.Resources>
   <Grid x:Name="PageRoot" Background="#0C121C">
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="182" />
+      <ColumnDefinition Width="196" />
       <ColumnDefinition Width="*" />
     </Grid.ColumnDefinitions>
     <Border Background="#101B29" BorderBrush="#233348" BorderThickness="0,0,1,0">
@@ -184,7 +210,15 @@
           <TextBlock Text="ПОДКЛЮЧЕНИЕ К СЕРВИСАМ" Foreground="#738CA9" FontSize="9" Margin="7,10,0,0" />
         </StackPanel>
         <StackPanel Grid.Row="1">
-          <Button x:Name="HomeNavButton" Style="{StaticResource NavButton}" Content="◉  Подключение" />
+          <Button x:Name="HomeNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Подключение">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="34" Height="34" Margin="-4,0,8,0">
+                <TextBlock x:Name="HomeNavFallback" Text="◉" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="HomeNavIcon" Width="34" Height="34"/>
+              </Grid>
+              <TextBlock Text="Подключение" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <Button x:Name="ServersNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Список серверов">
             <StackPanel Orientation="Horizontal">
               <Grid Width="34" Height="34" Margin="-4,0,8,0">
@@ -194,7 +228,15 @@
               <TextBlock Text="Серверы" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button x:Name="MonitorNavButton" Style="{StaticResource NavButton}" Content="▥  Мониторинг" AutomationProperties.Name="Мониторинг серверов" />
+          <Button x:Name="MonitorNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Мониторинг">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="34" Height="34" Margin="-4,0,8,0">
+                <TextBlock x:Name="MonitorNavFallback" Text="▥" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="MonitorNavIcon" Width="34" Height="34"/>
+              </Grid>
+              <TextBlock Text="Мониторинг" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
           <Button x:Name="OverviewNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Обзор подключения">
             <StackPanel Orientation="Horizontal">
               <Grid Width="34" Height="34" Margin="-4,0,8,0">
@@ -204,8 +246,24 @@
               <TextBlock Text="Помощь" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button x:Name="JournalNavButton" Style="{StaticResource NavButton}" Content="≡  Журнал" />
-          <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" Content="⚙  Настройки" />
+          <Button x:Name="JournalNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Журнал">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="34" Height="34" Margin="-4,0,8,0">
+                <TextBlock x:Name="JournalNavFallback" Text="≡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="JournalNavIcon" Width="34" Height="34"/>
+              </Grid>
+              <TextBlock Text="Журнал" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Настройки">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="34" Height="34" Margin="-4,0,8,0">
+                <TextBlock x:Name="SettingsNavFallback" Text="⚙" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="SettingsNavIcon" Width="34" Height="34"/>
+              </Grid>
+              <TextBlock Text="Настройки" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
         </StackPanel>
         <StackPanel Grid.Row="3">
           <Button x:Name="HideToTrayButton" Content="Свернуть в трей" Style="{StaticResource QuietButton}" Margin="0,0,0,8" />
@@ -354,54 +412,58 @@
       </ScrollViewer>
       <ScrollViewer x:Name="GeoPage" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,4,20">
-          <Border Background="#142131" CornerRadius="20" Padding="22" Margin="0,0,0,16">
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
             <StackPanel>
-              <TextBlock Text="GeoHide · RU / US / EU" FontSize="24" FontWeight="SemiBold" />
-              <TextBlock Text="Проверяем каждый сервер через физическое подключение. ChatGPT, Gemini и хранилище файлов проверяются отдельно." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,8,0,12" />
-              <WrapPanel>
-                <Button x:Name="GeoCheck" Content="Проверить серверы" Style="{StaticResource ActionButton}" Margin="0,0,10,8" />
-                <Button x:Name="GeoRefresh" Content="Обновить адреса GeoHide" Style="{StaticResource ActionButton}" Margin="0,0,10,8" />
-              </WrapPanel>
-              <StackPanel x:Name="GeoProgressPanel" Visibility="Collapsed" Margin="0,8,0,6" AutomationProperties.LiveSetting="Polite">
-                <ProgressBar x:Name="GeoProgress" IsIndeterminate="True" Height="5" Foreground="#91F2D2" Background="#253C51" BorderThickness="0" />
-                <TextBlock x:Name="GeoProgressText" Text="Начинаю проверку…" Foreground="#A4D5F2" Margin="0,8,0,0" TextWrapping="Wrap" />
+              <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="175"/></Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="GeoHide · RU / US / EU" FontSize="24" FontWeight="SemiBold"/>
+                  <TextBlock Text="ChatGPT, Gemini и вложения — отдельные проверки каждого сервера через физическое подключение." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,8,12,15" FontSize="12"/>
+                  <WrapPanel>
+                    <Button x:Name="GeoCheck" Content="Проверить серверы" Style="{StaticResource ActionButton}" Background="#91F2D2" Foreground="#11372F" BorderBrush="#91F2D2" Margin="0,0,10,6"/>
+                    <Button x:Name="GeoRefresh" Content="Обновить адреса GeoHide" Style="{StaticResource ActionButton}" Margin="0,0,0,6"/>
+                  </WrapPanel>
+                </StackPanel>
+                <Image x:Name="GeoHeaderArt" Grid.Column="1" Height="112" Width="165" IsHitTestVisible="False" Margin="0,0,-6,0"/>
+              </Grid>
+              <StackPanel x:Name="GeoProgressPanel" Visibility="Collapsed" Margin="0,10,0,6" AutomationProperties.LiveSetting="Polite">
+                <ProgressBar x:Name="GeoProgress" IsIndeterminate="True" Height="5" Foreground="#91F2D2" Background="#253C51" BorderThickness="0"/>
+                <TextBlock x:Name="GeoProgressText" Text="Начинаю проверку…" Foreground="#A4D5F2" Margin="0,8,0,0" TextWrapping="Wrap"/>
               </StackPanel>
-              <TextBlock x:Name="GeoStatus" Text="Ожидание проверки" TextWrapping="Wrap" Foreground="#91F2D2" Margin="0,8,0,8" />
-              <TextBlock x:Name="GeoSourceStatus" Text="Списки: официальный репозиторий GeoHide; обновление раз в час" TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" />
+              <TextBlock x:Name="GeoStatus" Text="Ожидание проверки" TextWrapping="Wrap" Foreground="#91F2D2" FontSize="12" Margin="0,10,0,0"/>
             </StackPanel>
           </Border>
           <UniformGrid Columns="3" Margin="0,0,0,12">
-            <Border Background="#142131" CornerRadius="18" Padding="16" Margin="0,0,10,0">
+            <Border BorderBrush="#2B4054" BorderThickness="1" Background="#142131" CornerRadius="20" Padding="12" Margin="0,0,10,0">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                  <Image x:Name="GeoFlagUS" Width="32" Height="26" Margin="0,0,10,0" />
-                  <TextBlock Text="США" FontSize="17" VerticalAlignment="Center" />
+                  <Image x:Name="GeoFlagUS" Width="28" Height="22" Margin="0,0,10,0" />
+                  <TextBlock Text="США" FontSize="15" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock x:Name="GeoCountUS" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
+                <TextBlock x:Name="GeoCountUS" Text="—" FontSize="26" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,4,0,0" />
                 <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
-              <TextBlock x:Name="GeoGeminiCountUS" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
+              <TextBlock x:Name="GeoGeminiCountUS" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,3,0,0" />
               </StackPanel>
             </Border>
-            <Border Background="#142131" CornerRadius="18" Padding="16" Margin="0,0,10,0">
+            <Border BorderBrush="#2B4054" BorderThickness="1" Background="#142131" CornerRadius="20" Padding="12" Margin="0,0,10,0">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                  <Image x:Name="GeoFlagEU" Width="32" Height="26" Margin="0,0,10,0" />
-                  <TextBlock Text="Европа" FontSize="17" VerticalAlignment="Center" />
+                  <Image x:Name="GeoFlagEU" Width="28" Height="22" Margin="0,0,10,0" />
+                  <TextBlock Text="Европа" FontSize="15" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock x:Name="GeoCountEU" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
+                <TextBlock x:Name="GeoCountEU" Text="—" FontSize="26" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,4,0,0" />
                 <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
-              <TextBlock x:Name="GeoGeminiCountEU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
+              <TextBlock x:Name="GeoGeminiCountEU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,3,0,0" />
               </StackPanel>
             </Border>
-            <Border Background="#142131" CornerRadius="18" Padding="16" Margin="0,0,10,0">
+            <Border BorderBrush="#2B4054" BorderThickness="1" Background="#142131" CornerRadius="20" Padding="12" Margin="0,0,10,0">
               <StackPanel>
                 <StackPanel Orientation="Horizontal">
-                  <Image x:Name="GeoFlagRU" Width="32" Height="26" Margin="0,0,10,0" />
-                  <TextBlock Text="Россия" FontSize="17" VerticalAlignment="Center" />
+                  <Image x:Name="GeoFlagRU" Width="28" Height="22" Margin="0,0,10,0" />
+                  <TextBlock Text="Россия" FontSize="15" VerticalAlignment="Center" />
                 </StackPanel>
-                <TextBlock x:Name="GeoCountRU" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
+                <TextBlock x:Name="GeoCountRU" Text="—" FontSize="26" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,4,0,0" />
                 <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
-              <TextBlock x:Name="GeoGeminiCountRU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
+              <TextBlock x:Name="GeoGeminiCountRU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,3,0,0" />
               </StackPanel>
             </Border>
           </UniformGrid>
@@ -498,6 +560,9 @@
             </DataGrid.Columns>
           </DataGrid>
           <TextBlock Text="Gemini: HTTPS страницы и API; ответ модели после входа проверяется отдельно. Зелёный — HTTPS отвечает · жёлтый — есть только TCP · красный — нет ответа. График: последние 24 реальные проверки; высота зелёного столбца — задержка до 2 секунд." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,10,0,0" />
+              <Expander Header="Источники и время обновления" Foreground="#8FA6BD" FontSize="11" Margin="0,10,0,0">
+                <TextBlock x:Name="GeoSourceStatus" Text="Официальные списки GeoHide; обновление раз в час" TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,8,0,0"/>
+              </Expander>
           <Expander Header="Адреса US + EU · автоматический и ручной выбор" Foreground="#A4B7CE" Margin="0,20,0,0">
           <Border Background="#142131" BorderBrush="#345865" BorderThickness="1" CornerRadius="20" Padding="22" Margin="0,0,0,16">
             <StackPanel>
@@ -600,11 +665,23 @@
       <TextBlock Grid.Row="4" Text="Настройки и диагностика локальны. Вход в аккаунт сохраняется." Foreground="#647F9D" FontSize="10" Margin="2,9,0,0" />
       <ScrollViewer x:Name="SettingsPage" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,12,20">
-          <TextBlock Text="Настройки GeoRoute" TextWrapping="Wrap" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20" />
-          <CheckBox x:Name="StartWithWindows" Content="Открывать GeoRoute в трее при входе в Windows" Margin="0,0,0,18" FontSize="11" ToolTip="Запускать менеджер в трее после входа в Windows" />
-          <CheckBox x:Name="ReducedMotion" Content="Без анимаций" Margin="0,0,0,18" AutomationProperties.Name="Уменьшить движение интерфейса" ToolTip="Также учитываются системные настройки анимаций Windows" />
-          <Button x:Name="OpenLogButton" Content="Папка журналов ↗" Style="{StaticResource QuietButton}" HorizontalContentAlignment="Left" Margin="0,0,0,18" />
-          <TextBlock Text="Закрытие окна сворачивает приложение в трей. Выход останавливает мониторинг; уже применённые адреса сохраняются в Windows." TextWrapping="Wrap" Foreground="#9CAEC4" Margin="0,0,0,20" />
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="95"/></Grid.ColumnDefinitions>
+              <StackPanel VerticalAlignment="Center"><TextBlock Text="GeoRoute под вас" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="Запуск, движение интерфейса и дополнительные возможности." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="13" Margin="0,9,16,0"/></StackPanel>
+              <Image x:Name="SettingsHeaderArt" Grid.Column="1" Width="82" Height="82" IsHitTestVisible="False"/>
+            </Grid>
+          </Border>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <StackPanel><TextBlock Text="Приложение" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <CheckBox x:Name="StartWithWindows" Style="{StaticResource SettingsToggle}" Content="Открывать GeoRoute в трее при входе в Windows" ToolTip="Запускать менеджер в трее после входа в Windows"/>
+              <CheckBox x:Name="ReducedMotion" Style="{StaticResource SettingsToggle}" Content="Уменьшить анимации" AutomationProperties.Name="Уменьшить движение интерфейса" ToolTip="Также учитываются системные настройки анимаций Windows"/>
+              <TextBlock Text="Закрытие окна сворачивает GeoRoute в трей. Полный выход останавливает мониторинг, а применённые адреса сохраняются в Windows." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="2,13,2,0"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <StackPanel><TextBlock Text="Журналы и поддержка" FontSize="18" FontWeight="SemiBold"/><TextBlock Text="История действий помогает понять, что произошло с подключением." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="0,7,0,12"/><Button x:Name="OpenLogButton" Content="Открыть папку журналов ↗" Style="{StaticResource ActionButton}" HorizontalAlignment="Left"/></StackPanel>
+          </Border>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
           <Expander Header="Прокси, NextDNS и технические сведения" Foreground="#A4B7CE" Margin="0,10,0,20">
             <StackPanel Margin="0,14,0,0">
               <Button x:Name="HttpProxyButton" Content="US-прокси…" Style="{StaticResource QuietButton}" Margin="0,0,0,12" FontSize="12" ToolTip="Настройка настольного ChatGPT / Dot" />
@@ -615,11 +692,19 @@
               <TextBlock x:Name="LastReadText" Text="" Foreground="#667F9D" FontSize="11" HorizontalAlignment="Right" Margin="0,0,0,12" />
             </StackPanel>
           </Expander>
-          <Button x:Name="ExitManagerButton" Content="Выйти из GeoRoute" Style="{StaticResource QuietButton}" Margin="0,0,0,8" FontSize="11" ToolTip="Завершить менеджер. Настройки DNS и hosts сохранятся." />
+          </Border>
+          <Button x:Name="ExitManagerButton" Content="Выйти из GeoRoute" Style="{StaticResource QuietButton}" Foreground="#E8AEA8" HorizontalAlignment="Left" Margin="0,0,0,8" ToolTip="Завершить менеджер. Настройки DNS и hosts сохранятся."/>
         </StackPanel>
       </ScrollViewer>
       <Grid x:Name="JournalPage" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed">
-        <Border x:Name="JournalCard" Background="#101C2B" BorderBrush="#2A3F56" BorderThickness="1" CornerRadius="22">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Border Style="{StaticResource PageCard}" Margin="0,0,0,16" Padding="20,15">
+          <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="85"/></Grid.ColumnDefinitions>
+            <StackPanel VerticalAlignment="Center"><TextBlock Text="Что происходит с подключением" FontSize="22" FontWeight="SemiBold"/><TextBlock Text="Действия, проверки и ошибки — в одном месте. Используйте фильтр или поиск." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="12" Margin="0,8,16,0"/></StackPanel>
+            <Image x:Name="JournalHeaderArt" Grid.Column="1" Width="70" Height="70" IsHitTestVisible="False"/>
+          </Grid>
+        </Border>
+        <Border Grid.Row="1" x:Name="JournalCard" Background="#101C2B" BorderBrush="#2A3F56" BorderThickness="1" CornerRadius="22">
           <Grid>
             <Grid.RowDefinitions>
               <RowDefinition Height="49" />

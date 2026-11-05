@@ -15,8 +15,8 @@ using System.Security.Principal;
 [assembly: AssemblyTitle("GeoRoute")]
 [assembly: AssemblyDescription("GeoRoute — GeoHide profiles and monitoring")]
 [assembly: AssemblyProduct("GeoRoute")]
-[assembly: AssemblyVersion("0.3.2.0")]
-[assembly: AssemblyFileVersion("0.3.2.0")]
+[assembly: AssemblyVersion("0.4.0.0")]
+[assembly: AssemblyFileVersion("0.4.0.0")]
 
 namespace NextDNS.Desktop
 {

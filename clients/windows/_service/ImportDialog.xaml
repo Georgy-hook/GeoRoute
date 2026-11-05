@@ -2,20 +2,28 @@
         Title="Добавить профиль — GeoRoute" Width="640" Height="730" MinWidth="520" MinHeight="480" WindowStartupLocation="CenterOwner"
         Background="#0F1825" Foreground="#EEF4FC" FontFamily="Segoe UI" FontSize="14" ShowInTaskbar="False" UseLayoutRounding="True">
   <Window.Resources>
-    <Style TargetType="TextBox"><Setter Property="Background" Value="#18283B"/><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="BorderBrush" Value="#3D536C"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="11,8"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="CaretBrush" Value="#91F2D2"/></Style>
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="#172A3C"/><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="BorderBrush" Value="#3D536C"/><Setter Property="Padding" Value="12,8"/><Setter Property="Height" Value="44"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="CaretBrush" Value="#91F2D2"/>
+      <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox">
+        <Border x:Name="Field" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12"><ScrollViewer x:Name="PART_ContentHost"/></Border>
+        <ControlTemplate.Triggers><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="Field" Property="BorderBrush" Value="#91F2D2"/></Trigger></ControlTemplate.Triggers>
+      </ControlTemplate></Setter.Value></Setter>
+    </Style>
     <Style TargetType="ComboBoxItem"><Setter Property="Background" Value="#18283B"/><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="Padding" Value="10,8"/><Style.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#2E4B60"/></Trigger></Style.Triggers></Style>
     <Style TargetType="ComboBox"><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="Background" Value="#18283B"/><Setter Property="BorderBrush" Value="#3D536C"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox"><Grid>
-      <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="5"><Grid><ContentPresenter Content="{TemplateBinding SelectionBoxItem}" Margin="11,8,28,8" VerticalAlignment="Center"/><TextBlock Text="⌄" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#91F2D2"/></Grid></Border>
+      <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12"><Grid><ContentPresenter Content="{TemplateBinding SelectionBoxItem}" Margin="11,8,28,8" VerticalAlignment="Center"/><TextBlock Text="⌄" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#91F2D2"/></Grid></Border>
       <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"><ToggleButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></ToggleButton.Template></ToggleButton>
       <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False" PopupAnimation="None"><Border Background="#18283B" BorderBrush="#3D536C" BorderThickness="1" MinWidth="190" MaxHeight="250"><ScrollViewer><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer></Border></Popup>
     </Grid></ControlTemplate></Setter.Value></Setter></Style>
   </Window.Resources>
   <Grid Margin="26" Background="#0F1825">
     <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Border Background="#152B38" BorderBrush="#2B4557" BorderThickness="1" CornerRadius="18" Padding="10,6" Margin="0,0,0,8">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <StackPanel Orientation="Horizontal"><Image x:Name="DialogImportIcon" Width="52" Height="52" Margin="0,0,12,0"/><StackPanel VerticalAlignment="Center"><TextBlock Text="Добавить профиль" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="IP, страна и сервис — файл создадим сами" Foreground="#9CAEC4" FontSize="13" Margin="0,6,0,0"/></StackPanel></StackPanel>
       <Button Grid.Column="1" x:Name="ImportHelpButton" Content="?" Width="38" Height="38" FontSize="20" VerticalAlignment="Center" ToolTip="Как добавить профиль" AutomationProperties.Name="Инструкция по добавлению профиля"/>
     </Grid>
+    </Border>
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
       <StackPanel Margin="0,0,10,10">
         <StackPanel Orientation="Horizontal" Margin="0,6,0,20">
