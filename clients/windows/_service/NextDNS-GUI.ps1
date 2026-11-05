@@ -39,6 +39,7 @@ $script:taskHealthAt = $null
 $script:taskAppLaunchTarget = ''
 $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'Connection.ps1')
+. (Join-Path $PSScriptRoot 'ProfileCreation.ps1')
 . (Join-Path $PSScriptRoot 'Tray.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
 
@@ -531,7 +532,7 @@ function Start-TaskAction([string]$Mode, [string]$ProfileId = '', [hashtable]$Im
         $taskLogPath = Join-Path $taskRunDirectory ($taskRunId + '.log')
         $taskRequestPath = Join-Path $taskRunDirectory ($taskRunId + '.request.json')
         $taskRequest = @{Mode=$Mode;ProfileId=$ProfileId;ResultPath=$taskResultPath;LogPath=$taskLogPath;ExpectedUserSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value}
-        if ($Mode -eq 'Import') { foreach ($taskKey in @('SourcePath','Name','CountryCode','Region')) { $taskRequest[$taskKey] = $ImportData[$taskKey] } }
+        if ($Mode -eq 'Import') { foreach ($taskKey in @('SourcePath','Name','CountryCode','Region','InputKind','Address','Service')) { $taskRequest[$taskKey] = $ImportData[$taskKey] } }
         $taskRequest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $taskRequestPath -Encoding UTF8
         $taskArguments = @('-NoLogo','-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + (Join-Path $script:taskRoot 'GuiWorker.ps1') + '"'),'-RequestPath',('"' + $taskRequestPath + '"'))
         $taskStart = @{FilePath=$script:taskShell;ArgumentList=$taskArguments;WindowStyle='Hidden';PassThru=$true;ErrorAction='Stop'}
@@ -742,12 +743,42 @@ function Show-TaskProfileHelp($Owner=$script:taskWindow) {
     [void]$help.ShowDialog()
 }
 
+function Set-TaskProfileInputMode {
+    $byIP=$script:taskImport.Ui.CreateByIP.IsChecked -eq $true
+    $script:taskImport.Ui.AddressPanel.Visibility=if($byIP){'Visible'}else{'Collapsed'}
+    $script:taskImport.Ui.FilePanel.Visibility=if($byIP){'Collapsed'}else{'Visible'}
+    $script:taskImport.Ui.ProfileNameLabel.Text=if($byIP){'Название · необязательно'}else{'Название профиля'}
+    $script:taskImport.Ui.ProfileNameHelp.Text=if($byIP){'Оставьте пустым — назовём по сервису и стране.'}else{'Укажите название, которое будет видно на карточке.'}
+    $script:taskImport.Ui.ImportErrorText.Text=''
+}
+function Get-TaskProfileInput {
+    $ui=$script:taskImport.Ui
+    $country=$ui.CountryBox.SelectedItem
+    if(-not $country){throw 'Выберите страну или регион.'}
+    $data=@{CountryCode=[string]$country.Tag;Region=[string]$country.Content;Name=$ui.ProfileNameBox.Text.Trim();SourcePath='';Address='';Service='ChatGPT';InputKind='File'}
+    if($ui.CreateByIP.IsChecked -eq $true){
+        if(-not $ui.ServerAddressBox.Text.Trim()){throw 'Введите IP-адрес сервера.'}
+        $data.Address=Convert-GeoProfileAddress $ui.ServerAddressBox.Text.Trim()
+        if(-not $ui.ServiceBox.SelectedItem){throw 'Выберите сервис: ChatGPT или Gemini.'}
+        $data.Service=[string]$ui.ServiceBox.SelectedItem.Tag
+        if($data.Service -notin @('ChatGPT','Gemini')){throw 'Выберите сервис: ChatGPT или Gemini.'}
+        $data.InputKind='Address'
+        if(-not $data.Name){$data.Name=$data.Service+' — '+$data.Region}
+    }else{
+        if(-not $script:taskImport.SourcePath){throw 'Сначала выберите файл .hosts.'}
+        if(-not $data.Name){throw 'Укажите понятное название профиля.'}
+        $data.SourcePath=$script:taskImport.SourcePath
+    }
+    return $data
+}
+
 function Show-TaskImportDialog {
     if ($script:taskBusy) { return }
     [xml]$taskDialogXaml = [IO.File]::ReadAllText((Join-Path $script:taskRoot 'ImportDialog.xaml'))
     $taskDialogReader = [Xml.XmlNodeReader]::new($taskDialogXaml)
     try { $taskDialog = [Windows.Markup.XamlReader]::Load($taskDialogReader) } finally { $taskDialogReader.Close() }
     $taskDialog.Owner = $script:taskWindow
+    $taskDialog.Height=[Math]::Min(730,[Windows.SystemParameters]::WorkArea.Height-32)
     Register-TaskDarkTitleBar $taskDialog
     Register-TaskDialogKeys $taskDialog
     $script:taskImport = @{Window=$taskDialog;Ui=@{};SourcePath='';Data=$null}
@@ -757,6 +788,8 @@ function Show-TaskImportDialog {
     }
     $script:taskImport.Ui.DialogImportIcon.Source = Get-TaskImage 'icon-import.png'
     foreach ($taskName in @('BrowseFileButton','ConfirmImportButton','CancelImportButton')) { $script:taskImport.Ui[$taskName].Style = $script:taskWindow.FindResource('ActionButton') }
+    foreach($name in @('CreateByIP','CreateFromFile')){$script:taskImport.Ui[$name].Style=$script:taskWindow.FindResource('GeoModeStyle');$script:taskImport.Ui[$name].Add_Checked({Set-TaskProfileInputMode})}
+    Set-TaskProfileInputMode
     $script:taskImport.Ui.CancelImportButton.IsCancel = $true
     $script:taskImport.Ui.ConfirmImportButton.Background = Get-TaskBrush '#91F2D2'
     $script:taskImport.Ui.ConfirmImportButton.Foreground = Get-TaskBrush '#0C2823'
@@ -786,17 +819,13 @@ function Show-TaskImportDialog {
     })
     $script:taskImport.Ui.CancelImportButton.Add_Click({ $script:taskImport.Window.DialogResult = $false })
     $script:taskImport.Ui.ConfirmImportButton.Add_Click({
-        if (-not $script:taskImport.SourcePath) { $script:taskImport.Ui.ImportErrorText.Text = 'Сначала выберите файл .hosts.'; return }
-        $taskName = $script:taskImport.Ui.ProfileNameBox.Text.Trim()
-        if (-not $taskName) { $script:taskImport.Ui.ImportErrorText.Text = 'Укажите понятное название профиля.'; $script:taskImport.Ui.ProfileNameBox.Focus() | Out-Null; return }
-        $taskCountry = $script:taskImport.Ui.CountryBox.SelectedItem
-        $script:taskImport.Data = @{SourcePath=$script:taskImport.SourcePath;Name=$taskName;CountryCode=[string]$taskCountry.Tag;Region=[string]$taskCountry.Content}
-        $script:taskImport.Window.DialogResult = $true
+        try{$script:taskImport.Data=Get-TaskProfileInput;$script:taskImport.Window.DialogResult=$true}
+        catch{$script:taskImport.Ui.ImportErrorText.Text=$_.Exception.Message}
     })
     if (-not $script:taskReducedMotion) { $taskDialog.Content.Opacity = 0 }
     $taskDialog.Content.RenderTransform = [Windows.Media.TranslateTransform]::new()
     $taskDialog.Add_ContentRendered({
-        $script:taskImport.Ui.BrowseFileButton.Focus() | Out-Null
+        $script:taskImport.Ui.ServerAddressBox.Focus() | Out-Null
         $script:taskImport.Window.Content.Opacity = 1
         if (-not $script:taskReducedMotion) {
             $taskDialogBody = $script:taskImport.Window.Content
@@ -888,13 +917,14 @@ public static class NextDnsWindowChrome {
         [xml]$taskImportXaml = [IO.File]::ReadAllText((Join-Path $script:taskRoot 'ImportDialog.xaml'))
         $taskImportReader = [Xml.XmlNodeReader]::new($taskImportXaml)
         try { $taskImportWindow = [Windows.Markup.XamlReader]::Load($taskImportReader) } finally { $taskImportReader.Close() }
+        foreach($name in @('CreateByIP','CreateFromFile')){$taskImportWindow.FindName($name).Style=$script:taskWindow.FindResource('GeoModeStyle')}
         $taskImportWindow.FindName('DialogImportIcon').Source = Get-TaskImage 'icon-import.png'
         foreach ($taskName in @('BrowseFileButton','ConfirmImportButton','CancelImportButton')) { $taskImportWindow.FindName($taskName).Style = $script:taskWindow.FindResource('ActionButton') }
         $taskImportWindow.FindName('ImportHelpButton').Style=$script:taskWindow.FindResource('QuietButton')
         $taskImportWindow.FindName('ConfirmImportButton').Background = Get-TaskBrush '#91F2D2'
         $taskImportWindow.FindName('ConfirmImportButton').Foreground = Get-TaskBrush '#0C2823'
-        $taskImportWindow.Content.Measure([Windows.Size]::new(610,520))
-        $taskImportWindow.Content.Arrange([Windows.Rect]::new(0,0,610,520))
+        $taskImportWindow.Content.Measure([Windows.Size]::new(640,660))
+        $taskImportWindow.Content.Arrange([Windows.Rect]::new(0,0,640,660))
         $taskImportWindow.Content.UpdateLayout()
         if ($RenderPreview) {
             Export-TaskPreview $PreviewPath
@@ -921,7 +951,7 @@ public static class NextDnsWindowChrome {
             Update-GeoEditorState -Force
             Set-TaskPage 'Overview'
             $taskImportPreviewPath = if ($PreviewPath) { [IO.Path]::Combine([IO.Path]::GetDirectoryName($PreviewPath),([IO.Path]::GetFileNameWithoutExtension($PreviewPath) + '-import.png')) } else { Join-Path $script:taskRoot 'GUI-preview-import.png' }
-            $taskImportBitmap = [Windows.Media.Imaging.RenderTargetBitmap]::new(610,520,96,96,[Windows.Media.PixelFormats]::Pbgra32)
+            $taskImportBitmap = [Windows.Media.Imaging.RenderTargetBitmap]::new(640,660,96,96,[Windows.Media.PixelFormats]::Pbgra32)
             $taskImportBitmap.Render($taskImportWindow.Content)
             $taskImportEncoder = [Windows.Media.Imaging.PngBitmapEncoder]::new()
             $taskImportEncoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($taskImportBitmap))
