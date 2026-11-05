@@ -29,8 +29,13 @@ try {
  & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source 'Build-Launcher.ps1') -NoLegacyAlias -OutputDirectory $package
  if($LASTEXITCODE -ne 0){throw 'Launcher build failed.'}
  $smoke=Start-Process -FilePath (Join-Path $package 'GeoRoute.exe') -ArgumentList '-SmokeTest' -WindowStyle Hidden -PassThru
- if(-not $smoke.WaitForExit(30000)){$smoke.Kill();throw 'Compiled launcher smoke test timed out.'}
- if($smoke.ExitCode -ne 0){throw 'Compiled launcher smoke test failed.'}
+ if(-not $smoke.WaitForExit(30000)){$smoke.Kill();$null=$smoke.WaitForExit(5000);throw 'Compiled launcher smoke test timed out.'}
+ if($smoke.ExitCode -ne 0){
+  foreach($log in @('launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Get-Content -LiteralPath (Join-Path $service $log) -Tail 12 | Write-Output}}
+  throw 'Compiled launcher smoke test failed.'
+ }
+ # Only this clean staging copy was tested; diagnostics are not distribution files.
+ foreach($log in @('launcher.log','launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Remove-Item -LiteralPath (Join-Path $service $log) -Force}}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
