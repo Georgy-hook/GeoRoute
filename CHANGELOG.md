@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 — 2026-11-05
+
+- Use four new Image Gen transparent navigation icons for Connect, Monitoring, Journal and Settings, keeping full-resolution lossless PNG sources.
+- Redesign Monitoring with a generated server-orbit spot image, compact region cards and quieter metadata. Keep live progress and per-server loading behavior.
+- Group Settings into rounded cards with keyboard-accessible toggles; add an illustrated Journal header and rounded profile-form fields.
+- Add a short page fade that respects reduced-motion preferences and expand WPF previews to cover the new screens.
+- Preserve original generated artwork and design prompts in the repository; keep the generated UI mockup separate from actual runtime controls.
+
 ## 0.3.2 — 2026-11-05
 
 - Create a custom profile directly from a public IP, country and service (ChatGPT or Gemini); no user-authored hosts file required.

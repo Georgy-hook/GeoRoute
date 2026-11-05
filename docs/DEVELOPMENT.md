@@ -4,10 +4,10 @@ Windows client source: `clients/windows/_service`. PowerShell scripts require Wi
 
 ```powershell
 .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
-.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.3.2
+.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.4.0
 ```
 
-The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.3.2.zip` and its SHA-256. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
+The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.4.0.zip` and its SHA-256. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
 
 `GeoAvailability.ps1` owns regional eligibility, profile requirements and provider-list replacement. `GeoHide.ps1` writes prepared profiles; `Profiles.ps1` is the existing elevated hosts apply/restore boundary. `Home.ps1` distinguishes off/checking/ready/unavailable using actual managed hosts plus current probe evidence. Ordinary hosts mode does not require wildcard NextDNS rewrite checks. The optional bridge retains its separate diagnostics.
 

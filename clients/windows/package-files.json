@@ -67,5 +67,10 @@
   "profiles/gemini-us.hosts",
   "profiles/gemini-eu.hosts",
   "ProfileHelp.xaml",
-  "ProfileCreation.ps1"
+  "ProfileCreation.ps1",
+  "assets/ui/nav-connect-v1.png",
+  "assets/ui/nav-monitor-v1.png",
+  "assets/ui/nav-journal-v1.png",
+  "assets/ui/nav-settings-v1.png",
+  "assets/ui/network-orbit-v1.png"
 ]

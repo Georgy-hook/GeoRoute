@@ -273,6 +273,7 @@ function Set-TaskPage([string]$Page) {
     $script:taskUi.PageTitle.Text=$titles[$Page];$script:taskUi.PageSubtitle.Text=$subtitles[$Page]
     $nav=@{HomeNavButton='Home';OverviewNavButton='Overview';ServersNavButton='Servers';MonitorNavButton='Geo';JournalNavButton='Journal';SettingsNavButton='Settings'}
     foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name];$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
+    if(-not $script:taskReducedMotion -and -not $SmokeTest -and -not $RenderPreview){$fade=[Windows.Media.Animation.DoubleAnimation]::new(0.88,1,[Windows.Duration]::new([timespan]::FromMilliseconds(160)));$script:taskUi[$pages[$Page]].BeginAnimation([Windows.UIElement]::OpacityProperty,$fade)}
     if($Page -eq 'Home'){Update-GeoHome -Force}
 }
 
@@ -871,11 +872,12 @@ public static class NextDnsWindowChrome {
     foreach ($taskAsset in @{AppIcon='app-icon.png';ImportIcon='icon-import.png';CheckIcon='icon-cache.png';CacheIcon='icon-check.png';PowerIcon='icon-power.png';LogIcon='icon-log.png';GlobeIcon='icon-globe.png'}.GetEnumerator()) {
         $script:taskUi[$taskAsset.Key].Source = Get-TaskImage $taskAsset.Value
     }
-    foreach($taskNavAsset in @{Overview='icon-overview.png';Servers='icon-servers.png'}.GetEnumerator()) {
+    foreach($taskNavAsset in @{Overview='icon-overview.png';Servers='icon-servers.png';Home='nav-connect-v1.png';Monitor='nav-monitor-v1.png';Journal='nav-journal-v1.png';Settings='nav-settings-v1.png'}.GetEnumerator()) {
         $taskNavImage = $script:taskUi[($taskNavAsset.Key + 'NavIcon')]
         $taskNavImage.Source = Get-TaskImage $taskNavAsset.Value
         if($taskNavImage.Source) { $script:taskUi[($taskNavAsset.Key + 'NavFallback')].Visibility='Collapsed' }
     }
+    foreach($asset in @{GeoHeaderArt='network-orbit-v1.png';JournalHeaderArt='nav-journal-v1.png';SettingsHeaderArt='nav-settings-v1.png'}.GetEnumerator()){$script:taskUi[$asset.Key].Source=Get-TaskImage $asset.Value}
     $taskWindowIcon = Get-TaskImage 'app.ico'
     if ($taskWindowIcon) { $script:taskWindow.Icon = $taskWindowIcon }
     $taskArt = Join-Path $script:taskRoot 'assets\app-icon.png'
@@ -931,6 +933,7 @@ public static class NextDnsWindowChrome {
             $taskServerPreviewPath = if ($PreviewPath) { [IO.Path]::Combine([IO.Path]::GetDirectoryName($PreviewPath),([IO.Path]::GetFileNameWithoutExtension($PreviewPath) + '-servers.png')) } else { Join-Path $script:taskRoot 'GUI-preview-servers.png' }
             Set-TaskPage 'Servers'
             Export-TaskPreview $taskServerPreviewPath
+            foreach($previewPage in @('Journal','Settings')){Set-TaskPage $previewPage;Export-TaskPreview ($taskServerPreviewPath.Replace('-servers.png',('-'+$previewPage.ToLowerInvariant()+'.png')))}
             Set-TaskPage 'Geo'
             $geoPreviewPath = [IO.Path]::Combine([IO.Path]::GetDirectoryName($taskServerPreviewPath),([IO.Path]::GetFileNameWithoutExtension($taskServerPreviewPath) + '-geohide.png'))
             Export-TaskPreview $geoPreviewPath
@@ -959,6 +962,7 @@ public static class NextDnsWindowChrome {
             try { $taskImportEncoder.Save($taskImportStream) } finally { $taskImportStream.Dispose() }
             Write-Output ('Import preview saved: ' + $taskImportPreviewPath)
         }
+        foreach($checkPage in @('Journal','Settings')){Set-TaskPage $checkPage;$script:taskWindow.Content.UpdateLayout()}
         $help=New-TaskProfileHelp $script:taskWindow
         $help.Content.Measure([Windows.Size]::new(630,690))
         $help.Content.Arrange([Windows.Rect]::new(0,0,630,690))
