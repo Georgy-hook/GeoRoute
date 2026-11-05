@@ -198,6 +198,18 @@ def main():
     save('completed.json', {'at': datetime.now(timezone.utc).isoformat(), 'pending': list(pending)})
     if pending or any(r['state'] not in ('existing-report', 'completed') for r in results):
         raise RuntimeError('Some VirusTotal results are incomplete; inspect retained evidence, do not claim clean')
+    lines = ['# VirusTotal release audit', '', 'Collection completed. Findings require review; this is not a safety certificate.', '', '| File | Malicious | Suspicious | Engines | Report |', '|---|---:|---:|---:|---|']
+    for item in results:
+        report = item['report']['data']
+        stats = report['last_analysis_stats']
+        engines = report['coverage']['engines']
+        lines.append(f"| `{item['name']}` | {stats['malicious']} | {stats['suspicious']} | {engines} | [VirusTotal]({item['report_url']}) |")
+        if stats['malicious'] or stats['suspicious']:
+            print(f"::warning title=VirusTotal findings::{item['name']}: {stats['malicious']} malicious, {stats['suspicious']} suspicious out of {engines} engines. Review the full report.")
+    (OUT / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
+    if os.environ.get('GITHUB_STEP_SUMMARY'):
+        with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as stream:
+            stream.write('\n'.join(lines) + '\n')
     print('All requested report objects recovered. Review their findings before publishing a verdict.')
 
 

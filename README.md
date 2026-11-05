@@ -4,6 +4,8 @@
 
 **[Скачать GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)** · [Установка по шагам](docs/INSTALL.ru.md) · [English](README.en.md)
 
+> **VirusTotal, релиз 0.4.0:** есть срабатывания. ZIP и `GeoRoute.exe` — **2/71**, `NextDNSBridge.exe` — **3/71**, встроенный Python — **0/71**. Срабатывания пока не подтверждены как ложные. [Полные отчёты, даты и SHA-256](docs/security/virustotal-v0.4.0.md).
+
 ![Главный экран GeoRoute](docs/images/home.png)
 
 ## Начать пользоваться
