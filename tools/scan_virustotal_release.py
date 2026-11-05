@@ -126,7 +126,12 @@ def main():
         raise RuntimeError('Release differs from the locally verified 0.4.0 digest; do not scan replacement bytes')
     with zipfile.ZipFile(io.BytesIO(archive)) as package:
         save('zip-members.json', package.namelist())
-        selected = [(filename, archive)] + [(path, package.read('GeoRoute/' + path)) for path in
+        # .NET Framework can write Windows separators into ZIP entry names.
+        # Match names without changing or repacking any of the inspected bytes.
+        members = {info.filename.replace('\\', '/'): info for info in package.infolist()}
+        if len(members) != len(package.infolist()):
+            raise RuntimeError('Ambiguous normalized ZIP entries')
+        selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in
                     ('GeoRoute.exe', '_service/bridge/NextDNSBridge.exe', '_service/bridge/python/python.exe')]
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
