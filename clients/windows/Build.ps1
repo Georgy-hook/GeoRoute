@@ -28,8 +28,9 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Python runtime packaging failed.'}
  & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $source 'Build-Launcher.ps1') -NoLegacyAlias -OutputDirectory $package
  if($LASTEXITCODE -ne 0){throw 'Launcher build failed.'}
- & (Join-Path $package 'GeoRoute.exe') -SmokeTest
- if($LASTEXITCODE -ne 0){throw 'Compiled launcher smoke test failed.'}
+ $smoke=Start-Process -FilePath (Join-Path $package 'GeoRoute.exe') -ArgumentList '-SmokeTest' -WindowStyle Hidden -PassThru
+ if(-not $smoke.WaitForExit(30000)){$smoke.Kill();throw 'Compiled launcher smoke test timed out.'}
+ if($smoke.ExitCode -ne 0){throw 'Compiled launcher smoke test failed.'}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
