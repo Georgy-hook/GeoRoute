@@ -133,8 +133,13 @@ def main():
             raise RuntimeError('Ambiguous normalized ZIP entries')
         bridge_path = ('_service/bridge/NextDNSBridge.exe' if 'GeoRoute/_service/bridge/NextDNSBridge.exe' in members
                        else '_service/bridge/bridge.py')
+        entry_path = 'GeoRoute.exe' if 'GeoRoute/GeoRoute.exe' in members else 'GeoRoute.cmd'
+        paths = [entry_path]
+        if 'GeoRoute/_service/AppInstance.ps1' in members:
+            paths += ['_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1']
+        paths += [bridge_path, '_service/bridge/python/python.exe']
         selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in
-                    ('GeoRoute.exe', bridge_path, '_service/bridge/python/python.exe')]
+                    paths]
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
                                   'files': [{'name': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}

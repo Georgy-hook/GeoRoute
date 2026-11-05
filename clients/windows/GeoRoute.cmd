@@ -1,5 +1,10 @@
 @echo off
 setlocal
+if not exist "%~dp0_service\NextDNS-GUI.ps1" (
+ echo GeoRoute: extract the entire ZIP before starting. The _service folder is missing.
+ pause
+ exit /b 1
+)
 set "GeoRouteMode="
 if "%~1"=="" goto launch
 if /i "%~1"=="-Tray" set "GeoRouteMode=-Tray"
