@@ -26,7 +26,7 @@ try{
     Assert (-not $saved.autoSelect -and $saved.us -eq '192.3.233.253') 'Manual US input persisted'
     Assert ($script:applyCalls.Count -eq 0) 'Save without connecting never applies'
     Assert ($script:taskUi.GeoUS.IsEnabled -and $script:taskUi.GeoEU.IsEnabled) 'Manual fields are editable'
-    $script:geoReport.rows=@([pscustomobject]@{Region='US';Address='192.255.159.240';EligibleUS=$true;SourceActive=$true;CheckedAt=(Get-Date).ToString('o')},[pscustomobject]@{Region='EU';Address='45.13.237.213';EligibleEU=$true;FilesTLS=$true;FilesHTTP=404;SourceActive=$true;CheckedAt=(Get-Date).ToString('o')})
+    $script:geoReport.rows=@([pscustomobject]@{Region='US';Address='192.255.159.240';EligibleUS=$true;SourceActive=$true;CheckedAt=(Get-Date).ToString('o')},[pscustomobject]@{Region='EU';Address='45.13.237.213';EligibleEU=$true;GeminiReady=$true;FilesTLS=$true;FilesHTTP=404;SourceActive=$true;CheckedAt=(Get-Date).ToString('o')})
     $script:taskUi.GeoUS.Text='192.255.159.240'
     Save-GeoEditor -Connect
     Assert ($script:applyCalls.Count -eq 1 -and $script:applyCalls[0].Mode -eq 'Apply') 'One manual connect uses existing elevated apply boundary'

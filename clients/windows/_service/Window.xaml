@@ -194,6 +194,7 @@
               <TextBlock Text="Серверы" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
+          <Button x:Name="MonitorNavButton" Style="{StaticResource NavButton}" Content="▥  Мониторинг" AutomationProperties.Name="Мониторинг серверов" />
           <Button x:Name="OverviewNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Обзор подключения">
             <StackPanel Orientation="Horizontal">
               <Grid Width="34" Height="34" Margin="-4,0,8,0">
@@ -356,58 +357,17 @@
           <Border Background="#142131" CornerRadius="20" Padding="22" Margin="0,0,0,16">
             <StackPanel>
               <TextBlock Text="GeoHide · RU / US / EU" FontSize="24" FontWeight="SemiBold" />
-              <TextBlock Text="Проверка напрямую через Ethernet. Зелёный TCP ещё не подтверждает работу ChatGPT или скачивание GIF." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,8,0,12" />
+              <TextBlock Text="Проверяем каждый сервер через физическое подключение. ChatGPT, Gemini и хранилище файлов проверяются отдельно." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,8,0,12" />
               <WrapPanel>
                 <Button x:Name="GeoCheck" Content="Проверить серверы" Style="{StaticResource ActionButton}" Margin="0,0,10,8" />
                 <Button x:Name="GeoRefresh" Content="Обновить адреса GeoHide" Style="{StaticResource ActionButton}" Margin="0,0,10,8" />
               </WrapPanel>
+              <StackPanel x:Name="GeoProgressPanel" Visibility="Collapsed" Margin="0,8,0,6" AutomationProperties.LiveSetting="Polite">
+                <ProgressBar x:Name="GeoProgress" IsIndeterminate="True" Height="5" Foreground="#91F2D2" Background="#253C51" BorderThickness="0" />
+                <TextBlock x:Name="GeoProgressText" Text="Начинаю проверку…" Foreground="#A4D5F2" Margin="0,8,0,0" TextWrapping="Wrap" />
+              </StackPanel>
               <TextBlock x:Name="GeoStatus" Text="Ожидание проверки" TextWrapping="Wrap" Foreground="#91F2D2" Margin="0,8,0,8" />
               <TextBlock x:Name="GeoSourceStatus" Text="Списки: официальный репозиторий GeoHide; обновление раз в час" TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" />
-            </StackPanel>
-          </Border>
-          <Border Background="#142131" BorderBrush="#345865" BorderThickness="1" CornerRadius="20" Padding="22" Margin="0,0,0,16">
-            <StackPanel>
-              <TextBlock Text="Подключение ChatGPT + вложений" FontSize="21" FontWeight="SemiBold" />
-              <TextBlock Text="US — ChatGPT. EU — вложения. Выбор адресов и их подключение — два разных действия." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,6,0,10" />
-              <Border Background="#203145" CornerRadius="12" Padding="12" Margin="0,0,0,14">
-                <TextBlock x:Name="GeoEditorStatus" Text="Проверяю, применён ли профиль в Windows…" Foreground="#F6C56B" TextWrapping="Wrap" FontWeight="SemiBold" />
-              </Border>
-              <WrapPanel Margin="0,0,0,12">
-                <RadioButton x:Name="GeoAuto" Style="{StaticResource GeoModeStyle}" GroupName="GeoAddressMode" Content="Автоматически" Foreground="#EDF4FD" FontSize="15" Padding="8" Margin="0,0,22,0" />
-                <RadioButton x:Name="GeoManual" Style="{StaticResource GeoModeStyle}" GroupName="GeoAddressMode" Content="Вручную" Foreground="#EDF4FD" FontSize="15" Padding="8" />
-              </WrapPanel>
-              <TextBlock x:Name="GeoModeHelp" Text="Автовыбор сохраняет адреса в профиле. Чтобы изменить подключение, нажмите кнопку ниже и подтвердите запрос Windows." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,0,0,14" />
-              <UniformGrid Columns="2">
-                <StackPanel Margin="0,0,18,0">
-                  <TextBlock Text="ChatGPT · US" FontWeight="SemiBold" Margin="0,0,0,7" />
-                  <ComboBox x:Name="GeoUS" IsEditable="True" MinHeight="38" FontSize="16" HorizontalContentAlignment="Stretch" />
-                  <TextBlock x:Name="GeoUSHelp" Text="Выберите из списка или впишите свой IPv4" Foreground="#9CAEC4" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
-                </StackPanel>
-                <StackPanel>
-                  <TextBlock Text="Вложения · EU" FontWeight="SemiBold" Margin="0,0,0,7" />
-                  <ComboBox x:Name="GeoEU" IsEditable="True" MinHeight="38" FontSize="16" HorizontalContentAlignment="Stretch" />
-                  <TextBlock x:Name="GeoEUHelp" Text="Выберите из списка или впишите свой IPv4" Foreground="#9CAEC4" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
-                </StackPanel>
-              </UniformGrid>
-              <WrapPanel Margin="0,18,0,0">
-                <Button x:Name="GeoApply" Content="Подключить выбранные адреса" Style="{StaticResource ActionButton}" Background="#91F2D2" Foreground="#103129" Margin="0,0,10,8" />
-                <Button x:Name="GeoSave" Content="Сохранить без подключения" Style="{StaticResource QuietButton}" Margin="0,0,0,8" />
-              </WrapPanel>
-              <TextBlock Text="Кнопка подключения сохраняет выбранные адреса и запрашивает разрешение Windows на изменение hosts. Автовыбор и мониторинг сами подключение не переключают." Foreground="#9CAEC4" TextWrapping="Wrap" FontSize="11" />
-              <Expander Header="Добавить другой сервер в список мониторинга" Foreground="#A4B7CE" Margin="0,15,0,0">
-                <StackPanel Margin="0,10,0,0">
-                  <TextBlock Text="Это добавляет адрес для проверок. Чтобы подключить его, выберите режим «Вручную» и укажите этот IP в поле US или EU выше." Foreground="#9CAEC4" TextWrapping="Wrap" Margin="0,0,0,10" />
-                  <WrapPanel>
-                    <ComboBox x:Name="GeoRegion" Width="65">
-                      <ComboBoxItem Content="US" />
-                      <ComboBoxItem Content="EU" />
-                      <ComboBoxItem Content="RU" />
-                    </ComboBox>
-                    <TextBox x:Name="GeoAddress" Width="170" Margin="10,0" Tag="IPv4 для проверки" />
-                    <Button x:Name="GeoAdd" Content="Добавить и проверить" Style="{StaticResource ActionButton}" />
-                  </WrapPanel>
-                </StackPanel>
-              </Expander>
             </StackPanel>
           </Border>
           <UniformGrid Columns="3" Margin="0,0,0,12">
@@ -418,7 +378,8 @@
                   <TextBlock Text="США" FontSize="17" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="GeoCountUS" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
-                <TextBlock Text="узлов отвечают по HTTPS" Foreground="#9CAEC4" FontSize="11" />
+                <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
+              <TextBlock x:Name="GeoGeminiCountUS" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
               </StackPanel>
             </Border>
             <Border Background="#142131" CornerRadius="18" Padding="16" Margin="0,0,10,0">
@@ -428,7 +389,8 @@
                   <TextBlock Text="Европа" FontSize="17" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="GeoCountEU" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
-                <TextBlock Text="узлов отвечают по HTTPS" Foreground="#9CAEC4" FontSize="11" />
+                <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
+              <TextBlock x:Name="GeoGeminiCountEU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
               </StackPanel>
             </Border>
             <Border Background="#142131" CornerRadius="18" Padding="16" Margin="0,0,10,0">
@@ -438,7 +400,8 @@
                   <TextBlock Text="Россия" FontSize="17" VerticalAlignment="Center" />
                 </StackPanel>
                 <TextBlock x:Name="GeoCountRU" Text="—" FontSize="30" FontWeight="SemiBold" Foreground="#91F2D2" Margin="0,9,0,0" />
-                <TextBlock Text="узлов отвечают по HTTPS" Foreground="#9CAEC4" FontSize="11" />
+                <TextBlock Text="узлов отвечают ChatGPT" Foreground="#9CAEC4" FontSize="11" />
+              <TextBlock x:Name="GeoGeminiCountRU" Text="Gemini: нужна проверка" Foreground="#A4B7CE" FontSize="11" Margin="0,5,0,0" />
               </StackPanel>
             </Border>
           </UniformGrid>
@@ -476,12 +439,23 @@
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
               </DataGridTemplateColumn>
-              <DataGridTemplateColumn Header="Доступность" Width="150">
+              <DataGridTemplateColumn Header="ChatGPT" Width="150">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
                     <StackPanel VerticalAlignment="Center" ToolTip="{Binding Error}">
+                      <ProgressBar IsIndeterminate="True" Height="3" Width="106" HorizontalAlignment="Left" Foreground="#A4D5F2" Background="#253C51" BorderThickness="0" Margin="0,0,0,5" Visibility="{Binding LoadingVisibility}" AutomationProperties.Name="Сервер проверяется" />
                       <TextBlock Text="{Binding StatusLabel}" Foreground="{Binding StatusColor}" FontWeight="SemiBold" />
                       <TextBlock Text="{Binding State}" Foreground="#9CAEC4" FontSize="10" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                  </DataTemplate>
+                </DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
+              <DataGridTemplateColumn Header="Gemini" Width="140">
+                <DataGridTemplateColumn.CellTemplate>
+                  <DataTemplate>
+                    <StackPanel VerticalAlignment="Center" ToolTip="{Binding GeminiError}">
+                      <TextBlock Text="{Binding GeminiLabel}" Foreground="{Binding GeminiColor}" FontWeight="SemiBold" />
+                      <TextBlock Text="Страница + API TLS" Foreground="#9CAEC4" FontSize="10" />
                     </StackPanel>
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
@@ -523,7 +497,54 @@
               <DataGridTextColumn Header="Причина" Binding="{Binding Error}" Width="300" />
             </DataGrid.Columns>
           </DataGrid>
-          <TextBlock Text="Зелёный — HTTPS отвечает · жёлтый — есть только TCP · красный — нет ответа. График: последние 24 реальные проверки; высота зелёного столбца — задержка до 2 секунд." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,10,0,0" />
+          <TextBlock Text="Gemini: HTTPS страницы и API; ответ модели после входа проверяется отдельно. Зелёный — HTTPS отвечает · жёлтый — есть только TCP · красный — нет ответа. График: последние 24 реальные проверки; высота зелёного столбца — задержка до 2 секунд." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,10,0,0" />
+          <Expander Header="Адреса US + EU · автоматический и ручной выбор" Foreground="#A4B7CE" Margin="0,20,0,0">
+          <Border Background="#142131" BorderBrush="#345865" BorderThickness="1" CornerRadius="20" Padding="22" Margin="0,0,0,16">
+            <StackPanel>
+              <TextBlock Text="ChatGPT + Gemini + вложения" FontSize="21" FontWeight="SemiBold" />
+              <TextBlock Text="US — ChatGPT. EU — Gemini и вложения. Выбор адресов и их подключение — два разных действия." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,6,0,10" />
+              <Border Background="#203145" CornerRadius="12" Padding="12" Margin="0,0,0,14">
+                <TextBlock x:Name="GeoEditorStatus" Text="Проверяю, применён ли профиль в Windows…" Foreground="#F6C56B" TextWrapping="Wrap" FontWeight="SemiBold" />
+              </Border>
+              <WrapPanel Margin="0,0,0,12">
+                <RadioButton x:Name="GeoAuto" Style="{StaticResource GeoModeStyle}" GroupName="GeoAddressMode" Content="Автоматически" Foreground="#EDF4FD" FontSize="15" Padding="8" Margin="0,0,22,0" />
+                <RadioButton x:Name="GeoManual" Style="{StaticResource GeoModeStyle}" GroupName="GeoAddressMode" Content="Вручную" Foreground="#EDF4FD" FontSize="15" Padding="8" />
+              </WrapPanel>
+              <TextBlock x:Name="GeoModeHelp" Text="Автовыбор сохраняет адреса в профиле. Чтобы изменить подключение, нажмите кнопку ниже и подтвердите запрос Windows." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,0,0,14" />
+              <UniformGrid Columns="2">
+                <StackPanel Margin="0,0,18,0">
+                  <TextBlock Text="ChatGPT · US" FontWeight="SemiBold" Margin="0,0,0,7" />
+                  <ComboBox x:Name="GeoUS" IsEditable="True" MinHeight="38" FontSize="16" HorizontalContentAlignment="Stretch" />
+                  <TextBlock x:Name="GeoUSHelp" Text="Выберите из списка или впишите свой IPv4" Foreground="#9CAEC4" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
+                <StackPanel>
+                  <TextBlock Text="Gemini и вложения · EU" FontWeight="SemiBold" Margin="0,0,0,7" />
+                  <ComboBox x:Name="GeoEU" IsEditable="True" MinHeight="38" FontSize="16" HorizontalContentAlignment="Stretch" />
+                  <TextBlock x:Name="GeoEUHelp" Text="Выберите из списка или впишите свой IPv4" Foreground="#9CAEC4" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+                </StackPanel>
+              </UniformGrid>
+              <WrapPanel Margin="0,18,0,0">
+                <Button x:Name="GeoApply" Content="Подключить выбранные адреса" Style="{StaticResource ActionButton}" Background="#91F2D2" Foreground="#103129" Margin="0,0,10,8" />
+                <Button x:Name="GeoSave" Content="Сохранить без подключения" Style="{StaticResource QuietButton}" Margin="0,0,0,8" />
+              </WrapPanel>
+              <TextBlock Text="Кнопка подключения сохраняет выбранные адреса и запрашивает разрешение Windows на изменение hosts. Автовыбор и мониторинг сами подключение не переключают." Foreground="#9CAEC4" TextWrapping="Wrap" FontSize="11" />
+              <Expander Header="Добавить другой сервер в список мониторинга" Foreground="#A4B7CE" Margin="0,15,0,0">
+                <StackPanel Margin="0,10,0,0">
+                  <TextBlock Text="Это добавляет адрес для проверок. Чтобы подключить его, выберите режим «Вручную» и укажите этот IP в поле US или EU выше." Foreground="#9CAEC4" TextWrapping="Wrap" Margin="0,0,0,10" />
+                  <WrapPanel>
+                    <ComboBox x:Name="GeoRegion" Width="65">
+                      <ComboBoxItem Content="US" />
+                      <ComboBoxItem Content="EU" />
+                      <ComboBoxItem Content="RU" />
+                    </ComboBox>
+                    <TextBox x:Name="GeoAddress" Width="170" Margin="10,0" Tag="IPv4 для проверки" />
+                    <Button x:Name="GeoAdd" Content="Добавить и проверить" Style="{StaticResource ActionButton}" />
+                  </WrapPanel>
+                </StackPanel>
+              </Expander>
+            </StackPanel>
+          </Border>
+          </Expander>
         </StackPanel>
       </ScrollViewer>
       <Grid Grid.Row="1" x:Name="ServersPage" Visibility="Collapsed">
@@ -542,7 +563,7 @@
             <TextBlock x:Name="ProfileCountText" Text="Профили подключения" Foreground="#9DB3CD" FontSize="13" VerticalAlignment="Center" />
           </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal">
-            <Button x:Name="GeoNavButton" Content="Мониторинг и адреса" Style="{StaticResource ActionButton}" Margin="0,0,10,0" />
+            <Button x:Name="GeoNavButton" Content="Проверки и адреса" Style="{StaticResource ActionButton}" Margin="0,0,10,0" />
             <Button x:Name="ImportButton" Style="{StaticResource QuietButton}" HorizontalAlignment="Right" Padding="3,0,10,0" Margin="0" Grid.Column="0">
               <StackPanel Orientation="Horizontal">
                 <Image x:Name="ImportIcon" Width="44" Height="44" Margin="0,0,5,0" />

@@ -6,7 +6,7 @@ Assert (-not (Test-GeoAddress '127.0.0.1')) 'Loopback rejected'
 Assert (-not (Test-GeoAddress '192.168.1.1')) 'Private rejected'
 Assert (-not (Test-GeoAddress 'not-an-ip')) 'Invalid address rejected'
 $settings=[pscustomobject]@{us='192.255.159.241';eu='45.13.237.213';autoSelect=$true;manualServers=@()}
-$rows=@([pscustomobject]@{Region='US';Address='192.255.159.240';EligibleUS=$true;EligibleEU=$false},[pscustomobject]@{Region='EU';Address='45.13.237.213';EligibleUS=$false;EligibleEU=$true})
+$rows=@([pscustomobject]@{Region='US';Address='192.255.159.240';EligibleUS=$true;EligibleEU=$false},[pscustomobject]@{Region='EU';Address='45.13.237.213';EligibleUS=$false;EligibleEU=$true;GeminiReady=$true})
 $report=[pscustomobject]@{rows=$rows}
 $selected=Get-GeoSelection $settings $report
 Assert ($selected.ready -and $selected.us -eq '192.255.159.240') 'Dead US selection replaced'

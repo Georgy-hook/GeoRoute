@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 <#
-OpenAI hosts profile manager. Check/List are read-only; Import writes this package only.
+OpenAI and Gemini hosts profile manager. Check/List are read-only; Import writes this package only.
 Apply/Restore require elevation. Existing managed markers remain compatible.
 Never changes DNS servers, NextDNS, proxy enable/server, certificates, VPN or browser data.
 #>
@@ -19,6 +19,7 @@ param(
 Set-StrictMode -Version 2
 $ErrorActionPreference='Stop'
 $taskRoot=$PSScriptRoot
+. (Join-Path $taskRoot 'GeoServices.ps1')
 $taskCatalogPath=Join-Path $taskRoot 'profiles.json'
 $taskProfilesRoot=Join-Path $taskRoot 'profiles'
 $taskHostsPath=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
@@ -91,7 +92,7 @@ function Assert-Administrator {
 function Assert-Domain([string]$Domain) {
     if ($Domain.Length -gt 253 -or $Domain -cnotmatch '^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$') { throw ('Некорректное имя домена: '+$Domain) }
     if (@($Domain -split '\.' | Where-Object {$_.Length -gt 63}).Count) { throw ('Слишком длинная часть домена: '+$Domain) }
-    if ($Domain -notmatch '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$') { throw ('Профиль содержит посторонний домен: '+$Domain) }
+    if ($Domain -notmatch '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -and -not (Test-GeoGeminiDomain $Domain)) { throw ('Профиль содержит посторонний домен: '+$Domain) }
 }
 function Convert-Address([string]$Text) {
     $address=$null
@@ -131,7 +132,7 @@ function Get-MapSignature($Records) {
     return (@($Records | ForEach-Object {$_.Name+'='+$_.Address} | Sort-Object) -join "`n")
 }
 function New-ManagedBlock($Records,[string]$Id) {
-    $lines=@('# BEGIN CHATGPT-US-WINDOWS',('# Profile ID: '+$Id),'# Exact OpenAI host mappings. Transport checks do not verify attachment downloads.')
+    $lines=@('# BEGIN CHATGPT-US-WINDOWS',('# Profile ID: '+$Id),'# Exact OpenAI and Gemini host mappings. Transport checks do not verify attachment downloads.')
     $lines+=@($Records | ForEach-Object {$_.Address+' '+$_.Name})
     $lines+='# END CHATGPT-US-WINDOWS'
     return ($lines -join "`r`n")+"`r`n"
@@ -431,7 +432,7 @@ try {
                 $owned=@((@(Get-Value $state 'AddedProxyNames' @())+@($added)) | Select-Object -Unique)
                 $newState=[ordered]@{Version=2;Active=$true;ProfileId=$ProfileId;Variant=$(if($ProfileId -in @('primary','alternate')){(Get-Culture).TextInfo.ToTitleCase($ProfileId)}else{'Custom'});Address=$(if($source.Addresses.Count -eq 1){$source.Addresses[0]}else{$null});Addresses=@($source.Addresses);DomainCount=$source.Records.Count;AddedProxyNames=$owned;UpdatedAt=(Get-Date).ToString('o');UserSid=[Security.Principal.WindowsIdentity]::GetCurrent().User.Value}
                 Invoke-SettingsTransaction $before $after $proxyAfter $newState {Test-Settings $source} $oldProxy $taskStateReadSnapshot
-                $taskResult.Message='Профиль применён. Hosts и DNS проверены. Открытие вложения проверь в ChatGPT.'
+                $taskResult.Message='Профиль применён. Hosts и DNS проверены. Ответы ChatGPT / Gemini и открытие вложений проверяются в самом сервисе.'
             } elseif ($Mode -eq 'ClearCache') { Refresh-Cache; Test-Settings $source; $taskResult.Message='Кеш DNS обновлён. Активен профиль «'+$source.Entry.name+'».' }
             else { Test-Settings $source; $taskResult.Message='Активный профиль «'+$source.Entry.name+'»: hosts и DNS проверены.' }
         }

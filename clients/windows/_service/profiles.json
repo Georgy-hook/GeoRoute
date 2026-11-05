@@ -3,14 +3,14 @@
   "Profiles": [
     {
       "id": "us-eu",
-      "name": "US + EU — ChatGPT и вложения",
+      "name": "US + EU — ChatGPT + Gemini",
       "region": "США + Европейский союз",
       "countryCode": "EU",
       "hostsFile": "profiles/us-eu.hosts",
       "address": null,
-      "description": "GeoHide: US 192.255.159.240; все известные адреса oaiusercontent.com через EU 45.13.237.213. Меняется подготовленный профиль; примените его кнопкой. Скачивание конкретной GIF проверяется отдельно.",
+      "description": "Gemini и файлы через EU. GeoHide: US 192.255.159.240; все известные адреса oaiusercontent.com через EU 45.13.237.213. Меняется подготовленный профиль; примените его кнопкой. Скачивание конкретной GIF проверяется отдельно.",
       "verifiedAt": null,
-      "domainCount": 37
+      "domainCount": 46
     },
     {
       "id": "primary",
@@ -67,6 +67,30 @@
       "verifiedAt": null,
       "domainCount": 37,
       "managedRegion": "RU"
+    },
+    {
+      "id": "gemini-us",
+      "name": "Gemini — US",
+      "region": "US",
+      "countryCode": "US",
+      "hostsFile": "profiles/gemini-us.hosts",
+      "address": "192.255.159.240",
+      "description": "Только Gemini. HTTPS страницы и API проверяются отдельно от ChatGPT.",
+      "verifiedAt": null,
+      "domainCount": 9,
+      "managedRegion": "US"
+    },
+    {
+      "id": "gemini-eu",
+      "name": "Gemini — EU",
+      "region": "EU",
+      "countryCode": "EU",
+      "hostsFile": "profiles/gemini-eu.hosts",
+      "address": "45.13.237.213",
+      "description": "Только Gemini. HTTPS страницы и API проверяются отдельно от ChatGPT.",
+      "verifiedAt": null,
+      "domainCount": 9,
+      "managedRegion": "EU"
     }
   ]
 }

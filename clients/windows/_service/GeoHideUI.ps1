@@ -2,24 +2,45 @@
 . (Join-Path $PSScriptRoot 'GeoHideHistory.ps1')
 . (Join-Path $PSScriptRoot 'GeoProfileUI.ps1')
 . (Join-Path $PSScriptRoot 'Home.ps1')
+. (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
 $script:geoRegionFilter='ALL';$script:geoDisplayRows=@()
 $script:geoRun=$null;$script:geoAt=[datetime]::MinValue;$script:geoSourceAt=[datetime]::MinValue;$script:geoReport=$null;$script:geoStamp=''
+function Set-GeoMonitorBusy([bool]$Busy) {
+    foreach($name in @('GeoCheck','GeoRefresh','GeoAdd')){if($script:taskUi[$name]){$script:taskUi[$name].IsEnabled=-not $Busy}}
+    $script:taskUi.GeoCheck.Content=if($Busy){'Проверяю…'}else{'Проверить серверы'}
+    $script:taskUi.GeoProgressPanel.Visibility=if($Busy){'Visible'}else{'Collapsed'}
+}
 function Start-GeoMonitor([switch]$Refresh) {
     if($script:geoRun -or $SmokeTest -or $RenderPreview){return}
     $path=Join-Path $script:taskRoot 'geohide-monitor.json'
-    $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+(Join-Path $script:taskRoot 'GeoHideWorker.ps1')+'"'),'-ResultPath',('"'+$path+'"'))
-    if($Refresh){$args+='-RefreshSources';$script:geoSourceAt=Get-Date}
-    $process=Start-Process -FilePath $script:taskShell -ArgumentList $args -WindowStyle Hidden -PassThru
-    $script:geoRun=[pscustomobject]@{Process=$process;Path=$path;At=(Get-Date)}
-    $script:taskUi.GeoStatus.Text='Проверяю адреса напрямую через физический интерфейс…'
+    $runId=[guid]::NewGuid().ToString('N')
+    try{
+        Set-GeoMonitorBusy $true
+        $catalog=Get-Content -LiteralPath (Join-Path $script:taskRoot 'geohide-servers.json') -Raw -Encoding UTF8|ConvertFrom-Json
+        $settings=Read-GeoSettings $script:taskRoot
+        Update-GeoRows (New-GeoPendingReport (@($catalog.servers)+@($settings.manualServers)) $runId $(if($Refresh){'Обновляю списки GeoHide'}else{'Начинаю проверку'}))
+        $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+(Join-Path $script:taskRoot 'GeoHideWorker.ps1')+'"'),'-ResultPath',('"'+$path+'"'),'-RunId',$runId)
+        if($Refresh){$args+='-RefreshSources';$script:geoSourceAt=Get-Date}
+        $process=Start-Process -FilePath $script:taskShell -ArgumentList $args -WindowStyle Hidden -PassThru
+        $script:geoRun=[pscustomobject]@{Process=$process;Path=$path;At=(Get-Date);Id=$runId}
+        $script:geoStamp=''
+    }catch{
+        Stop-GeoReportLoading $script:geoReport
+        if($script:geoReport){Update-GeoHistory $script:geoReport}
+        Set-GeoMonitorBusy $false
+        $script:geoAt=Get-Date
+        $script:taskUi.GeoStatus.Text='Не удалось начать проверку: '+$_.Exception.Message
+    }
 }
 function Update-GeoRows($Report) {
-    if($Report.running -and $script:geoReport){
-        $keys=@($Report.rows|ForEach-Object {$_.Region+'-'+$_.Address})
-        $Report.rows=@($Report.rows)+@($script:geoReport.rows|Where-Object {($_.Region+'-'+$_.Address) -notin $keys})
-    }
     $script:geoReport=$Report
     Update-GeoHistory $Report
+    if($Report.running){
+        $script:taskUi.GeoProgress.IsIndeterminate=$Report.completed -eq 0
+        $script:taskUi.GeoProgress.Maximum=[Math]::Max(1,[int]$Report.total)
+        $script:taskUi.GeoProgress.Value=[int]$Report.completed
+        $script:taskUi.GeoProgressText.Text=$Report.phase+' · '+$Report.completed+' из '+$Report.total
+    }
     $us=@($Report.rows|Where-Object {$_.Region -eq 'US' -and $_.EligibleUS})
     $eu=@($Report.rows|Where-Object {$_.Region -eq 'EU' -and $_.EligibleEU})
     $draftUS=$script:taskUi.GeoUS.Text;$draftEU=$script:taskUi.GeoEU.Text
@@ -27,29 +48,45 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoEU.ItemsSource=@($Report.rows|Where-Object Region -eq 'EU'|ForEach-Object Address)
     $settings=Read-GeoSettings $script:taskRoot
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
-    $script:taskUi.GeoStatus.Text=('US готовы: '+$us.Count+' / '+@($Report.rows|Where-Object Region -eq 'US').Count+' · EU готовы: '+$eu.Count+' · '+$Report.interface+' · '+([datetime]$Report.at).ToString('HH:mm:ss')+$(if($Report.running){' · проверка продолжается'}else{' · авто: 2 мин'}))
+    $script:taskUi.GeoStatus.Text=('US готовы: '+$us.Count+' / '+@($Report.rows|Where-Object Region -eq 'US').Count+' · EU готовы: '+$eu.Count+' · '+$Report.interface+' · Gemini: '+@($Report.rows|Where-Object GeminiReady).Count+' маршрутов (CAPTCHA: '+@($Report.rows|Where-Object GeminiChallenge).Count+')'+' · '+([datetime]$Report.at).ToString('HH:mm:ss')+$(if($Report.running){' · проверка продолжается'}else{' · авто: 2 мин'}))
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}
     Update-GeoProfileCards
 
 }
+function Read-GeoRunSnapshot([switch]$Force) {
+    try{
+        if(Test-Path -LiteralPath $script:geoRun.Path){
+            $stamp=[IO.File]::GetLastWriteTimeUtc($script:geoRun.Path).ToString('o')
+            if($Force -or $stamp -ne $script:geoStamp){
+                $snapshot=Get-Content -LiteralPath $script:geoRun.Path -Raw -Encoding UTF8|ConvertFrom-Json
+                if($snapshot.runId -eq $script:geoRun.Id){$script:geoStamp=$stamp;Update-GeoRows $snapshot}
+            }
+        }
+    }catch{$script:taskUi.GeoStatus.Text='Не удалось прочитать результат. Проверка завершится или остановится по тайм-ауту: '+$_.Exception.Message}
+}
+function Complete-GeoMonitor {
+    Stop-GeoReportLoading $script:geoReport
+    try{if($script:geoReport){Update-GeoHistory $script:geoReport}}finally{
+        try{$script:geoRun.Process.Dispose()}catch{}
+        $script:geoRun=$null;$script:geoAt=Get-Date
+        Set-GeoMonitorBusy $false
+    }
+}
 function Poll-GeoMonitor {
     Update-GeoEditorState
     if($script:geoRun){
-        try{
-            if(Test-Path -LiteralPath $script:geoRun.Path){
-                $stamp=[IO.File]::GetLastWriteTimeUtc($script:geoRun.Path).ToString('o')
-                if($stamp -ne $script:geoStamp){$script:geoStamp=$stamp;Update-GeoRows (Get-Content -LiteralPath $script:geoRun.Path -Raw -Encoding UTF8|ConvertFrom-Json)}
-            }
-            if($script:geoRun.Process.HasExited){
-                if($script:geoRun.Process.ExitCode -ne 0){$script:taskUi.GeoStatus.Text='Ошибка диагностики. Предыдущие результаты сохранены; это не означает отказ всех серверов.'}
-                $script:geoRun.Process.Dispose();$script:geoRun=$null;$script:geoAt=Get-Date
-            }elseif(((Get-Date)-$script:geoRun.At).TotalSeconds -gt 240){
-                $script:geoRun.Process.Kill();$script:geoRun.Process.Dispose();$script:geoRun=$null;$script:geoAt=Get-Date
-                $script:taskUi.GeoStatus.Text='Общий тайм-аут проверки; показаны последние результаты.'
-            }
-        }catch{$script:taskUi.GeoStatus.Text='Ожидаю результат: '+$_.Exception.Message}
+        Read-GeoRunSnapshot
+        if($script:geoRun.Process.HasExited){
+            $exitCode=$script:geoRun.Process.ExitCode
+            Read-GeoRunSnapshot -Force
+            Complete-GeoMonitor
+            if($exitCode -ne 0){$script:taskUi.GeoStatus.Text='Ошибка диагностики. Незавершённые строки не считаются результатом; повторите проверку.'}
+        }elseif(((Get-Date)-$script:geoRun.At).TotalSeconds -gt 600){
+            try{$script:geoRun.Process.Kill()}finally{Complete-GeoMonitor}
+            $script:taskUi.GeoStatus.Text='Общий тайм-аут проверки. Незавершённые строки отмечены отдельно; можно повторить.'
+        }
     }elseif(((Get-Date)-$script:geoAt).TotalSeconds -ge 120){Start-GeoMonitor -Refresh:(((Get-Date)-$script:geoSourceAt).TotalMinutes -ge 60)}
 }
 function Initialize-GeoMonitor {
@@ -66,7 +103,9 @@ function Initialize-GeoMonitor {
     $script:taskUi.GeoManual.IsChecked=-not [bool]$settings.autoSelect
     $script:taskUi.GeoRegion.SelectedIndex=0
     $path=Join-Path $script:taskRoot 'geohide-monitor.json'
-    if(Test-Path -LiteralPath $path){try{Update-GeoRows (Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json)}catch{}}
+    if(Test-Path -LiteralPath $path){try{$previous=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json;Stop-GeoReportLoading $previous;Update-GeoRows $previous}catch{}}
+    Set-GeoMonitorBusy $false
+    $script:taskUi.MonitorNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoRefresh.Add_Click({Start-GeoMonitor -Refresh})
     $script:taskUi.GeoCheck.Add_Click({Start-GeoMonitor})
@@ -100,6 +139,8 @@ function Initialize-GeoMonitor {
 }
 
 function Stop-GeoMonitor {
+    Stop-GeoReportLoading $script:geoReport
+    Set-GeoMonitorBusy $false
     if($script:geoRun){
         try{if(-not $script:geoRun.Process.HasExited){$script:geoRun.Process.Kill()};$script:geoRun.Process.Dispose()}catch{}
         $script:geoRun=$null
@@ -142,7 +183,7 @@ function Update-GeoEditorState([switch]$Force) {
         $manual=($script:taskUi.GeoManual.IsChecked -eq $true)
         $script:taskUi.GeoUS.IsEnabled=$manual -and -not $script:taskBusy
         $script:taskUi.GeoEU.IsEnabled=$manual -and -not $script:taskBusy
-        $script:taskUi.GeoModeHelp.Text=if($manual){'1. Выберите или впишите адрес US для ChatGPT и адрес EU для вложений.  2. Нажмите «Сохранить и подключить».  3. Подтвердите запрос Windows.'}else{'Программа сама подбирает доступные адреса и сохраняет их в профиле. Чтобы использовать эту пару в Windows, нажмите «Подключить выбранные адреса» и подтвердите запрос Windows.'}
+        $script:taskUi.GeoModeHelp.Text=if($manual){'1. Выберите или впишите адрес US для ChatGPT и адрес EU для Gemini и вложений.  2. Нажмите «Сохранить и подключить».  3. Подтвердите запрос Windows.'}else{'Программа сама подбирает доступные адреса и сохраняет их в профиле. Чтобы использовать эту пару в Windows, нажмите «Подключить выбранные адреса» и подтвердите запрос Windows.'}
         $script:taskUi.GeoApply.Content=if($manual){'Сохранить и подключить'}else{'Подключить выбранные адреса'}
         $availability=Get-GeoPairAvailability $script:taskUi.GeoUS.Text.Trim() $script:taskUi.GeoEU.Text.Trim() $script:geoReport
         $script:taskUi.GeoApply.IsEnabled=(-not $script:taskBusy -and $availability.Ready)

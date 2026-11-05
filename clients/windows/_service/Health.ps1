@@ -13,6 +13,7 @@ Set-StrictMode -Version 2
 $ErrorActionPreference='Stop'
 $taskRoot=[IO.Path]::GetFullPath($PSScriptRoot)
 . (Join-Path $PSScriptRoot 'HttpProxy.ps1')
+. (Join-Path $PSScriptRoot 'GeoServices.ps1')
 $taskRunRoot=Join-Path $taskRoot 'run-results'
 $taskUtf8=New-Object Text.UTF8Encoding($false)
 $taskRunRootUnsafe=$false
@@ -50,13 +51,13 @@ function Get-Map([string]$Text) {
         $clean=($line -split '#',2)[0].Trim()
         if (-not $clean) {continue}
         $parts=@($clean -split '\s+')
-        if ($parts.Count -ge 2) {foreach($domain in ($parts|Select-Object -Skip 1)){if($domain -match '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$'){($parts[0].ToLowerInvariant()+' '+$domain.ToLowerInvariant())}}}
+        if ($parts.Count -ge 2) {foreach($domain in ($parts|Select-Object -Skip 1)){if($domain -match '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -or (Test-GeoGeminiDomain $domain)){($parts[0].ToLowerInvariant()+' '+$domain.ToLowerInvariant())}}}
     })
     return ,@($records | Sort-Object -Unique)
 }
 function Get-CacheDetails {
     $details=[ordered]@{windowsDnsRelatedEntries=$null;profileDomainCount=0;activeProfileId=$null;activeProfileName=$null;lastClearedAt=$null;folders=@();cacheProfileRoot=$null;profileEvidence=$null;detail='Размеры кешей получены только из метаданных; очистка по кнопке относится к DNS.'}
-    try {$details.windowsDnsRelatedEntries=@(Get-DnsClientCache -ErrorAction Stop|Where-Object {$_.Entry -match '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$'}).Count} catch {$details.detail='Не удалось прочитать DNS-кеш Windows.'}
+    try {$details.windowsDnsRelatedEntries=@(Get-DnsClientCache -ErrorAction Stop|Where-Object {$_.Entry -match '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -or (Test-GeoGeminiDomain ([string]$_.Entry))}).Count} catch {$details.detail='Не удалось прочитать DNS-кеш Windows.'}
     try {
         $hosts=[IO.File]::ReadAllText((Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'))
         $block=[regex]::Match($hosts,'(?ms)^# BEGIN CHATGPT-US-WINDOWS\r?\n.*?^# END CHATGPT-US-WINDOWS(?:\r?\n|$)')

@@ -27,6 +27,69 @@
       "addresses": [
         "192.255.159.240"
       ]
+    },
+    {
+      "domain": "gemini.google.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "gemini.google",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "bard.google.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "geminiweb-pa.clients.google.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "geminiweb-pa.clients6.google.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "generativelanguage.googleapis.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "geller-pa.googleapis.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "proactivebackend-pa.googleapis.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
+    },
+    {
+      "domain": "robinfrontend-pa.googleapis.com",
+      "label": "Gemini",
+      "addresses": [
+        "45.13.237.213"
+      ]
     }
   ]
 }
