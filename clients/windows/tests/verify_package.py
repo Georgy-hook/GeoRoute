@@ -12,7 +12,7 @@ def check(path):
         assert archive.testzip() is None
         names = archive.namelist()
         assert len(names) == len(set(names))
-        required = ['GeoRoute/GeoRoute.exe',
+        required = ['GeoRoute/GeoRoute.cmd', 'GeoRoute/_service/AppInstance.ps1',
                     'GeoRoute/_service/bridge/bridge.py',
                     'GeoRoute/_service/bridge/python/python.exe',
                     'GeoRoute/_service/bridge/python/LICENSE.txt',
@@ -21,6 +21,7 @@ def check(path):
                     'GeoRoute/_service/profiles/gemini-eu.hosts', 'GeoRoute/_service/profiles/gemini-us.hosts']
         assert all(name in names for name in required)
         assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
+        assert 'GeoRoute/GeoRoute.exe' not in names
         for name in names:
             parts = PurePosixPath(name).parts
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name

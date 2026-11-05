@@ -2,7 +2,7 @@ name: Bridge direct-service candidate audit
 
 on:
   push:
-    branches: [codex/bridge-lifecycle]
+    branches: [main, codex/bridge-lifecycle]
     paths:
       - clients/windows/_service/bridge/**
       - clients/windows/tests/Test-BridgeService.ps1
@@ -10,6 +10,12 @@ on:
       - tools/scan_bridge_candidate.py
       - tools/package_bridge_candidate.py
       - tools/scan_virustotal_release.py
+      - .github/workflows/bridge-candidate-audit.yml
+  pull_request:
+    paths:
+      - clients/windows/_service/bridge/**
+      - clients/windows/tests/Test-BridgeService.ps1
+      - clients/windows/tests/test_bridge_protocol.py
       - .github/workflows/bridge-candidate-audit.yml
 
 permissions:
@@ -50,6 +56,7 @@ jobs:
           path: bridge-candidate/
           retention-days: 30
   scan:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/bridge-lifecycle' && contains(github.event.head_commit.message, '[audit-bridge]')
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 20

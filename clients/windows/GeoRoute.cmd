@@ -1,0 +1,14 @@
+@echo off
+setlocal
+set "GeoRouteMode="
+if "%~1"=="" goto launch
+if /i "%~1"=="-Tray" set "GeoRouteMode=-Tray"
+if /i "%~1"=="-Repair" set "GeoRouteMode=-Repair"
+if /i "%~1"=="-SmokeTest" goto smoke
+if not defined GeoRouteMode exit /b 2
+:launch
+start "" "%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -STA -WindowStyle Hidden -ExecutionPolicy Bypass -File "%~dp0_service\NextDNS-GUI.ps1" %GeoRouteMode%
+exit /b
+:smoke
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "%~dp0_service\NextDNS-GUI.ps1" -SmokeTest
+exit /b %errorlevel%

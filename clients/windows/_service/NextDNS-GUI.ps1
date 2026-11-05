@@ -16,9 +16,16 @@ if(-not('GeoRouteDpi' -as [type])){
  Add-Type -TypeDefinition 'using System; using System.Runtime.InteropServices; public static class GeoRouteDpi { [DllImport("user32.dll")] private static extern IntPtr SetThreadDpiAwarenessContext(IntPtr value); public static void Enable(){try{SetThreadDpiAwarenessContext(new IntPtr(-4));}catch(EntryPointNotFoundException){}} }'
 }
 [GeoRouteDpi]::Enable()
-$script:taskActivationEvent=if($ActivationEvent){[Threading.EventWaitHandle]::OpenExisting($ActivationEvent)}else{$null}
-if($Repair){ & (Join-Path $PSScriptRoot 'RepairCenter.ps1') -SmokeTest:$SmokeTest; return }
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $script:taskRoot 'AppInstance.ps1')
+$script:taskInstance=$null
+$script:taskActivationEvent=$null
+if(-not $SmokeTest -and -not $RenderPreview){
+ $script:taskInstance=New-GeoRouteInstance -Root $script:taskRoot -Repair:$Repair -Background:$Tray -ActivationName $ActivationEvent
+ if(-not $script:taskInstance.IsOwner){return}
+ $script:taskActivationEvent=$script:taskInstance.Event
+}
+if($Repair){try{ & (Join-Path $PSScriptRoot 'RepairCenter.ps1') -SmokeTest:$SmokeTest }finally{Close-GeoRouteInstance $script:taskInstance};return}
 $script:taskShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:taskUi = @{}
 $script:taskBusy = $false
@@ -1108,3 +1115,4 @@ catch {
     catch { }
     exit 1
 }
+finally {Close-GeoRouteInstance $script:taskInstance}

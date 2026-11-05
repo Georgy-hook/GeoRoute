@@ -21,10 +21,10 @@ with zipfile.ZipFile(io.BytesIO(content)) as archive:
     if len(members) != len(archive.infolist()):
         raise RuntimeError('Ambiguous client entries')
     selected = [(path.name, content)]
-    for name in ['GeoRoute.exe', '_service/NextDNS-GUI.ps1', '_service/bridge/bridge.py', '_service/bridge/python/python.exe']:
+    for name in ['GeoRoute.cmd', '_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1', '_service/bridge/bridge.py', '_service/bridge/python/python.exe']:
         selected.append((name, archive.read(members['GeoRoute/' + name])))
 audit.save('candidate-manifest.json', {'source_commit': os.environ['GITHUB_SHA'],
-           'purpose': 'Native Win32 launcher and direct SCM bridge, tested portable app artifact',
+           'purpose': 'Script-based WPF GUI and direct SCM bridge, tested portable app artifact',
            'files': [{'name': name, 'sha256': hashlib.sha256(data).hexdigest(), 'size': len(data)}
                      for name, data in selected]})
 audit.audit_files(selected)

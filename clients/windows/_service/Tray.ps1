@@ -38,12 +38,21 @@ function Hide-TaskManager {
 }
 function Open-TaskRepair {
     try {
-        Start-Process -FilePath (Get-ManagerLauncher $script:taskRoot) -ArgumentList '-Repair' | Out-Null
+        Start-Process -FilePath (Get-ManagerLauncher $script:taskRoot) -ArgumentList '-Repair' -WindowStyle Hidden | Out-Null
         Add-TaskLog 'Открыто восстановление вложений: диагностика, перезапуск Chrome и дополнительные настройки.'
     } catch {Add-TaskLog ('Не удалось открыть помощь: '+$_.Exception.Message)}
 }
-function Get-TaskStartupCommand { '"'+(Get-ManagerLauncher $script:taskRoot)+'" -Tray' }
+function Get-TaskStartupCommand {
+ $entry=Get-ManagerLauncher $script:taskRoot
+ if([IO.Path]::GetExtension($entry) -ieq '.cmd'){return '"'+$env:ComSpec+'" /d /s /c ""'+$entry+'" -Tray"'}
+ '"'+$entry+'" -Tray'
+}
 function Get-TaskStartupValue { [Microsoft.Win32.Registry]::GetValue('HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run',$script:taskStartupName,'') }
+function Sync-TaskStartupEntry {
+ $value=Get-TaskStartupValue
+ $legacy=@(foreach($path in @((Join-Path (Split-Path $script:taskRoot -Parent) 'GeoRoute.exe'),(Join-Path $script:taskRoot 'bin\GeoRoute.exe'),(Join-Path (Split-Path $script:taskRoot -Parent) 'NextDNS.exe'),(Join-Path $script:taskRoot 'bin\NextDNS.exe'))){'"'+$path+'" -Tray'})
+ if($value -in $legacy){New-ItemProperty -Path $script:taskStartupKey -Name $script:taskStartupName -Value (Get-TaskStartupCommand) -PropertyType String -Force | Out-Null}
+}
 function Set-TaskStartup([bool]$Enabled) {
     if($script:taskStartupSync){return}
     try {
@@ -117,6 +126,7 @@ function Poll-TaskConnection {
     elseif(('NextDNS.Desktop.DesktopInstance' -as [type]) -and [NextDNS.Desktop.DesktopInstance]::ConsumeActivation()) {Show-TaskManager}
 }
 function Initialize-TaskTray {
+    try {Sync-TaskStartupEntry}catch{Add-TaskLog ('Не удалось обновить автозапуск: '+$_.Exception.Message) -Kind Problems}
     Add-Type -AssemblyName System.Windows.Forms,System.Drawing
     $script:taskTrayIcon=[Drawing.Icon]::new((Join-Path $script:taskRoot 'assets\app.ico'))
     $script:taskTray=[Windows.Forms.NotifyIcon]::new()
