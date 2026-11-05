@@ -1,14 +1,14 @@
-name: Bridge lifecycle candidate audit
+name: Bridge direct-service candidate audit
 
 on:
   push:
     branches: [codex/bridge-lifecycle]
     paths:
       - clients/windows/_service/bridge/**
-      - clients/windows/tests/BridgeLifecycleTests.cs
-      - clients/windows/tests/Test-BridgeLifecycle.ps1
+      - clients/windows/tests/Test-BridgeService.ps1
       - clients/windows/tests/test_bridge_protocol.py
       - tools/scan_bridge_candidate.py
+      - tools/package_bridge_candidate.py
       - tools/scan_virustotal_release.py
       - .github/workflows/bridge-candidate-audit.yml
 
@@ -28,22 +28,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.14'
-      - name: Verify lifecycle and DNS protocol, then build candidate
+      - name: Package runtime and verify real LocalService lifecycle
         shell: powershell
         run: |
           $ErrorActionPreference='Stop'
           $python=(Get-Command python.exe).Source
           $shell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-          & $shell -NoProfile -File clients/windows/tests/Test-BridgeLifecycle.ps1 -PythonExe $python
-          if($LASTEXITCODE -ne 0){throw 'Lifecycle tests failed'}
           python -m unittest discover -s clients/windows/tests -p test_bridge_protocol.py
           if($LASTEXITCODE -ne 0){throw 'DNS protocol tests failed'}
-          & $shell -NoProfile -File clients/windows/_service/bridge/Build.ps1
-          if($LASTEXITCODE -ne 0){throw 'Candidate build failed'}
           New-Item -ItemType Directory -Path bridge-candidate | Out-Null
-          Copy-Item clients/windows/_service/bridge/NextDNSBridge.exe bridge-candidate/
-          $hash=(Get-FileHash bridge-candidate/NextDNSBridge.exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          @{source_commit=$env:GITHUB_SHA;sha256=$hash;lifecycle_scenarios=7;protocol_tests=11;purpose='Fix worker startup, shutdown, and service recovery; no system installation'} | ConvertTo-Json | Set-Content bridge-candidate/manifest.json -Encoding UTF8
+          python -I clients/windows/tools/prepare_runtime.py --destination bridge-candidate/python
+          if($LASTEXITCODE -ne 0){throw 'Runtime packaging failed'}
+          Copy-Item clients/windows/_service/bridge/bridge.py bridge-candidate/
+          & $shell -NoProfile -File clients/windows/tests/Test-BridgeService.ps1 -RuntimeRoot (Resolve-Path bridge-candidate).Path
+          if($LASTEXITCODE -ne 0){throw 'SCM integration failed'}
+          python tools/package_bridge_candidate.py
+          if($LASTEXITCODE -ne 0){throw 'Candidate packaging failed'}
       - uses: actions/upload-artifact@v4
         with:
           name: bridge-candidate

@@ -12,14 +12,19 @@ def main():
     manifest = json.loads((root / 'manifest.json').read_text(encoding='utf-8-sig'))
     if manifest['source_commit'] != os.environ['GITHUB_SHA']:
         raise RuntimeError('Candidate belongs to a different source revision')
-    name = 'NextDNSBridge.exe'
-    content = (root / name).read_bytes()
-    if not 1024 <= len(content) <= 1024 * 1024:
-        raise RuntimeError('Unexpected bridge candidate size')
-    if hashlib.sha256(content).hexdigest() != manifest['sha256']:
-        raise RuntimeError('Candidate does not match the tested build artifact')
+    expected = {'NextDNSBridge-bundle.zip', 'bridge.py', 'python/python.exe'}
+    if {item['name'] for item in manifest['files']} != expected or len(manifest['files']) != len(expected):
+        raise RuntimeError('Unexpected candidate contents')
+    selected = []
+    for item in manifest['files']:
+        content = (root / item['name']).read_bytes()
+        if not 1024 <= len(content) <= 32000000 or len(content) != item['size']:
+            raise RuntimeError('Unexpected candidate size')
+        if hashlib.sha256(content).hexdigest() != item['sha256']:
+            raise RuntimeError('Candidate does not match the tested build artifact')
+        selected.append((item['name'], content))
     audit.save('candidate-manifest.json', manifest)
-    audit.audit_files([(name, content)])
+    audit.audit_files(selected)
 
 
 if __name__ == '__main__':

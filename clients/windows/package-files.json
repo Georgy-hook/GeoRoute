@@ -39,8 +39,6 @@
   "assets/ui/icon-overview.png",
   "assets/ui/icon-power.png",
   "assets/ui/icon-servers.png",
-  "bridge/Build.ps1",
-  "bridge/NextDNSBridge.cs",
   "bridge/bridge.py",
   "connection-routes.json",
   "profiles.json",

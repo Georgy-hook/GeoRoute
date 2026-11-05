@@ -13,13 +13,14 @@ def check(path):
         names = archive.namelist()
         assert len(names) == len(set(names))
         required = ['GeoRoute/GeoRoute.exe', 'GeoRoute/GeoRoute.exe.config',
-                    'GeoRoute/_service/bridge/NextDNSBridge.exe',
+                    'GeoRoute/_service/bridge/bridge.py',
                     'GeoRoute/_service/bridge/python/python.exe',
                     'GeoRoute/_service/bridge/python/LICENSE.txt',
                     'GeoRoute/_service/GeoServices.ps1', 'GeoRoute/_service/GeoMonitorState.ps1',
                     'GeoRoute/_service/GeoProbe.ps1',
                     'GeoRoute/_service/profiles/gemini-eu.hosts', 'GeoRoute/_service/profiles/gemini-us.hosts']
         assert all(name in names for name in required)
+        assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
         for name in names:
             parts = PurePosixPath(name).parts
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name

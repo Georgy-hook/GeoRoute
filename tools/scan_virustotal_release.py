@@ -131,8 +131,10 @@ def main():
         members = {info.filename.replace('\\', '/'): info for info in package.infolist()}
         if len(members) != len(package.infolist()):
             raise RuntimeError('Ambiguous normalized ZIP entries')
+        bridge_path = ('_service/bridge/NextDNSBridge.exe' if 'GeoRoute/_service/bridge/NextDNSBridge.exe' in members
+                       else '_service/bridge/bridge.py')
         selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in
-                    ('GeoRoute.exe', '_service/bridge/NextDNSBridge.exe', '_service/bridge/python/python.exe')]
+                    ('GeoRoute.exe', bridge_path, '_service/bridge/python/python.exe')]
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
                                   'files': [{'name': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}

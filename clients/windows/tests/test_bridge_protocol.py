@@ -40,6 +40,15 @@ class Protocol(unittest.TestCase):
   x.request=request
   with self.assertRaises(OSError):x.query(QUERY)
   self.assertEqual(calls,list(b.SERVERS))
+ def test_shutdown_prevents_new_upstream_requests(self):
+  x=b.DoH('abcdef');calls=[];x.request=lambda q,s:calls.append(s)
+  x.close()
+  with self.assertRaises(OSError):x.query(QUERY)
+  self.assertEqual(calls,[])
+ def test_shutdown_rejects_new_work(self):
+  with tempfile.TemporaryDirectory(prefix='bridge-stopping-') as folder:
+   x=b.Bridge('abcdef',5355,folder);x.close()
+   self.assertFalse(x.submit(lambda:None))
  def test_servfail_preserves_query(self):
   result=b.failure(QUERY);self.assertEqual(result[:2],QUERY[:2]);self.assertEqual(result[12:],QUERY[12:]);self.assertEqual(result[3]&15,2);self.assertTrue(result[2]&128);self.assertEqual(result[4:12],QUERY[4:12])
  def test_concurrency_is_bounded(self):

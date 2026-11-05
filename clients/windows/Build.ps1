@@ -28,8 +28,6 @@ try {
  if($LASTEXITCODE -ne 0){throw 'Python runtime packaging failed.'}
  & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $service 'Build-Launcher.ps1') -NoLegacyAlias
  if($LASTEXITCODE -ne 0){throw 'Launcher build failed.'}
- & $shell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $service 'bridge\Build.ps1')
- if($LASTEXITCODE -ne 0){throw 'Service build failed.'}
  $output=Join-Path $clientRoot 'dist'
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
