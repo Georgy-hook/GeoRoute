@@ -110,7 +110,8 @@ def main():
     repo = os.environ.get('GITHUB_REPOSITORY', 'Georgy-hook/GeoRoute')
     if not re.fullmatch(r'v\d+\.\d+\.\d+', tag) or repo != 'Georgy-hook/GeoRoute':
         raise RuntimeError('Expected an explicit GeoRoute release tag in its own repository')
-    status, raw = fetch(f'https://api.github.com/repos/{repo}/releases/tags/{tag}')
+    github_headers = {'Authorization': 'Bearer ' + os.environ['GITHUB_TOKEN']} if os.environ.get('GITHUB_TOKEN') else {}
+    status, raw = fetch(f'https://api.github.com/repos/{repo}/releases/tags/{tag}', headers=github_headers)
     if status != 200:
         raise RuntimeError(f'Release metadata returned HTTP {status}')
     release = json.loads(raw)
