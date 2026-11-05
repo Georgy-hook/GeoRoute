@@ -33,10 +33,13 @@ jobs:
         run: |
           $ErrorActionPreference='Stop'
           $python=(Get-Command python.exe).Source
-          & clients/windows/tests/Test-BridgeLifecycle.ps1 -PythonExe $python
+          $shell=Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
+          & $shell -NoProfile -File clients/windows/tests/Test-BridgeLifecycle.ps1 -PythonExe $python
+          if($LASTEXITCODE -ne 0){throw 'Lifecycle tests failed'}
           python -m unittest discover -s clients/windows/tests -p test_bridge_protocol.py
           if($LASTEXITCODE -ne 0){throw 'DNS protocol tests failed'}
-          & clients/windows/_service/bridge/Build.ps1
+          & $shell -NoProfile -File clients/windows/_service/bridge/Build.ps1
+          if($LASTEXITCODE -ne 0){throw 'Candidate build failed'}
           New-Item -ItemType Directory -Path bridge-candidate | Out-Null
           Copy-Item clients/windows/_service/bridge/NextDNSBridge.exe bridge-candidate/
           $hash=(Get-FileHash bridge-candidate/NextDNSBridge.exe -Algorithm SHA256).Hash.ToLowerInvariant()
