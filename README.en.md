@@ -4,6 +4,8 @@ Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint avail
 
 **[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.exe**. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
+**VirusTotal snapshot for 0.4.0 (2026-11-05): detections present.** ZIP and `GeoRoute.exe`: **2/71**; `NextDNSBridge.exe`: **3/71**; bundled Python: **0/71** (existing analysis dated 2026-11-02). These findings have not been confirmed as false positives. [Reports, coverage, dates and exact SHA-256 hashes](docs/security/virustotal-v0.4.0.md).
+
 Wait for the initial checks, choose an available route under **Servers**, then use the single **Enable / Disable** control on the home page and confirm the Windows elevation request. The interface is currently Russian.
 
 The manager refreshes provider lists for US/EU/RU hourly and probes endpoints every two minutes. Regional replacement is independent: an EU outage does not prevent updating US or RU profiles. Unavailable, retired and stale endpoints cannot unlock a managed profile. A mixed US+EU route requires both roles to pass. Healthy choices are retained; manual addresses survive provider refresh.

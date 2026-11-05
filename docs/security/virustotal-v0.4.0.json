@@ -1,0 +1,132 @@
+{
+  "release": "v0.4.0",
+  "release_url": "https://github.com/Georgy-hook/GeoRoute/releases/tag/v0.4.0",
+  "zip_sha256": "9f8a8e8742aebe8d164ba56d8f58d6c401d347fbfeb5d16e63f5fd9730611d3d",
+  "retrieved_at": "2026-11-05T15:09:46.426456+00:00",
+  "workflow_url": "https://github.com/Georgy-hook/GeoRoute/actions/runs/42051782089",
+  "scope": "Published ZIP and three EXE files. Other ZIP members were not submitted separately. This is a report snapshot, not a safety certificate.",
+  "files": [
+    {
+      "name": "GeoRoute-Windows-x64-0.4.0.zip",
+      "sha256": "9f8a8e8742aebe8d164ba56d8f58d6c401d347fbfeb5d16e63f5fd9730611d3d",
+      "size": 24923558,
+      "report_url": "https://www.virustotal.com/gui/file/9f8a8e8742aebe8d164ba56d8f58d6c401d347fbfeb5d16e63f5fd9730611d3d/detection",
+      "analysis_date": "2026-11-05T15:08:04Z",
+      "analysis_date_moscow": "05.11.2026 18:08:04",
+      "last_analysis_stats": {
+        "malicious": 2,
+        "suspicious": 0,
+        "undetected": 60,
+        "harmless": 0,
+        "timeout": 2,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 7
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "malicious",
+          "timeout",
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "detections": [
+        "W32.Malware.B4FA2B78",
+        "malicious (moderate confidence)"
+      ],
+      "state": "completed"
+    },
+    {
+      "name": "GeoRoute.exe",
+      "sha256": "9197f88dfd53c11716d1d3c74923bf132a7ddaf1712d42bc5f253d139f9bce10",
+      "size": 183808,
+      "report_url": "https://www.virustotal.com/gui/file/9197f88dfd53c11716d1d3c74923bf132a7ddaf1712d42bc5f253d139f9bce10/detection",
+      "analysis_date": "2026-11-05T15:08:05Z",
+      "analysis_date_moscow": "05.11.2026 18:08:05",
+      "last_analysis_stats": {
+        "malicious": 2,
+        "suspicious": 0,
+        "undetected": 66,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 3
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "malicious",
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "detections": [
+        "W32.Malware.B4FA2B78",
+        "Malicious"
+      ],
+      "state": "completed"
+    },
+    {
+      "name": "_service/bridge/NextDNSBridge.exe",
+      "sha256": "bd8091d98f3ffc2cc7b81079b8464ce2d826c5183c64a3bf3662e59c8d9cbac0",
+      "size": 7168,
+      "report_url": "https://www.virustotal.com/gui/file/bd8091d98f3ffc2cc7b81079b8464ce2d826c5183c64a3bf3662e59c8d9cbac0/detection",
+      "analysis_date": "2026-11-05T15:08:07Z",
+      "analysis_date_moscow": "05.11.2026 18:08:07",
+      "last_analysis_stats": {
+        "malicious": 3,
+        "suspicious": 0,
+        "undetected": 65,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 3
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "malicious",
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "detections": [
+        "malicious (moderate confidence)",
+        "ti!BD8091D98F3F",
+        "Malicious"
+      ],
+      "state": "completed"
+    },
+    {
+      "name": "_service/bridge/python/python.exe",
+      "sha256": "4942b86a6597e5aee0128daa00050ed79bc21f6e709a78eb19cbfeb0c2f39ac9",
+      "size": 106208,
+      "report_url": "https://www.virustotal.com/gui/file/4942b86a6597e5aee0128daa00050ed79bc21f6e709a78eb19cbfeb0c2f39ac9/detection",
+      "analysis_date": "2026-11-02T10:02:52Z",
+      "analysis_date_moscow": "02.11.2026 13:02:52",
+      "last_analysis_stats": {
+        "malicious": 0,
+        "suspicious": 0,
+        "undetected": 68,
+        "harmless": 0,
+        "timeout": 0,
+        "confirmed-timeout": 0,
+        "failure": 0,
+        "type-unsupported": 3
+      },
+      "coverage": {
+        "engines": 71,
+        "categories": [
+          "type-unsupported",
+          "undetected"
+        ]
+      },
+      "detections": [],
+      "state": "existing-report"
+    }
+  ]
+}
