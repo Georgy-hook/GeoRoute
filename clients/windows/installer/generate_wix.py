@@ -53,6 +53,7 @@ def main():
     install = element(programs, 'Directory', Id='INSTALLFOLDER', Name='GeoRoute')
     element(target, 'Directory', Id='ProgramMenuFolder')
     element(target, 'Directory', Id='DesktopFolder')
+    element(target, 'Directory', Id='System64Folder')
     dirs = {'': install}
     components = []
     for path in sorted(root.rglob('*')):
@@ -97,7 +98,7 @@ def main():
     element(ui, 'Publish', '1', Dialog='InstallDirDlg', Control='Back', Event='NewDialog', Value='WelcomeDlg', Order='2')
     element(ui, 'Error', 'Закройте GeoRoute через трей перед установкой. Перед удалением выключите подключение. Подробности находятся в журнале установщика.', Id='1722')
     # Fixed visible read-only checks: no encoded commands, downloads or network changes.
-    prefix = '"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe" -NoLogo -NoProfile -NonInteractive -Command '
+    prefix = '"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -Command '
     running = "try{$m=[Threading.Mutex]::OpenExisting('Local\\GeoRoute.Setup.Application');$m.Dispose();Write-Error 'Close GeoRoute through its tray menu first';exit 1}catch [Threading.WaitHandleCannotBeOpenedException]{exit 0}"
     hosts = "$p=Join-Path $env:SystemRoot 'System32\\drivers\\etc\\hosts';try{if([IO.File]::ReadAllText($p).Contains('# BEGIN CHATGPT-US-WINDOWS')){Write-Error 'Disable GeoRoute before uninstalling';exit 1}}catch{Write-Error $_;exit 1}"
     sequence = element(product, 'InstallExecuteSequence')
