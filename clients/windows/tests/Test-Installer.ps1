@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath,[string]$ScreenshotDirectory)
+param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath,[string]$ScreenshotDirectory,[switch]$CheckDefaultLocation)
 $ErrorActionPreference='Stop'
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or -not $env:RUNNER_TEMP){throw 'Installer integration is restricted to disposable GitHub Windows runners.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -107,6 +107,26 @@ try {
  $cleanSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+(Join-Path $app '_service\NextDNS-GUI.ps1')+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($cleanSmoke.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $catalog)){throw 'Profile defaults did not recover after clean reinstall'}
  if((Run-Msi ('/x '+$productCode) 'clean-uninstall.log') -ne 0){throw 'Clean uninstall failed'}
+ if($CheckDefaultLocation){
+  $defaultApp=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Programs\GeoRoute'
+  if(Test-Path -LiteralPath $defaultApp){throw 'Unexpected existing default install folder on disposable runner'}
+  try {
+   if((Run-Msi ('/i "'+$SetupPath+'"') 'default-install.log') -ne 0){throw 'Default-location install failed'}
+   $defaultGui=Join-Path $defaultApp '_service\NextDNS-GUI.ps1'
+   if(-not(Test-Path -LiteralPath $defaultGui)){throw 'Default install used an unexpected location'}
+   foreach($directory in @([Environment]::GetFolderPath('Programs'),[Environment]::GetFolderPath('Desktop'))){
+    $link=Join-Path $directory 'GeoRoute.lnk'
+    if(-not(Test-Path -LiteralPath $link)){throw ('Missing installed shortcut: '+$link)}
+    $folder=(New-Object -ComObject Shell.Application).NameSpace($directory)
+    $arguments=$folder.ParseName('GeoRoute.lnk').ExtendedProperty('System.Link.Arguments')
+    if($arguments -notlike ('*"'+$defaultGui+'"')){throw 'Default install shortcut points outside app'}
+   }
+   $productInfo=New-Object -ComObject WindowsInstaller.Installer
+   try {if($productInfo.ProductInfo($productCode,'ProductName') -ne 'GeoRoute'){throw 'Windows Installer registration missing'}}finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
+   $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
+   if($defaultSmoke.ExitCode -ne 0){throw 'Default install GUI smoke failed'}
+  } finally {if((Run-Msi ('/x '+$productCode) 'default-uninstall.log') -ne 0){throw 'Default install cleanup failed'}}
+ }
  if((Get-FileHash -LiteralPath $hosts).Hash -ne $hostsBefore){throw 'Installer changed hosts'}
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress

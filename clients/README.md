@@ -1,6 +1,6 @@
-# Локальные клиенты DnsConf
+# Локальные клиенты GeoRoute
 
-[Windows: GUI, трей и служба NextDNS Bridge](windows/README.md) дополняют облачные правила этого репозитория. Исходники, иконки Image Gen и тесты находятся здесь; готовый ZIP с Python runtime публикуется в [Releases](https://github.com/Georgy-hook/DnsConf/releases).
+[GeoRoute для Windows](windows/README.md) подключает ChatGPT и Gemini через совместимые серверы и показывает их доступность. Обычный MSI-установщик и дополнительный ZIP доступны в [Releases](https://github.com/Georgy-hook/GeoRoute/releases). Python отдельно устанавливать не нужно.
 
 Облачный конфигуратор в корне проекта управляет правилами NextDNS/Cloudflare. Локальный Bridge доставляет DNS-запросы до NextDNS, а hosts-профили и GUI помогают диагностировать клиент. Эти части можно использовать и развивать отдельно.
 
