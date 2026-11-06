@@ -121,20 +121,22 @@ try {
     $arguments=$folder.ParseName('GeoRoute.lnk').ExtendedProperty('System.Link.Arguments')
     if($arguments -notlike ('*"'+$defaultGui+'"')){throw 'Default install shortcut points outside app'}
    }
-   $productInfo=New-Object -ComObject WindowsInstaller.Installer
-   try {
-    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'InstalledProductName'))
-    if($productName -ne 'GeoRoute'){throw 'Windows Installer registration missing'}
-   }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
+   # Verify the entry actually consumed by Windows Settings / Installed apps.
+   $uninstallKey='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\'+$productCode
+   $registration=Get-ItemProperty -LiteralPath $uninstallKey
+   if($registration.DisplayName -ne 'GeoRoute' -or $registration.WindowsInstaller -ne 1 -or
+      $registration.UninstallString -notlike ('*'+$productCode+'*')){throw 'Installed-apps registration mismatch'}
    $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
    if($defaultSmoke.ExitCode -ne 0){throw 'Default install GUI smoke failed'}
   } finally {if((Run-Msi ('/x '+$productCode) 'default-uninstall.log') -ne 0){throw 'Default install cleanup failed'}}
+  if(Test-Path -LiteralPath $uninstallKey){throw 'Uninstall left an installed-apps entry'}
  }
  if((Get-FileHash -LiteralPath $hosts).Hash -ne $hostsBefore){throw 'Installer changed hosts'}
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
  if($proxyAfter -cne $proxyBefore){throw 'Installer changed proxy'}
  Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, profile preservation, clean reinstall, uninstall, owned startup and untouched network.'
+ if($CheckDefaultLocation){Write-Output 'Published MSI also passed: standard per-user folder, desktop and Start menu shortcuts, installed-apps registration/removal and default-location GUI launch.'}
 } catch {
  Write-Host ('Installer integration failed: '+$_.Exception.Message)
  throw
