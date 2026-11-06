@@ -1,5 +1,6 @@
 [
   "AppInstance.ps1",
+  "InstallerActions.ps1",
   "BridgeStatus.ps1",
   "BrowserRecovery.ps1",
   "Connection.ps1",

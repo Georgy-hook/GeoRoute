@@ -3,18 +3,20 @@
 param(
  [string]$PythonExe='python.exe',
  [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.4.2',
- [string]$CompilerPath
+ [string]$ArchivePath,
+ [string]$OutputDirectory,
+ [string]$WixBin
 )
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-if(-not $CompilerPath){
- $candidates=@((Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),(Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'))
- $CompilerPath=$candidates|Where-Object {Test-Path -LiteralPath $_}|Select-Object -First 1
+if(-not $WixBin){
+ if($env:WIX){$WixBin=Join-Path $env:WIX 'bin'}else{$WixBin=Join-Path ${env:ProgramFiles(x86)} 'WiX Toolset v3.14\bin'}
 }
-if(-not $CompilerPath -or -not(Test-Path -LiteralPath $CompilerPath)){throw 'Install Inno Setup 6.7+ or specify -CompilerPath.'}
-$output=Join-Path $PSScriptRoot 'dist'
-$archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
-if(-not(Test-Path -LiteralPath $archive)){throw 'Build the portable ZIP first with the same Version.'}
+if(-not(Test-Path -LiteralPath (Join-Path $WixBin 'candle.exe'))){throw 'Install WiX Toolset 3.14.1 or specify -WixBin.'}
+if(-not $OutputDirectory){$OutputDirectory=Join-Path $PSScriptRoot 'dist'}
+$output=[IO.Path]::GetFullPath($OutputDirectory)
+if(-not $ArchivePath){$ArchivePath=Join-Path $PSScriptRoot ('dist\GeoRoute-Windows-x64-'+$Version+'.zip')}
+$archive=[IO.Path]::GetFullPath($ArchivePath)
 $expected=(Get-Content -LiteralPath ($archive+'.sha256') -Raw).Split(' ')[0]
 if((Get-FileHash -LiteralPath $archive).Hash -ine $expected){throw 'Portable ZIP hash mismatch.'}
 & $PythonExe -I (Join-Path $PSScriptRoot 'tests\verify_package.py') $archive
@@ -23,9 +25,17 @@ $buildRoot=Join-Path $PSScriptRoot '.build'
 $stage=[IO.Path]::GetFullPath((Join-Path $buildRoot ('installer-'+[guid]::NewGuid().ToString('N'))))
 try {
  [IO.Compression.ZipFile]::ExtractToDirectory($archive,$stage)
- & $CompilerPath '/Qp' ('/DAppVersion='+$Version) ('/DPackageRoot='+(Join-Path $stage 'GeoRoute')) ('/DOutputRoot='+$output) (Join-Path $PSScriptRoot 'installer\GeoRoute.iss')
- if($LASTEXITCODE -ne 0){throw 'Inno Setup compilation failed.'}
- $setup=Join-Path $output ('GeoRoute-Setup-'+$Version+'-x64.exe')
+ $source=Join-Path $stage 'GeoRoute.wxs'
+ & $PythonExe -I (Join-Path $PSScriptRoot 'installer\generate_wix.py') --root (Join-Path $stage 'GeoRoute') --version $Version --output $source
+ if($LASTEXITCODE -ne 0){throw 'MSI source generation failed.'}
+ $obj=Join-Path $stage 'GeoRoute.wixobj'
+ & (Join-Path $WixBin 'candle.exe') -nologo -arch x64 -ext WixUtilExtension -ext WixUIExtension -out $obj $source
+ if($LASTEXITCODE -ne 0){throw 'MSI compilation failed.'}
+ New-Item -ItemType Directory -Path $output -Force|Out-Null
+ $setup=Join-Path $output ('GeoRoute-Setup-'+$Version+'-x64.msi')
+ & (Join-Path $WixBin 'light.exe') -nologo -ext WixUtilExtension -ext WixUIExtension -cultures:ru-ru -out $setup $obj
+ if($LASTEXITCODE -ne 0){throw 'MSI linking/validation failed.'}
+ Remove-Item -LiteralPath ([IO.Path]::ChangeExtension($setup,'.wixpdb')) -ErrorAction SilentlyContinue
  $hash=(Get-FileHash -LiteralPath $setup).Hash.ToLowerInvariant()
  [IO.File]::WriteAllText(($setup+'.sha256'),($hash+'  '+[IO.Path]::GetFileName($setup)+"`n"),[Text.Encoding]::ASCII)
  Write-Output ('Built '+$setup+' from verified portable payload '+$expected)

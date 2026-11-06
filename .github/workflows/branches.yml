@@ -17,10 +17,19 @@ jobs:
         env:
           BRANCH: ${{ github.head_ref || github.ref_name }}
           REF_TYPE: ${{ github.ref_type }}
+          BASE: ${{ github.base_ref }}
         run: |
           if [[ "$REF_TYPE" == tag ]]; then exit 0; fi
           if [[ ! "$BRANCH" =~ ^(main|develop|release/V[0-9]+\.[0-9]+\.[0-9]+|feature/[a-z0-9][a-z0-9-]*)$ ]]; then
             echo 'Use main, develop, release/V1.0.0 or feature/short-name.' >&2
+            exit 1
+          fi
+          if [[ "$BASE" == main && ! "$BRANCH" =~ ^release/V ]]; then
+            echo 'Merge a prepared release branch into main.' >&2
+            exit 1
+          fi
+          if [[ "$BRANCH" == feature/* && -n "$BASE" && "$BASE" != develop ]]; then
+            echo 'Feature branches merge into develop.' >&2
             exit 1
           fi
   delete-feature:

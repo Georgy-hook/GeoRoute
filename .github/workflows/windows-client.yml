@@ -34,27 +34,13 @@ jobs:
       - name: Build portable client
         run: .\clients\windows\Build.ps1 -PythonExe python.exe
       - name: Build ordinary Windows installer
-        run: |
-          # Use the currently recommended upstream compiler, not runner's older 6.x.
-          $compiler=Join-Path $env:RUNNER_TEMP 'innosetup-7.1.1-x64.exe'
-          Invoke-WebRequest 'https://github.com/jrsoftware/issrc/releases/download/is-7_1_1/innosetup-7.1.1-x64.exe' -OutFile $compiler
-          if((Get-FileHash -LiteralPath $compiler).Hash -ine '8a5a6711c3766a6e5fb74f280ba0e3551e719ce94538d901fdbd1f8f9920b3f0'){throw 'Upstream compiler digest mismatch'}
-          $signature=Get-AuthenticodeSignature -LiteralPath $compiler
-          if($signature.Status -ne 'Valid' -or $signature.SignerCertificate.Subject -notmatch 'Pyrsys B\.V\.'){throw 'Upstream compiler signature mismatch'}
-          $compilerRoot=Join-Path $env:RUNNER_TEMP 'InnoSetup7'
-          $install=Start-Process -FilePath $compiler -ArgumentList ('/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /DIR="'+$compilerRoot+'"') -Wait -PassThru
-          if($install.ExitCode -ne 0){throw 'Upstream compiler setup failed'}
-          .\clients\windows\Build-Installer.ps1 -PythonExe python.exe -CompilerPath (Join-Path $compilerRoot 'ISCC.exe')
+        run: .\clients\windows\Build-Installer.ps1 -PythonExe python.exe
       - name: Install, upgrade, launch and uninstall in disposable runner
-        run: .\clients\windows\tests\Test-Installer.ps1 -SetupPath (Resolve-Path clients/windows/dist/GeoRoute-Setup-*-x64.exe).Path -ArchivePath (Resolve-Path clients/windows/dist/*.zip).Path
+        run: .\clients\windows\tests\Test-Installer.ps1 -SetupPath (Resolve-Path clients/windows/dist/GeoRoute-Setup-*-x64.msi).Path -ArchivePath (Resolve-Path clients/windows/dist/*.zip).Path
       - uses: actions/upload-artifact@v4
         with:
           name: GeoRoute-Windows
           path: clients/windows/dist/*
-      - uses: actions/upload-artifact@v4
-        with:
-          name: installer-test-evidence
-          path: clients/windows/installer-test-evidence/
   audit:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/release/')) && contains(github.event.head_commit.message, '[audit-client]')
     needs: windows
@@ -69,10 +55,6 @@ jobs:
         with:
           name: GeoRoute-Windows
           path: client-candidate/
-      - uses: actions/download-artifact@v4
-        with:
-          name: installer-test-evidence
-          path: installer-test-evidence/
       - name: Inspect exact client candidate with VirusTotal
         env:
           VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}
