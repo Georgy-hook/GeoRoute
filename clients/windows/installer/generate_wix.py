@@ -78,6 +78,10 @@ def main():
                         Guid='{A2B1743E-52F6-49F0-84AD-EEC7176D507D}', Win64='yes')
     element(shortcuts, 'RegistryValue', Root='HKCU', Key='Software\\GeoRoute', Name='InstallFolder',
             Type='string', Value='[INSTALLFOLDER]', KeyPath='yes')
+    # Native RemoveFolder removes empty directories only, preserving all user data.
+    for directory in [*dirs.values(), programs]:
+        did = directory.attrib['Id']
+        element(shortcuts, 'RemoveFolder', Id='Remove' + did, Directory=did, On='uninstall')
     for directory in ('ProgramMenuFolder', 'DesktopFolder'):
         element(shortcuts, 'Shortcut', Id='Shortcut' + directory, Directory=directory, Name='GeoRoute',
                 Target='[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe',
