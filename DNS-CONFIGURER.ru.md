@@ -1,6 +1,6 @@
 🌐 Languages: [󠁧󠁢󠁥󠁮󠁧󠁿**English**](README.md) | [**Русский**](README.ru.md)
 
-[![Last Build](../../actions/workflows/github_action.yml/badge.svg?branch=main)](../../actions/workflows/github_action.yml)<br>
+[![Last Build](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml/badge.svg?branch=main)](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml)<br>
 
 # Конфигуратор блокировок и перенаправлений DNS
 
@@ -43,7 +43,7 @@
 
 [Настройка исключений редиректов (опционально)](#настройка-исключений-редиректов-опционально)
 
-[Настройка донора DNS](#dns-донор)
+[Настройка донора DNS](#настройка-dns-донора)
 
 [Настройка сразу нескольких профилей](#настройка-сразу-нескольких-профилей)
 
@@ -340,7 +340,7 @@ GitHub отключает workflow с расписанием в публично
 что расписание всё ещё включено.
 
 **Как проверить:** Кликните на бейдж ниже (в начале README есть точно такой же), чтобы перейти к истории запусков.<br>
-[![Last Build](../../actions/workflows/github_action.yml/badge.svg?branch=main)](../../actions/workflows/github_action.yml)<br>
+[![Last Build](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml/badge.svg?branch=main)](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml)<br>
 У отключённого workflow будет пометка, что запуски по расписанию выключены. В истории запусков (workflow runs) можно увидеть дату последнего пуска.
 
 **Как включить обратно:**

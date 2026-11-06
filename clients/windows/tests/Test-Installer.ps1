@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath)
+param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath,[string]$ScreenshotDirectory)
 $ErrorActionPreference='Stop'
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or -not $env:RUNNER_TEMP){throw 'Installer integration is restricted to disposable GitHub Windows runners.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -58,6 +58,12 @@ try {
  if($shortcut.TargetPath -ine $shell -or $linkArguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch: '+$shortcut.TargetPath+'; '+$linkArguments)}
  $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($linkArguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($smoke.ExitCode -ne 0){throw 'Installed shortcut GUI smoke failed'}
+ if($ScreenshotDirectory){
+  New-Item -ItemType Directory -Path $ScreenshotDirectory -Force|Out-Null
+  $preview=Join-Path $ScreenshotDirectory 'georoute.png'
+  $render=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+(Join-Path $app '_service\NextDNS-GUI.ps1')+'" -RenderPreview -PreviewPath "'+$preview+'"') -WindowStyle Hidden -Wait -PassThru
+  if($render.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $preview)){throw 'Installed GUI screenshot export failed'}
+ }
  $mutex=[Threading.Mutex]::new($false,('Global\GeoRoute.Setup.Application.'+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value))
  try {if((Run-Setup 'running.log' -Repair) -eq 0){throw 'Installer replaced a running app'}}finally{$mutex.Dispose()}
  $catalog=Join-Path $app '_service\profiles.json';$routes=Join-Path $app '_service\connection-routes.json'
