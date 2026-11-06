@@ -59,7 +59,23 @@ foreach($row in $report.rows){
     $row.GeminiVerificationHTTP=if($verification){$verification.http}else{$null}
     $row.GeminiReady=Test-GeoGeminiProbe $gemini $api $verification
     $row.GeminiChallenge=[bool]$challenge
-    $row.GeminiError=if($challenge -and -not $row.GeminiReady){'Gemini перенаправляет на Google, но этот узел не открывает страницу проверки www.google.com. Выберите другой сервер.'}elseif($challenge){'Google ограничил доступ. Откройте Gemini после подключения; если есть CAPTCHA, пройдите её. Если поля нет, выберите другой сервер.'}elseif($gemini.blocked){'Страница ограничения региона'}elseif($gemini.error){$gemini.error}elseif($api.error){$api.error}elseif(-not $row.GeminiReady){'Страница / API Gemini не прошли HTTPS-проверку'}else{''}
+    if(($gemini.tcp -or $chat.tcp) -and ($challenge -or -not $row.GeminiReady -or -not $row.GeminiVerificationTLS)){
+        $python=Join-Path $PSScriptRoot 'bridge\python\python.exe'
+        if(Test-Path -LiteralPath $python){try{
+            $raw=& $python -I (Join-Path $PSScriptRoot 'gemini_probe.py') --address $row.Address --interface-index $ifIndex --local-address $localAddress
+            if($LASTEXITCODE -eq 0){
+                $shared=$raw|ConvertFrom-Json
+                $row.GeminiSharedHTTP2=[bool]($shared.ready -and $shared.verification)
+                $row.GeminiRouteMs=$shared.ms;$row.GeminiCountry=$shared.country
+                if($row.GeminiSharedHTTP2){
+                    if(-not $api.tls){$api=Probe-Geo $row.Address 'geminiweb-pa.clients6.google.com' '/';$row.GeminiAPIHTTP=$api.http}
+                    $row.GeminiReady=[bool]($api.tls -and $api.http -in @(200,204,400,401,404,405))
+                    $row.GeminiChallenge=$false;$row.GeminiHTTP=$shared.http
+                }
+            }
+        }catch{}}
+    }
+    $row.GeminiError=if($row.GeminiSharedHTTP2 -and $row.GeminiReady){''}elseif($row.GeminiSharedHTTP2){'Gemini и Google открываются, но API не прошёл проверку'}elseif($challenge -and -not $row.GeminiReady){'Gemini перенаправляет на Google, но общий маршрут проверки не прошёл тест. Выберите другой сервер.'}elseif($challenge){'Google ограничил доступ. Откройте Gemini после подключения; если есть CAPTCHA, пройдите её. Если поля нет, выберите другой сервер.'}elseif($gemini.blocked){'Страница ограничения региона'}elseif($gemini.error){$gemini.error}elseif($api.error){$api.error}elseif(-not $row.GeminiReady){'Страница / API Gemini не прошли HTTPS-проверку'}else{''}
     $row.State=if($ready){'ChatGPT: HTTPS отвечает'}elseif($chat.tcp){'ChatGPT: только TCP'}else{'ChatGPT: нет ответа'}
     $row.CheckedAt=(Get-Date).ToString('o');$row.CheckState='Complete'
     $report.completed++;$report.at=(Get-Date).ToString('o')

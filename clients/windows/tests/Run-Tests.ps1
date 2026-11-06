@@ -8,6 +8,8 @@ $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe
 & (Join-Path $PSScriptRoot 'Test-StartupMigration.ps1')
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_bridge_protocol.py')
 if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_gemini_http2.py')
+if($LASTEXITCODE -ne 0){throw 'Gemini HTTP2 tests failed.'}
 & (Join-Path $PSScriptRoot 'Test-GeoHide.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')

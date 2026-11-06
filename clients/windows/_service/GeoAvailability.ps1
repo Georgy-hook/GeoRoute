@@ -7,7 +7,7 @@ function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[Valid
         if($node.PSObject.Properties['CheckedAt']){$checked=[datetime]::MinValue;$fresh=[datetime]::TryParse([string]$node.CheckedAt,[ref]$checked) -and ((Get-Date)-$checked).TotalMinutes -lt 5}
         $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
         $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
-    }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},Address -Unique)
+    }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},@{Expression={if($_.PSObject.Properties['GeminiRouteMs'] -and $_.GeminiRouteMs -gt 0){$_.GeminiRouteMs}else{999999}}},Address -Unique)
 }
 function Get-GeoProfileRegion($Profile) {
     if($Profile.PSObject.Properties['managedRegion']){return [string]$Profile.managedRegion}
@@ -59,7 +59,7 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
                 $message=$prefix+$(if($row.GeminiError){$row.GeminiError}else{'Gemini: HTTPS страницы / API недоступен'})
                 if($shared){$warnings+=$message}else{$issues+=$message}
             }elseif($row.GeminiChallenge){$warnings+='Gemini: ограничение Google / CAPTCHA. Если поля проверки нет, выберите другой сервер'}
-            elseif($row.PSObject.Properties['GeminiVerificationTLS'] -and -not $row.GeminiVerificationTLS){$warnings+='Gemini: HTTPS отвечает, но этот узел не открывает проверку Google. Доступ к модели не подтверждён'}
+            elseif($row.PSObject.Properties['GeminiVerificationTLS'] -and -not (Test-GeoGoogleRoute $row)){$warnings+='Gemini: HTTPS отвечает, но этот узел не открывает проверку Google. Доступ к модели не подтверждён'}
             continue
         }
         $eligible=switch($need.Role){US{$row.EligibleUS}EU{$row.EligibleEU}RU{$row.EligibleRU}}

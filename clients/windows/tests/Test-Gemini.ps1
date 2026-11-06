@@ -52,6 +52,12 @@ try{
     $eu.GeminiVerificationTLS=$false
     Save-GeoProfile $temp $settings $report
     Assert ((Get-Content (Join-Path $temp 'profiles/eu-primary.hosts') -Raw) -notmatch 'www.google.com') 'An unsupported verification frontend cannot break Google Search'
+    $eu|Add-Member NoteProperty GeminiSharedHTTP2 $true
+    Save-GeoProfile $temp $settings $report
+    Assert ((Get-Content (Join-Path $temp 'profiles/eu-primary.hosts') -Raw) -match '37.221.93.128 www.google.com') 'A verified shared HTTP2 route retains Google on the Gemini IP'
+    $sharedState=Get-GeoProfileAvailability $temp 'eu-primary' $report
+    Assert ($sharedState.Ready -and $sharedState.State -eq 'ready') 'Shared HTTP2 works without a fresh www TLS handshake'
+    $eu.GeminiSharedHTTP2=$false
     $eu.GeminiVerificationTLS=$true
     Save-GeoProfile $temp $settings $report
     $eu.GeminiChallenge=$true

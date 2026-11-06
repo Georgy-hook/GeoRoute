@@ -23,7 +23,7 @@ try {
   [IO.Directory]::CreateDirectory((Split-Path $target -Parent))|Out-Null
   Copy-Item -LiteralPath $path -Destination $target
  }
- foreach($name in @('Начать здесь.txt','Совместимость с Discord Fix.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
+ foreach($name in @('Начать здесь.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
  Copy-Item -LiteralPath (Join-Path $clientRoot 'GeoRoute.cmd') -Destination $package
  & $PythonExe -I (Join-Path $clientRoot 'tools\prepare_runtime.py') --destination (Join-Path $service 'bridge\python')
  if($LASTEXITCODE -ne 0){throw 'Python runtime packaging failed.'}

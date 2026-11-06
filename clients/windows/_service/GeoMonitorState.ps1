@@ -1,7 +1,7 @@
 ﻿# No WPF dependency: both the worker and the UI use the same per-run states.
 function New-GeoPendingReport($Servers,[string]$RunId,[string]$Phase='Проверка серверов') {
     $rows=@(foreach($server in @($Servers|Sort-Object region,address -Unique)){
-        [pscustomobject]@{Region=$server.region;Address=$server.address;SourceActive=$true;CheckState='Queued';State='В очереди';TCP=$false;TLS=$false;HTTP=$null;Country='';LatencyMs=0;FilesTLS=$false;FilesHTTP=$null;Error='';CheckedAt=$null;EligibleUS=$false;EligibleEU=$false;EligibleRU=$false;GeminiTLS=$false;GeminiHTTP=$null;GeminiAPIHTTP=$null;GeminiReady=$false;GeminiChallenge=$false;GeminiVerificationTLS=$false;GeminiVerificationHTTP=$null;GeminiError=''}
+        [pscustomobject]@{Region=$server.region;Address=$server.address;SourceActive=$true;CheckState='Queued';State='В очереди';TCP=$false;TLS=$false;HTTP=$null;Country='';LatencyMs=0;FilesTLS=$false;FilesHTTP=$null;Error='';CheckedAt=$null;EligibleUS=$false;EligibleEU=$false;EligibleRU=$false;GeminiTLS=$false;GeminiHTTP=$null;GeminiAPIHTTP=$null;GeminiReady=$false;GeminiChallenge=$false;GeminiVerificationTLS=$false;GeminiVerificationHTTP=$null;GeminiSharedHTTP2=$false;GeminiRouteMs=0;GeminiCountry='';GeminiError=''}
     })
     return [pscustomobject]@{runId=$RunId;running=$true;at=(Get-Date).ToString('o');phase=$Phase;completed=0;total=$rows.Count;interface='';rows=$rows;sourceErrors=@();sources=@()}
 }

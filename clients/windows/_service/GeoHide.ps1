@@ -46,12 +46,12 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
     $new=@('# GeoHide US + EU; addresses managed by the monitoring page.')
     $existing=@(foreach($line in $lines){$p=($line -split '#',2)[0].Trim() -split '\s+';if($p.Count -ge 2){$p[1..($p.Count-1)]}})
     $lines+=@(Get-GeoGeminiDomains|Where-Object {$_ -notin $existing}|ForEach-Object {$Settings.eu+' '+$_})
-    $googleEU=@($Report.rows|Where-Object {$_.Region -eq 'EU' -and $_.Address -eq $Settings.eu -and $_.GeminiVerificationTLS -and $_.GeminiVerificationHTTP -in @(200,400,429)}).Count -gt 0
+    $googleEU=@($Report.rows|Where-Object {$_.Region -eq 'EU' -and $_.Address -eq $Settings.eu -and (Test-GeoGoogleRoute $_)}).Count -gt 0
     foreach($line in $lines){
         $parts=($line -split '#',2)[0].Trim() -split '\s+'
         if($parts.Count -lt 2){continue}
         foreach($domain in $parts[1..($parts.Count-1)]){
-            # Do not send Google Search into a provider node that rejects Google's SNI.
+            # A shared, certificate-validated HTTP2 route can work without a new www TLS handshake.
             if($domain -eq 'www.google.com' -and -not $googleEU){continue}
             $address=if((Test-GeoGeminiDomain $domain) -or $domain -eq 'oaiusercontent.com' -or $domain.EndsWith('.oaiusercontent.com')){$Settings.eu}else{$Settings.us}
             $new+=($address+' '+$domain)
@@ -101,7 +101,7 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
         $legacy=[IO.File]::ReadAllText($legacyPath)
         $updated=[regex]::Replace($legacy,'(?m)^[0-9.]+(?=\s+)',[string]$ip)
         $updated=[regex]::Replace($updated,'(?m)^\S+\s+www\.google\.com\s*\r?\n?','')
-        $google=@($Report.rows|Where-Object {$_.Region -eq $region -and $_.Address -eq $ip -and $_.GeminiVerificationTLS -and $_.GeminiVerificationHTTP -in @(200,400,429)}).Count -gt 0
+        $google=@($Report.rows|Where-Object {$_.Region -eq $region -and $_.Address -eq $ip -and (Test-GeoGoogleRoute $_)}).Count -gt 0
         if($google){$updated=$updated.TrimEnd()+"`r`n"+$ip+" www.google.com`r`n"}
         if($updated -ne $legacy){
             $legacyBackup=$legacyPath+'.geohide-backup'
@@ -113,7 +113,7 @@ function Save-GeoProfile([string]$Root,$Settings,$Report) {
         $entry.verifiedAt=$null
         $entryCount=@($updated -split '\r?\n'|Where-Object {$_.Trim() -and $_ -notmatch '^\s*#'}).Count
         $entry|Add-Member NoteProperty domainCount $entryCount -Force
-        $entry.description='ChatGPT, Gemini и вложения OpenAI. GeoHide '+$ip+'. Адрес управляется вкладкой мониторинга.'
+        $entry.description='ChatGPT, Gemini и вложения OpenAI. GeoHide '+$ip+'.'+$(if($google){' Gemini и проверка Google идут через один IP; также меняется маршрут Google Поиска. В Chrome сначала откройте Gemini.'})+' Адрес управляется мониторингом.'
     }
     Write-GeoJson $catalogPath $catalog
     $routes=Get-Content -LiteralPath (Join-Path $Root 'connection-routes.json') -Raw -Encoding UTF8|ConvertFrom-Json
