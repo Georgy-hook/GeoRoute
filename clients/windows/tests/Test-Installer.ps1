@@ -122,7 +122,10 @@ try {
     if($arguments -notlike ('*"'+$defaultGui+'"')){throw 'Default install shortcut points outside app'}
    }
    $productInfo=New-Object -ComObject WindowsInstaller.Installer
-   try {if($productInfo.ProductInfo($productCode,'ProductName') -ne 'GeoRoute'){throw 'Windows Installer registration missing'}}finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
+   try {
+    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'ProductName'))
+    if($productName -ne 'GeoRoute'){throw 'Windows Installer registration missing'}
+   }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
    $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
    if($defaultSmoke.ExitCode -ne 0){throw 'Default install GUI smoke failed'}
   } finally {if((Run-Msi ('/x '+$productCode) 'default-uninstall.log') -ne 0){throw 'Default install cleanup failed'}}

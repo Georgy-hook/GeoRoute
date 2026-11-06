@@ -63,7 +63,9 @@ jobs:
           $folder=Join-Path $env:RUNNER_TEMP 'published-release'
           .\clients\windows\tests\Test-Installer.ps1 -SetupPath (Get-ChildItem $folder -Filter *.msi).FullName -ArchivePath (Get-ChildItem $folder -Filter *.zip).FullName -ScreenshotDirectory (Join-Path $env:RUNNER_TEMP 'release-screenshots') -CheckDefaultLocation
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: installed-release-screenshots
           path: ${{ runner.temp }}/release-screenshots/
           retention-days: 30
+          if-no-files-found: warn
