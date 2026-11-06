@@ -17,6 +17,8 @@ if(-not('GeoRouteDpi' -as [type])){
 }
 [GeoRouteDpi]::Enable()
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $script:taskRoot 'ProfileDefaults.ps1')
+Initialize-GeoRouteProfiles $script:taskRoot
 . (Join-Path $script:taskRoot 'AppInstance.ps1')
 $script:taskInstance=$null
 $script:taskActivationEvent=$null

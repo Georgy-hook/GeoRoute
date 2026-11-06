@@ -47,6 +47,7 @@ try {
  if((Run-Setup 'install.log') -ne 0){throw 'Fresh installation failed'}
  foreach($file in Get-ChildItem -LiteralPath (Join-Path $stage 'GeoRoute') -Recurse -File){
   $relative=$file.FullName.Substring((Join-Path $stage 'GeoRoute').Length+1)
+  if($relative -in @('_service\profiles.json','_service\connection-routes.json') -or $relative.StartsWith('_service\profiles\')){$relative=$relative.Replace('_service\','_service\defaults\')}
   if((Get-FileHash -LiteralPath $file.FullName).Hash -ne (Get-FileHash -LiteralPath (Join-Path $app $relative)).Hash){throw ('Installed payload differs: '+$relative)}
  }
  $shortcutPath=Join-Path ([Environment]::GetFolderPath('Programs')) 'GeoRoute.lnk'
@@ -93,11 +94,18 @@ try {
  New-ItemProperty -Path $runKey -Name $runName -Value $own -Force|Out-Null
  if((Run-Msi ('/x '+$productCode) 'uninstall-owned.log') -ne 0){throw 'Second uninstall failed'}
  if(Get-ItemProperty -LiteralPath $runKey -Name $runName -ErrorAction SilentlyContinue){throw 'Dangling startup value'}
+ # A fully removed data folder must not leave MSI component markers that break reinstall.
+ if(-not $app.StartsWith(($root+'\'),[StringComparison]::OrdinalIgnoreCase)){throw 'Unexpected app data path'}
+ Remove-Item -LiteralPath $app -Recurse -Force
+ if((Run-Setup 'clean-reinstall.log') -ne 0){throw 'Clean reinstall failed'}
+ $cleanSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+(Join-Path $app '_service\NextDNS-GUI.ps1')+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
+ if($cleanSmoke.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $catalog)){throw 'Profile defaults did not recover after clean reinstall'}
+ if((Run-Msi ('/x '+$productCode) 'clean-uninstall.log') -ne 0){throw 'Clean uninstall failed'}
  if((Get-FileHash -LiteralPath $hosts).Hash -ne $hostsBefore){throw 'Installer changed hosts'}
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
  if($proxyAfter -cne $proxyBefore){throw 'Installer changed proxy'}
- Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, repair/reinstall preservation, uninstall, owned startup and untouched network.'
+ Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, profile preservation, clean reinstall, uninstall, owned startup and untouched network.'
 } catch {
  Write-Host ('Installer integration failed: '+$_.Exception.Message)
  throw

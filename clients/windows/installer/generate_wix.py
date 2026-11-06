@@ -59,18 +59,19 @@ def main():
     for path in sorted(root.rglob('*')):
         if not path.is_file():
             continue
-        relative = path.relative_to(root).as_posix()
+        source_relative = path.relative_to(root).as_posix()
+        mutable = source_relative in {'_service/profiles.json', '_service/connection-routes.json'} or source_relative.startswith('_service/profiles/')
+        # User files are created by the app once, never registered as MSI resources.
+        relative = source_relative.replace('_service/', '_service/defaults/', 1) if mutable else source_relative
         parent = ''
-        for part in path.relative_to(root).parts[:-1]:
+        for part in Path(relative).parts[:-1]:
             child = parent + '/' + part if parent else part
             if child not in dirs:
                 dirs[child] = element(dirs[parent], 'Directory', Id=identity('D', child), Name=part)
             parent = child
         cid = identity('C', relative)
-        mutable = relative in {'_service/profiles.json', '_service/connection-routes.json'} or relative.startswith('_service/profiles/')
-        flags = {'Permanent': 'yes', 'NeverOverwrite': 'yes'} if mutable else {}
         comp = element(dirs[parent], 'Component', Id=cid,
-                       Guid='{' + str(uuid.uuid5(COMPONENT_NAMESPACE, relative)) + '}', Win64='yes', **flags)
+                       Guid='{' + str(uuid.uuid5(COMPONENT_NAMESPACE, relative)) + '}', Win64='yes')
         element(comp, 'RegistryValue', Root='HKCU', Key='Software\\GeoRoute\\Components', Name=cid,
                 Type='integer', Value='1', KeyPath='yes')
         element(comp, 'File', Id=identity('F', relative), Source=str(path), Name=path.name)
