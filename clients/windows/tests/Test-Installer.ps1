@@ -47,7 +47,7 @@ try {
  if($shortcut.TargetPath -ine $shell -or $linkArguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch: '+$shortcut.TargetPath+'; '+$linkArguments)}
  $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($linkArguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($smoke.ExitCode -ne 0){throw 'Installed shortcut GUI smoke failed'}
- $mutex=[Threading.Mutex]::new($false,'Local\GeoRoute.Setup.Application')
+ $mutex=[Threading.Mutex]::new($false,('Global\GeoRoute.Setup.Application.'+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value))
  try {if((Run-Setup 'running.log' -Repair) -eq 0){throw 'Installer replaced a running app'}}finally{$mutex.Dispose()}
  $catalog=Join-Path $app '_service\profiles.json';$routes=Join-Path $app '_service\connection-routes.json'
  Add-Content -LiteralPath $catalog -Value ' ';Add-Content -LiteralPath $routes -Value ' '
