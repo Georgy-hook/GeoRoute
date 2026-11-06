@@ -8,7 +8,7 @@ param(
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 if(-not $CompilerPath){
- $candidates=@((Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),(Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'))
+ $candidates=@((Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),(Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'))
  $CompilerPath=$candidates|Where-Object {Test-Path -LiteralPath $_}|Select-Object -First 1
 }
 if(-not $CompilerPath -or -not(Test-Path -LiteralPath $CompilerPath)){throw 'Install Inno Setup 6.7+ or specify -CompilerPath.'}
