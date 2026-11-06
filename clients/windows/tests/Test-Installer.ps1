@@ -29,7 +29,7 @@ try {
  $shortcutPath=Join-Path ([Environment]::GetFolderPath('Programs')) 'GeoRoute.lnk'
  if(-not(Test-Path -LiteralPath $shortcutPath)){throw 'Start menu shortcut missing'}
  $shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut($shortcutPath)
- if($shortcut.TargetPath -ine $shell -or $shortcut.Arguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw 'Shortcut points outside installed app'}
+ if($shortcut.TargetPath -ine $shell -or $shortcut.Arguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch. Target='+$shortcut.TargetPath+'; arguments='+$shortcut.Arguments+'; expected shell='+$shell+'; expected app='+$app)}
  $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($shortcut.Arguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($smoke.ExitCode -ne 0){throw 'Installed shortcut GUI smoke failed'}
  $mutex=[Threading.Mutex]::new($false,'Local\GeoRoute.Setup.Application')
