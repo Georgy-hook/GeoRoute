@@ -28,11 +28,11 @@ def main():
     args = parser.parse_args()
     root = args.root.resolve()
     wix = ET.Element('{' + NS + '}Wix')
-    product = element(wix, 'Product', Id='*', Name='GeoRoute', Language='1049',
+    product = element(wix, 'Product', Id='*', Name='GeoRoute', Language='1049', Codepage='1251',
                       Version=args.version, Manufacturer='GeoRoute contributors',
                       UpgradeCode='{406D415F-84DD-42A8-9865-2B63D7BD5C33}')
     element(product, 'Package', InstallerVersion='500', Compressed='yes',
-            InstallScope='perUser', InstallPrivileges='limited', Platform='x64',
+            InstallScope='perUser', InstallPrivileges='limited', Platform='x64', SummaryCodepage='1251',
             Description='GeoRoute: ChatGPT и Gemini')
     element(product, 'MajorUpgrade', Schedule='afterInstallInitialize',
             AllowSameVersionUpgrades='yes', DowngradeErrorMessage='Уже установлена более новая версия GeoRoute.')
