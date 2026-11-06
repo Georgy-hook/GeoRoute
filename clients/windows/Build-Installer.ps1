@@ -29,11 +29,11 @@ try {
  & $PythonExe -I (Join-Path $PSScriptRoot 'installer\generate_wix.py') --root (Join-Path $stage 'GeoRoute') --version $Version --output $source
  if($LASTEXITCODE -ne 0){throw 'MSI source generation failed.'}
  $obj=Join-Path $stage 'GeoRoute.wixobj'
- & (Join-Path $WixBin 'candle.exe') -nologo -arch x64 -ext WixUtilExtension -ext WixUIExtension -out $obj $source
+ & (Join-Path $WixBin 'candle.exe') -nologo -arch x64 -ext WixUIExtension -out $obj $source
  if($LASTEXITCODE -ne 0){throw 'MSI compilation failed.'}
  New-Item -ItemType Directory -Path $output -Force|Out-Null
  $setup=Join-Path $output ('GeoRoute-Setup-'+$Version+'-x64.msi')
- & (Join-Path $WixBin 'light.exe') -nologo -ext WixUtilExtension -ext WixUIExtension -cultures:ru-ru -out $setup $obj
+ & (Join-Path $WixBin 'light.exe') -nologo -ext WixUIExtension -cultures:ru-ru -out $setup $obj
  if($LASTEXITCODE -ne 0){throw 'MSI linking/validation failed.'}
  Remove-Item -LiteralPath ([IO.Path]::ChangeExtension($setup,'.wixpdb')) -ErrorAction SilentlyContinue
  $hash=(Get-FileHash -LiteralPath $setup).Hash.ToLowerInvariant()

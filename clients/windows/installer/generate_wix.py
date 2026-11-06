@@ -105,14 +105,13 @@ def main():
         ('CheckRunningApp', running, 'NOT UPGRADINGPRODUCTCODE', 'CostFinalize'),
         ('CheckDisabledRoute', hosts, 'REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE', 'CheckRunningApp')]:
         escaped = ''.join('[\\' + c + ']' if c in '[]{}' else c for c in code)
-        element(product, 'SetProperty', condition, Id='WixQuietExec64CmdLine', Action='Set'+name,
-                Value=prefix+'"'+escaped+'"', Before=name, Sequence='execute')
-        element(product, 'CustomAction', Id=name, BinaryKey='WixCA', DllEntry='WixQuietExec64', Execute='immediate', Return='check')
+        # Native MSI type 34 formats the fixed command once. QtExec would format
+        # the PowerShell type literals a second time and destroy their brackets.
+        element(product, 'CustomAction', Id=name, Directory='System64Folder',
+                ExeCommand=prefix+'"'+escaped+'"', Execute='immediate', Return='check')
         element(sequence, 'Custom', condition, Action=name, After=after)
     cleanup = '"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "[INSTALLFOLDER]_service\\InstallerActions.ps1"'
-    element(product, 'SetProperty', 'REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE', Id='CleanOwnStartup', Value=cleanup,
-            Before='CleanOwnStartup', Sequence='execute')
-    element(product, 'CustomAction', Id='CleanOwnStartup', BinaryKey='WixCA', DllEntry='WixQuietExec64',
+    element(product, 'CustomAction', Id='CleanOwnStartup', Directory='System64Folder', ExeCommand=cleanup,
             Execute='deferred', Impersonate='yes', Return='check')
     element(sequence, 'Custom', 'REMOVE="ALL" AND NOT UPGRADINGPRODUCTCODE', Action='CleanOwnStartup', Before='RemoveFiles')
     ET.indent(wix)
