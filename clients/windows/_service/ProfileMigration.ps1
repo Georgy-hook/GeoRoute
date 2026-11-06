@@ -15,7 +15,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     if($catalog.PSObject.Properties['UnifiedGeoHideVersion'] -and $catalog.UnifiedGeoHideVersion -ge 1){return}
     $settingsPath=Join-Path $Root 'geohide-settings.json'
     $settings=if(Test-Path -LiteralPath $settingsPath){Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8|ConvertFrom-Json}else{[pscustomobject]@{}}
-    $fallback=@{US='192.255.159.240';EU='31.25.239.132';RU='159.194.200.33'}
+    $fallback=@{US='192.255.159.240';EU='143.20.64.192';RU='159.194.200.33'}
     foreach($region in @('US','EU','RU')){
         $key=$region.ToLowerInvariant()
         try{if($settings.PSObject.Properties[$key]){$fallback[$region]=Convert-GeoProfileAddress ([string]$settings.$key)}}catch{}
@@ -43,7 +43,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
         $region=if($entry.id.StartsWith('eu-')){'EU'}elseif($entry.id -eq 'ru-primary'){'RU'}else{'US'}
         $ip=$fallback[$region]
         if($entry.id -eq 'alternate'){$ip=if($fallback.US -ne '192.3.233.253'){'192.3.233.253'}else{'192.255.159.241'}}
-        if($entry.id -eq 'eu-alternate'){$ip=@(@('31.25.239.132','37.221.93.141')|Where-Object {$_ -ne $fallback.EU})[0]}
+        if($entry.id -eq 'eu-alternate'){$ip=@(@('37.221.93.141','31.25.239.132')|Where-Object {$_ -ne $fallback.EU})[0]}
         # Repair legacy invalid metadata (such as a single character) from real hosts rows.
         foreach($candidate in @($entry.address)+@($records|ForEach-Object Address)){
             try{$ip=Convert-GeoProfileAddress ([string]$candidate);break}catch{}

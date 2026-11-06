@@ -2,19 +2,17 @@
 
 [![Релиз](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
 [![Windows 10 и 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
-[![VirusTotal — MSI 0.4.2: 0 обнаружений, снимок 06.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.4.2%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/8b7b473e9598a1a304eb4ec850b63ca566bdb12bf032271d96ee9b5dec18dba3/detection)
 
 Приложение для Windows, которое помогает подключать ChatGPT, Gemini и вложения OpenAI через серверы GeoHide, проверяет доступность узлов и подбирает замену, когда адреса меняются.
 
-**[Скачать установщик GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/download/v0.4.2/GeoRoute-Setup-0.4.2-x64.msi)** · [Установка по шагам](docs/INSTALL.ru.md) · [Все релизы](https://github.com/Georgy-hook/GeoRoute/releases) · [English](README.en.md)
+**[Скачать установщик GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/download/v0.4.3/GeoRoute-Setup-0.4.3-x64.msi)** · [Установка по шагам](docs/INSTALL.ru.md) · [Все релизы](https://github.com/Georgy-hook/GeoRoute/releases) · [English](README.en.md)
 
-> **VirusTotal · снимок от 06.11.2026:** ноль обнаружений у MSI 0.4.2, ZIP и выбранных компонентов. Бейдж ведёт на отчёт именно этого установщика. Есть тайм-ауты, ошибки и неподдерживаемые проверки; это не гарантия безопасности. [Охват, даты и SHA-256](docs/security/README.md).
 
 ![Главный экран GeoRoute](docs/images/home.png)
 
 ## Начать пользоваться
 
-1. На странице релиза скачайте **GeoRoute-Setup-0.4.2-x64.msi**. «Source code» и ZIP для обычной установки не нужны.
+1. На странице релиза скачайте **GeoRoute-Setup-0.4.3-x64.msi**. «Source code» и ZIP для обычной установки не нужны.
 2. Откройте скачанный файл → **Далее → Установить**. Ярлыки появятся на рабочем столе и в меню **Пуск**.
 3. Откройте **GeoRoute** с ярлыка. Подождите первую проверку серверов; в разделе **Серверы** выберите доступный маршрут.
 4. На главной нажмите **Включить** и подтвердите запрос Windows. Для отключения нажмите ту же кнопку ещё раз.
@@ -40,11 +38,11 @@
 
 Кнопка **?** рядом с «Добавить сервер» и в окне импорта открывает пошаговую инструкцию. Встроенные профили уже готовы к использованию; импорт нужен для собственного списка адресов.
 
-### Без файла: IP + страна + сервис
+### Без файла: IP + страна
 
 <img src="docs/images/add-profile.png" width="640" alt="Добавление общего профиля GeoHide: IP-адрес, страна и необязательное название">
 
-*Форма общего профиля GeoHide в версии разработки. Профиль можно добавить прямо в приложении.*
+*Форма добавления общего профиля GeoHide. Профиль можно добавить прямо в приложении.*
 
 1. Откройте **Серверы → Добавить сервер → По IP-адресу**.
 2. Введите публичный IP совместимого сервера без схемы URL, порта или маски сети. Поддерживаются IPv4 и IPv6.
@@ -106,7 +104,7 @@ US, EU и RU обновляются независимо. Рабочий адр�
 
 Мониторинг проверяет Gemini, его API и `www.google.com` через один узел. Управляемый профиль добавляет `www.google.com` только после успешной проверки, включая Google Поиск на этом имени. Gmail, `accounts.google.com` и остальные поддомены Google не перенаправляются. Автовыбор предпочитает узлы без ограничения Google. Если Gemini недоступен, общий профиль сохраняет рабочий ChatGPT и показывает предупреждение; зелёного подтверждения Gemini не будет.
 
-Страница Google с двумя разными IP и без поля ввода не позволяет пройти CAPTCHA. Добавления домена недостаточно, если сервер отвергает HTTPS к `www.google.com`. Очистка кеша это не исправляет. [Разбор и действия](docs/INSTALL.ru.md#если-google-показывает-два-разных-ip).
+Страница Google с двумя разными IP и без поля ввода не позволяет пройти CAPTCHA. Gemini и проверка Google должны идти через один IP. GeoRoute проверяет общий HTTP/2-маршрут; отдельное соединение с `www.google.com` требуется не на всех узлах. После запуска Chrome сначала откройте Gemini. Очистка кеша не исправляет неподдерживаемый сервером маршрут. [Разбор и действия](docs/INSTALL.ru.md#если-google-показывает-два-разных-ip).
 
 ## Что меняется на компьютере
 

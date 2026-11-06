@@ -2,13 +2,11 @@
 
 [![Release](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
 [![Windows 10 and 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
-[![VirusTotal — MSI 0.4.2: zero detections, snapshot 2026-11-06](https://img.shields.io/badge/VirusTotal-MSI%200.4.2%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/8b7b473e9598a1a304eb4ec850b63ca566bdb12bf032271d96ee9b5dec18dba3/detection)
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
-**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.2-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.3-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
-**VirusTotal snapshot for 0.4.2 (2026-11-06): zero detections** for the MSI, ZIP and selected source/runtime components. Some engines report unsupported types, failures or timeouts; this is not a safety guarantee. [Reports, actual coverage, analysis dates, hashes and historical evidence](docs/security/README.md).
 
 ![GeoRoute main screen](docs/images/home.png)
 
@@ -18,7 +16,7 @@ Wait for the initial checks, choose an available route under **Servers**, then u
 
 The manager refreshes provider lists for US/EU/RU hourly and probes endpoints every two minutes. Regional replacement is independent: an EU outage does not prevent updating US or RU profiles. Unavailable, retired and stale endpoints cannot unlock a managed profile. A mixed US+EU route requires both roles to pass. Healthy choices are retained; manual addresses survive provider refresh.
 
-Monitoring has its own sidebar entry, overall and per-server loading indicators, and a single active scan. Every bundled GeoHide profile includes ChatGPT, Gemini and OpenAI files; the mixed route sends Gemini through EU. The retired Gemini-only cards are migrated away with a backup. Gemini failures are visible without disabling a working ChatGPT connection. Automatic selection prefers nodes without Google challenges. Managed profiles include the exact `www.google.com` verification frontend only after its same-node HTTPS probe succeeds; this also routes Google Search on that hostname. Gmail, account login and other Google subdomains are not included.
+Monitoring has its own sidebar entry, overall and per-server loading indicators, and a single active scan. Every bundled GeoHide profile includes ChatGPT, Gemini and OpenAI files; the mixed route sends Gemini through EU. The retired Gemini-only cards are migrated away with a backup. Gemini failures are visible without disabling a working ChatGPT connection. Automatic selection prefers nodes without Google challenges. Managed profiles include the exact `www.google.com` verification frontend only after its same-node HTTPS or shared HTTP/2 route probe succeeds; this also routes Google Search on that hostname. Gmail, account login and other Google subdomains are not included.
 
 Automatic selection updates saved profiles. Applying them to Windows requires an explicit connection action and elevation. The ordinary mode manages a marked section of `hosts`, not an all-traffic VPN. Closing the window keeps monitoring in the tray; exiting stops monitoring while applied hosts settings remain. Optional NextDNS Bridge and HTTP proxy features are not enabled automatically.
 
@@ -32,4 +30,4 @@ Custom profiles: use the **?** button beside **Add server** for the in-app guide
 
 Create a profile without a file: **Servers → Add server → By IP**, enter a public server IP and choose the country, then save. One GeoHide profile includes ChatGPT, Gemini, OpenAI files and the exact Google verification frontend. A name is optional. Saving does not enable the route or verify connectivity; the supplied server must support these hosts. File import remains available as a separate input mode.
 
-<img src="docs/images/add-profile.png" width="640" alt="Development GeoRoute profile form: one GeoHide profile for ChatGPT and Gemini, server IP, country and optional name">
+<img src="docs/images/add-profile.png" width="640" alt="GeoRoute profile form: one GeoHide profile for ChatGPT and Gemini, server IP, country and optional name">
