@@ -1,4 +1,4 @@
-"""Inspect the exact portable app artifact produced and tested in this workflow."""
+"""Inspect exact tested portable, installer and installed-uninstaller bytes."""
 import hashlib
 import io
 from pathlib import Path
