@@ -21,7 +21,9 @@ $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``=
 $view.Execute();$productCode=$view.Fetch().StringData(1);$view.Close()
 function Run-Msi([string]$Arguments,[string]$Log) {
  $p=Start-Process -FilePath $msiexec -ArgumentList ($Arguments+' /qn /norestart /l*v "'+(Join-Path $root $Log)+'"') -Wait -PassThru
- if($p.ExitCode -ne 0 -and (Test-Path -LiteralPath (Join-Path $root $Log))){Get-Content -LiteralPath (Join-Path $root $Log) -Tail 50 | Write-Host}
+ if($p.ExitCode -ne 0 -and (Test-Path -LiteralPath (Join-Path $root $Log))){
+  Get-Content -LiteralPath (Join-Path $root $Log)|Select-String -Pattern 'WixQuietExec|Return value 3|Error |error |Exception' -Context 1,2|Select-Object -Last 20|ForEach-Object {Write-Host $_}
+ }
  return $p.ExitCode
 }
 function Run-Setup([string]$Log,[switch]$Repair) {
