@@ -2,11 +2,14 @@
 
 [![Release](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
 [![Windows 10 and 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
+[![VirusTotal — MSI 0.4.3: zero detections, snapshot 2026-11-06](https://img.shields.io/badge/VirusTotal-MSI%200.4.3%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/d06b9cd0088a2083e2d0f9b267e261cc5fcb8e953d0be0cf18848f516fbc24d4/detection)
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
 **[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.3-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
+
+**VirusTotal snapshot (2026-11-06): zero detections** for the exact 0.4.3 MSI, ZIP and eight selected components. The MSI has 59 undetected results and 12 unsupported types; absence of detections is not a safety guarantee. [Reports, coverage, dates and hashes](docs/security/README.md).
 
 ![GeoRoute main screen](docs/images/home.png)
 
