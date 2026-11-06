@@ -34,3 +34,6 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Local contributor instructions (not part of the public project).
+/AGENTS.md

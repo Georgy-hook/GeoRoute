@@ -2,8 +2,10 @@ name: GeoRoute Windows
 
 on:
   push:
+    branches: [main, develop, 'feature/**', 'release/**']
     paths:
       - 'clients/windows/**'
+      - 'tools/scan_windows_candidate.py'
       - '.github/workflows/windows-client.yml'
   pull_request:
     paths:
@@ -31,12 +33,20 @@ jobs:
         run: .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
       - name: Build portable client
         run: .\clients\windows\Build.ps1 -PythonExe python.exe
+      - name: Build ordinary Windows installer
+        run: .\clients\windows\Build-Installer.ps1 -PythonExe python.exe
+      - name: Install, upgrade, launch and uninstall in disposable runner
+        run: .\clients\windows\tests\Test-Installer.ps1 -SetupPath (Resolve-Path clients/windows/dist/GeoRoute-Setup-*-x64.exe).Path -ArchivePath (Resolve-Path clients/windows/dist/*.zip).Path
       - uses: actions/upload-artifact@v4
         with:
           name: GeoRoute-Windows
           path: clients/windows/dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-test-evidence
+          path: clients/windows/installer-test-evidence/
   audit:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/codex/bridge-lifecycle' && contains(github.event.head_commit.message, '[audit-client]')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || startsWith(github.ref, 'refs/heads/feature/') || startsWith(github.ref, 'refs/heads/release/')) && contains(github.event.head_commit.message, '[audit-client]')
     needs: windows
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -49,6 +59,10 @@ jobs:
         with:
           name: GeoRoute-Windows
           path: client-candidate/
+      - uses: actions/download-artifact@v4
+        with:
+          name: installer-test-evidence
+          path: installer-test-evidence/
       - name: Inspect exact client candidate with VirusTotal
         env:
           VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}

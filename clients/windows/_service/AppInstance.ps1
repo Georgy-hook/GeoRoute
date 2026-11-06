@@ -6,9 +6,12 @@ function Close-GeoRouteInstance($Instance) {
   $Instance.Mutex.Dispose();$Instance.Mutex=$null
  }
  if($Instance.Event){$Instance.Event.Dispose();$Instance.Event=$null}
+ if($Instance.InstallerMutex){$Instance.InstallerMutex.Dispose();$Instance.InstallerMutex=$null}
 }
 function New-GeoRouteInstance([string]$Root,[switch]$Repair,[switch]$Background,[string]$ActivationName) {
- $state=[pscustomobject]@{IsOwner=$true;Mutex=$null;Event=$null}
+ $state=[pscustomobject]@{IsOwner=$true;Mutex=$null;Event=$null;InstallerMutex=$null}
+ # Setup/Uninstall can ask the user to close GeoRoute without killing PowerShell.
+ $state.InstallerMutex=[Threading.Mutex]::new($false,'Local\GeoRoute.Setup.Application')
  if($ActivationName){$state.Event=[Threading.EventWaitHandle]::OpenExisting($ActivationName);return $state}
  # Retain compatibility when an older installed EXE hosts this script.
  if('NextDNS.Desktop.DesktopInstance' -as [type]){return $state}

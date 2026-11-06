@@ -1,0 +1,45 @@
+name: Branch policy
+
+on:
+  push:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  naming:
+    if: github.event_name != 'pull_request' || github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        env:
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          if [[ "$REF_TYPE" == tag ]]; then exit 0; fi
+          if [[ ! "$BRANCH" =~ ^(main|develop|release/V[0-9]+\.[0-9]+\.[0-9]+|feature/[a-z0-9][a-z0-9-]*)$ ]]; then
+            echo 'Use main, develop, release/V1.0.0 or feature/short-name.' >&2
+            exit 1
+          fi
+  delete-feature:
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'feature/') && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            try {
+              const { data } = await github.rest.git.getRef({ ...context.repo, ref: `heads/${pr.head.ref}` });
+              if (data.object.sha !== pr.head.sha) {
+                core.warning('Branch changed after merge; preserving newer work.');
+                return;
+              }
+              await github.rest.git.deleteRef({ ...context.repo, ref: `heads/${pr.head.ref}` });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+            }
