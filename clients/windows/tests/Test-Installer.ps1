@@ -29,8 +29,12 @@ try {
  $shortcutPath=Join-Path ([Environment]::GetFolderPath('Programs')) 'GeoRoute.lnk'
  if(-not(Test-Path -LiteralPath $shortcutPath)){throw 'Start menu shortcut missing'}
  $shortcut=(New-Object -ComObject WScript.Shell).CreateShortcut($shortcutPath)
- if($shortcut.TargetPath -ine $shell -or $shortcut.Arguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch. Target='+$shortcut.TargetPath+'; arguments='+$shortcut.Arguments+'; expected shell='+$shell+'; expected app='+$app)}
- $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($shortcut.Arguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
+ # WScript.Shell exposes ANSI arguments on an English Windows code page.
+ # The Shell property store reads the actual Unicode link used by Explorer.
+ $linkFolder=(New-Object -ComObject Shell.Application).NameSpace((Split-Path $shortcutPath -Parent))
+ $linkArguments=$linkFolder.ParseName('GeoRoute.lnk').ExtendedProperty('System.Link.Arguments')
+ if($shortcut.TargetPath -ine $shell -or $linkArguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch. Target='+$shortcut.TargetPath+'; Unicode arguments='+$linkArguments+'; expected shell='+$shell+'; expected app='+$app)}
+ $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($linkArguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($smoke.ExitCode -ne 0){throw 'Installed shortcut GUI smoke failed'}
  $mutex=[Threading.Mutex]::new($false,'Local\GeoRoute.Setup.Application')
  try {if((Run-Setup 'running.log') -eq 0){throw 'Installer replaced a running app'}}finally{$mutex.Dispose()}
