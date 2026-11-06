@@ -1,8 +1,8 @@
 # GeoRoute
 
-[![Релиз](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=3586a6&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
-[![Windows 10 и 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-3586a6?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
-[![VirusTotal — MSI 0.4.2: 0 обнаружений, снимок 06.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.4.2%20%7C%200%20detections-2ea98e?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/8b7b473e9598a1a304eb4ec850b63ca566bdb12bf032271d96ee9b5dec18dba3/detection)
+[![Релиз](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
+[![Windows 10 и 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
+[![VirusTotal — MSI 0.4.2: 0 обнаружений, снимок 06.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.4.2%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/8b7b473e9598a1a304eb4ec850b63ca566bdb12bf032271d96ee9b5dec18dba3/detection)
 
 Приложение для Windows, которое помогает подключать ChatGPT, Gemini и вложения OpenAI через серверы GeoHide, проверяет доступность узлов и подбирает замену, когда адреса меняются.
 
@@ -41,6 +41,10 @@
 Кнопка **?** рядом с «Добавить сервер» и в окне импорта открывает пошаговую инструкцию. Встроенные профили уже готовы к использованию; импорт нужен для собственного списка адресов.
 
 ### Без файла: IP + страна + сервис
+
+<img src="docs/images/add-profile.png" width="640" alt="Окно добавления профиля: IP-адрес, сервис ChatGPT или Gemini, страна и необязательное название">
+
+*Интерфейс установленной версии 0.4.2: профиль можно добавить прямо в приложении.*
 
 1. Откройте **Серверы → Добавить сервер → По IP-адресу**.
 2. Введите публичный IP совместимого сервера без схемы URL, порта или маски сети. Поддерживаются IPv4 и IPv6.
