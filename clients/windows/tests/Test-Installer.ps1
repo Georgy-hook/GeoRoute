@@ -123,7 +123,7 @@ try {
    }
    $productInfo=New-Object -ComObject WindowsInstaller.Installer
    try {
-    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'ProductName'))
+    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'InstalledProductName'))
     if($productName -ne 'GeoRoute'){throw 'Windows Installer registration missing'}
    }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
    $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
