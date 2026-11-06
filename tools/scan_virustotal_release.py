@@ -106,7 +106,7 @@ def analysis_id(data):
 
 
 def main():
-    tag = os.environ.get('RELEASE_TAG', 'v0.4.0')
+    tag = os.environ.get('RELEASE_TAG', '')
     repo = os.environ.get('GITHUB_REPOSITORY', 'Georgy-hook/GeoRoute')
     if not re.fullmatch(r'v\d+\.\d+\.\d+', tag) or repo != 'Georgy-hook/GeoRoute':
         raise RuntimeError('Expected an explicit GeoRoute release tag in its own repository')
@@ -140,6 +140,13 @@ def main():
         paths += [bridge_path, '_service/bridge/python/python.exe']
         selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in
                     paths]
+    setup_names = ['GeoRoute-Setup-' + tag[1:] + '-x64' + suffix for suffix in ('.msi', '.exe')]
+    setup_asset = next((a for name in setup_names for a in release['assets'] if a['name'] == name), None)
+    if setup_asset:
+        status, setup = fetch(setup_asset['browser_download_url'], timeout=90)
+        if status != 200 or setup_asset.get('digest') != 'sha256:' + hashlib.sha256(setup).hexdigest():
+            raise RuntimeError('Published installer digest mismatch')
+        selected.append((setup_asset['name'], setup))
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
                                   'files': [{'name': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}

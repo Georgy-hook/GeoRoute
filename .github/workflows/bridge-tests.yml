@@ -1,0 +1,40 @@
+name: Bridge service integration
+
+on:
+  push:
+    branches: [main, develop, 'feature/**', 'release/**']
+    paths:
+      - 'clients/windows/_service/bridge/**'
+      - 'clients/windows/tests/Test-BridgeService.ps1'
+      - 'clients/windows/tests/test_bridge_protocol.py'
+      - '.github/workflows/bridge-tests.yml'
+  pull_request:
+    paths:
+      - 'clients/windows/_service/bridge/**'
+      - 'clients/windows/tests/Test-BridgeService.ps1'
+      - 'clients/windows/tests/test_bridge_protocol.py'
+      - '.github/workflows/bridge-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  service:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Verify real LocalService lifecycle without changing adapter DNS
+        shell: powershell
+        run: |
+          $ErrorActionPreference='Stop'
+          python -m unittest discover -s clients/windows/tests -p test_bridge_protocol.py
+          if($LASTEXITCODE -ne 0){throw 'DNS protocol tests failed'}
+          $runtime=Join-Path $env:RUNNER_TEMP 'bridge-runtime'
+          New-Item -ItemType Directory -Path $runtime|Out-Null
+          python -I clients/windows/tools/prepare_runtime.py --destination (Join-Path $runtime 'python')
+          if($LASTEXITCODE -ne 0){throw 'Runtime packaging failed'}
+          .\clients\windows\tests\Test-BridgeService.ps1 -RuntimeRoot $runtime

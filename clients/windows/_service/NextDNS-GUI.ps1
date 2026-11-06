@@ -17,6 +17,7 @@ if(-not('GeoRouteDpi' -as [type])){
 }
 [GeoRouteDpi]::Enable()
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
+. (Join-Path $script:taskRoot 'ProfileDefaults.ps1')
 . (Join-Path $script:taskRoot 'AppInstance.ps1')
 $script:taskInstance=$null
 $script:taskActivationEvent=$null
@@ -25,6 +26,7 @@ if(-not $SmokeTest -and -not $RenderPreview){
  if(-not $script:taskInstance.IsOwner){return}
  $script:taskActivationEvent=$script:taskInstance.Event
 }
+Initialize-GeoRouteProfiles $script:taskRoot
 if($Repair){try{ & (Join-Path $PSScriptRoot 'RepairCenter.ps1') -SmokeTest:$SmokeTest }finally{Close-GeoRouteInstance $script:taskInstance};return}
 $script:taskShell = Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:taskUi = @{}

@@ -6,12 +6,7 @@ on:
       tag:
         description: Existing release tag to inspect (no rebuild)
         required: true
-        default: v0.4.0
-  push:
-    branches: [codex/virustotal-release-audit]
-    paths:
-      - .github/workflows/virustotal.yml
-      - tools/scan_virustotal_release.py
+        default: v0.4.2
 
 permissions:
   contents: read
@@ -32,9 +27,8 @@ jobs:
       - name: Inspect exact published files with VirusTotal
         env:
           GITHUB_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ inputs.tag || 'v0.4.0' }}
+          RELEASE_TAG: ${{ inputs.tag }}
           VTAI_TOKEN: ${{ secrets.VTAI_AGENT_TOKEN }}
-          VTAI_BOOTSTRAP_PUBLIC_KEY: ${{ vars.VTAI_BOOTSTRAP_PUBLIC_KEY }}
         run: python tools/scan_virustotal_release.py
       - uses: actions/upload-artifact@v4
         if: always()
