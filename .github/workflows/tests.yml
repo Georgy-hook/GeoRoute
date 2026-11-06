@@ -25,3 +25,5 @@ jobs:
         run: mvn -B test
       - name: Verify VirusTotal evidence handling without network calls
         run: python3 -m unittest discover -s tools/tests -v
+      - name: Check documentation links, images and anchors
+        run: python3 tools/check_docs.py

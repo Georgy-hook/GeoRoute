@@ -29,3 +29,11 @@ Never commit `geohide-settings.json`, `geohide-monitor.json`, `geohide-history.j
 CI scans exact tested ZIP/MSI bytes plus selected source/runtime members and the fixed uninstall helper. Read each report: ZIP results alone do not describe the installer. No custom uninstaller EXE is distributed. Never rebuild after scanning. Explicit `[audit-client]` commit markers on trusted feature/develop/release pushes trigger scans; fork PRs cannot access the token.
 
 Original cloud DNS configurator docs: [English](../DNS-CONFIGURER.md) / [Russian](../DNS-CONFIGURER.ru.md).
+
+## Documentation and release verification
+
+Run `python tools/check_docs.py` to check tracked Markdown targets, images and heading anchors. CI runs it with the ordinary repository tests. Update both language READMEs together.
+
+The VirusTotal header badge is an explicitly dated snapshot for one MSI version and links to that file's full SHA-256 report. It is not a live status or a certification badge. When publishing a new installer, update the version, date, verdict and report URL together only after meaningful analysis results are available. Preserve coverage limitations in the security report. The ordinary Shields format follows examples in [kObsidian](https://github.com/bezata/kObsidian#readme) and [VirusTotal Action](https://github.com/cssnr/virustotal-action/discussions/27); see [Shields static badges](https://shields.io/badges/static-badge). The official [VT widget](https://docs.virustotal.com/reference/widgeturl) is an iframe integration, rather than a GitHub Markdown badge.
+
+`verify-windows-release.yml` downloads the public MSI/ZIP without rebuilding them, checks GitHub digests, checksum sidecars and the tag's security report, then exercises the installer in a disposable Windows VM. It also tests the default per-user location, both shortcuts and Windows Installer registration. Screenshots are WPF renders from the installed release in a fresh verification profile; diagnostic previews do not run live network actions or prove model availability. Release tags and published bytes remain immutable when documentation is updated.

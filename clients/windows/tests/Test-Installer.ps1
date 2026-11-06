@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath)
+param([Parameter(Mandatory=$true)][string]$SetupPath,[Parameter(Mandatory=$true)][string]$ArchivePath,[string]$ScreenshotDirectory,[switch]$CheckDefaultLocation)
 $ErrorActionPreference='Stop'
 if($env:GITHUB_ACTIONS -ne 'true' -or $env:RUNNER_OS -ne 'Windows' -or -not $env:RUNNER_TEMP){throw 'Installer integration is restricted to disposable GitHub Windows runners.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -21,10 +21,10 @@ function Get-MsiCode([string]$Path) {
   $installer=New-Object -ComObject WindowsInstaller.Installer
   $database=$installer.OpenDatabase($Path,0)
   $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
-  $view.Execute();$record=$view.Fetch();$code=$record.StringData(1)
+  [void]$view.Execute();$record=$view.Fetch();$code=$record.StringData(1)
   return $code
  } finally {
-  if($view){$view.Close()}
+  if($view){[void]$view.Close()}
   foreach($com in @($record,$view,$database,$installer)){if($com){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)}}
  }
 }
@@ -58,6 +58,12 @@ try {
  if($shortcut.TargetPath -ine $shell -or $linkArguments -notlike ('*"'+$app+'\_service\NextDNS-GUI.ps1"')){throw ('Shortcut mismatch: '+$shortcut.TargetPath+'; '+$linkArguments)}
  $smoke=Start-Process -FilePath $shortcut.TargetPath -ArgumentList ($linkArguments+' -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($smoke.ExitCode -ne 0){throw 'Installed shortcut GUI smoke failed'}
+ if($ScreenshotDirectory){
+  New-Item -ItemType Directory -Path $ScreenshotDirectory -Force|Out-Null
+  $preview=Join-Path $ScreenshotDirectory 'georoute.png'
+  $render=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+(Join-Path $app '_service\NextDNS-GUI.ps1')+'" -RenderPreview -PreviewPath "'+$preview+'"') -WindowStyle Hidden -Wait -PassThru
+  if($render.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $preview)){throw 'Installed GUI screenshot export failed'}
+ }
  $mutex=[Threading.Mutex]::new($false,('Global\GeoRoute.Setup.Application.'+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value))
  try {if((Run-Setup 'running.log' -Repair) -eq 0){throw 'Installer replaced a running app'}}finally{$mutex.Dispose()}
  $catalog=Join-Path $app '_service\profiles.json';$routes=Join-Path $app '_service\connection-routes.json'
@@ -101,13 +107,47 @@ try {
  $cleanSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+(Join-Path $app '_service\NextDNS-GUI.ps1')+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
  if($cleanSmoke.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $catalog)){throw 'Profile defaults did not recover after clean reinstall'}
  if((Run-Msi ('/x '+$productCode) 'clean-uninstall.log') -ne 0){throw 'Clean uninstall failed'}
+ if($CheckDefaultLocation){
+  $defaultApp=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Programs\GeoRoute'
+  if(Test-Path -LiteralPath $defaultApp){throw 'Unexpected existing default install folder on disposable runner'}
+  try {
+   if((Run-Msi ('/i "'+$SetupPath+'"') 'default-install.log') -ne 0){throw 'Default-location install failed'}
+   $defaultGui=Join-Path $defaultApp '_service\NextDNS-GUI.ps1'
+   if(-not(Test-Path -LiteralPath $defaultGui)){throw 'Default install used an unexpected location'}
+   foreach($directory in @([Environment]::GetFolderPath('Programs'),[Environment]::GetFolderPath('Desktop'))){
+    $link=Join-Path $directory 'GeoRoute.lnk'
+    if(-not(Test-Path -LiteralPath $link)){throw ('Missing installed shortcut: '+$link)}
+    $folder=(New-Object -ComObject Shell.Application).NameSpace($directory)
+    $arguments=$folder.ParseName('GeoRoute.lnk').ExtendedProperty('System.Link.Arguments')
+    if($arguments -notlike ('*"'+$defaultGui+'"')){throw 'Default install shortcut points outside app'}
+   }
+   # MSI exposes per-user products through its API; do not assume an ARP registry hive.
+   $productInfo=New-Object -ComObject WindowsInstaller.Installer
+   try {
+    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'InstalledProductName'))
+    $assignment=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'AssignmentType'))
+    if($productName -ne 'GeoRoute' -or $assignment -ne '0'){throw 'Per-user Windows Installer registration mismatch'}
+   }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
+   $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
+   if($defaultSmoke.ExitCode -ne 0){throw 'Default install GUI smoke failed'}
+  } finally {if((Run-Msi ('/x '+$productCode) 'default-uninstall.log') -ne 0){throw 'Default install cleanup failed'}}
+  $productInfo=New-Object -ComObject WindowsInstaller.Installer
+  try {
+   $productState=$productInfo.GetType().InvokeMember('ProductState',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode))
+   if($productState -ne -1){throw 'Uninstall left a registered Windows Installer product'}
+  }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
+ }
  if((Get-FileHash -LiteralPath $hosts).Hash -ne $hostsBefore){throw 'Installer changed hosts'}
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
  if($proxyAfter -cne $proxyBefore){throw 'Installer changed proxy'}
  Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, profile preservation, clean reinstall, uninstall, owned startup and untouched network.'
+ if($CheckDefaultLocation){Write-Output 'Published MSI also passed: standard per-user folder, desktop and Start menu shortcuts, installed-apps registration/removal and default-location GUI launch.'}
 } catch {
  Write-Host ('Installer integration failed: '+$_.Exception.Message)
+ if($CheckDefaultLocation -and (Test-Path -LiteralPath (Join-Path $root 'default-install.log'))){
+  Get-Content -LiteralPath (Join-Path $root 'default-install.log')|Select-String -Pattern 'ProductCode|ProductName|ALLUSERS|RegisterProduct|PublishProduct|ARPSYSTEMCOMPONENT'|Select-Object -Last 24|ForEach-Object {Write-Host $_}
+ }
  throw
 } finally {
  if(-not $root.StartsWith(([IO.Path]::GetFullPath($env:RUNNER_TEMP)+'\'),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($root) -notmatch '^GeoRoute-Installer-[a-f0-9]{32}$'){throw 'Unexpected integration-test path'}
