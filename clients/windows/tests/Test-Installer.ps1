@@ -121,15 +121,21 @@ try {
     $arguments=$folder.ParseName('GeoRoute.lnk').ExtendedProperty('System.Link.Arguments')
     if($arguments -notlike ('*"'+$defaultGui+'"')){throw 'Default install shortcut points outside app'}
    }
-   # Verify the entry actually consumed by Windows Settings / Installed apps.
-   $uninstallKey='HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\'+$productCode
-   $registration=Get-ItemProperty -LiteralPath $uninstallKey
-   if($registration.DisplayName -ne 'GeoRoute' -or $registration.WindowsInstaller -ne 1 -or
-      $registration.UninstallString -notlike ('*'+$productCode+'*')){throw 'Installed-apps registration mismatch'}
+   # MSI exposes per-user products through its API; do not assume an ARP registry hive.
+   $productInfo=New-Object -ComObject WindowsInstaller.Installer
+   try {
+    $productName=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'InstalledProductName'))
+    $assignment=$productInfo.GetType().InvokeMember('ProductInfo',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode,'AssignmentType'))
+    if($productName -ne 'GeoRoute' -or $assignment -ne '0'){throw 'Per-user Windows Installer registration mismatch'}
+   }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
    $defaultSmoke=Start-Process -FilePath $shell -ArgumentList ('-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+$defaultGui+'" -SmokeTest') -WindowStyle Hidden -Wait -PassThru
    if($defaultSmoke.ExitCode -ne 0){throw 'Default install GUI smoke failed'}
   } finally {if((Run-Msi ('/x '+$productCode) 'default-uninstall.log') -ne 0){throw 'Default install cleanup failed'}}
-  if(Test-Path -LiteralPath $uninstallKey){throw 'Uninstall left an installed-apps entry'}
+  $productInfo=New-Object -ComObject WindowsInstaller.Installer
+  try {
+   $productState=$productInfo.GetType().InvokeMember('ProductState',[Reflection.BindingFlags]::GetProperty,$null,$productInfo,@([string]$productCode))
+   if($productState -ne -1){throw 'Uninstall left a registered Windows Installer product'}
+  }finally{[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($productInfo)}
  }
  if((Get-FileHash -LiteralPath $hosts).Hash -ne $hostsBefore){throw 'Installer changed hosts'}
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
@@ -139,6 +145,9 @@ try {
  if($CheckDefaultLocation){Write-Output 'Published MSI also passed: standard per-user folder, desktop and Start menu shortcuts, installed-apps registration/removal and default-location GUI launch.'}
 } catch {
  Write-Host ('Installer integration failed: '+$_.Exception.Message)
+ if($CheckDefaultLocation -and (Test-Path -LiteralPath (Join-Path $root 'default-install.log'))){
+  Get-Content -LiteralPath (Join-Path $root 'default-install.log')|Select-String -Pattern 'ProductCode|ProductName|ALLUSERS|RegisterProduct|PublishProduct|ARPSYSTEMCOMPONENT'|Select-Object -Last 24|ForEach-Object {Write-Host $_}
+ }
  throw
 } finally {
  if(-not $root.StartsWith(([IO.Path]::GetFullPath($env:RUNNER_TEMP)+'\'),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($root) -notmatch '^GeoRoute-Installer-[a-f0-9]{32}$'){throw 'Unexpected integration-test path'}
