@@ -88,6 +88,7 @@ try {
  foreach($file in $keep){if((Get-FileHash -LiteralPath $file).Hash -ne $hashes[$file]){throw ('Uninstall lost data: '+$file)}}
  Remove-ItemProperty -LiteralPath $runKey -Name $runName
  if((Run-Setup 'reinstall.log') -ne 0){throw 'Reinstall failed'}
+ $productCode=Get-MsiCode $SetupPath
  $own='"'+$env:ComSpec+'" /d /s /c ""'+(Join-Path $app 'GeoRoute.cmd')+'" -Tray"'
  New-ItemProperty -Path $runKey -Name $runName -Value $own -Force|Out-Null
  if((Run-Msi ('/x '+$productCode) 'uninstall-owned.log') -ne 0){throw 'Second uninstall failed'}
