@@ -1,32 +1,42 @@
-# BEGIN CHATGPT-US-WINDOWS
-# Prepared 2026-10-22. Append this block to the EXISTING Windows hosts file.
-# Use PRIMARY OR ALTERNATE, never both. This is not a complete hosts file.
-# Source: https://github.com/Internet-Helper/GeoHideDNS/blob/main/hosts/us/hosts
-# Export date: 2026-10-20. Additional DoH-verified names: chat.openai.com, ws.chatgpt.com.
-# GeoHide US proxy, fixed IPv4: 192.255.159.241. No EU/RU fallback in this block.
-# Static exact names only; no wildcard coverage or automatic updates.
+# GeoHide: ChatGPT, Gemini and OpenAI attachments.
 192.3.233.253 ab.chatgpt.com
 192.3.233.253 android.chat.openai.com
 192.3.233.253 api.openai.com
 192.3.233.253 auth.openai.com
 192.3.233.253 auth0.openai.com
+192.3.233.253 bard.google.com
 192.3.233.253 bps.openai.com
 192.3.233.253 cdn.oaistatic.com
 192.3.233.253 cdn.platform.openai.com
 192.3.233.253 chat.openai.com
 192.3.233.253 chatgpt.com
+192.3.233.253 codex-cloud-backend.chatgpt.com
+192.3.233.253 codex-cloud-environments.chatgpt.com
 192.3.233.253 developers.openai.com
 192.3.233.253 files.oaiusercontent.com
+192.3.233.253 geller-pa.googleapis.com
+192.3.233.253 gemini.google
+192.3.233.253 gemini.google.com
+192.3.233.253 geminiweb-pa.clients.google.com
+192.3.233.253 geminiweb-pa.clients6.google.com
+192.3.233.253 generativelanguage.googleapis.com
 192.3.233.253 ios.chat.openai.com
 192.3.233.253 oaistatic.com
 192.3.233.253 oaiusercontent.com
 192.3.233.253 openai.com
 192.3.233.253 operator.chatgpt.com
 192.3.233.253 platform.openai.com
+192.3.233.253 proactivebackend-pa.googleapis.com
+192.3.233.253 robinfrontend-pa.googleapis.com
+192.3.233.253 sdmntprcentralus.oaiusercontent.com
+192.3.233.253 sdmntpreastus2.oaiusercontent.com
 192.3.233.253 sdmntpritalynorth.oaiusercontent.com
 192.3.233.253 sdmntprnortheu.oaiusercontent.com
 192.3.233.253 sdmntprpolandcentral.oaiusercontent.com
+192.3.233.253 sdmntprsouthcentralus.oaiusercontent.com
 192.3.233.253 sdmntprukwest.oaiusercontent.com
+192.3.233.253 sdmntprwestcentralus.oaiusercontent.com
+192.3.233.253 sdmntprwestus.oaiusercontent.com
 192.3.233.253 tcr9i.chat.openai.com
 192.3.233.253 videos.openai.com
 192.3.233.253 webrtc.chatgpt.com
@@ -35,13 +45,3 @@
 192.3.233.253 www.oaistatic.com
 192.3.233.253 www.oaiusercontent.com
 192.3.233.253 www.openai.com
-192.3.233.253 sdmntprsouthcentralus.oaiusercontent.com
-# Local extension: TLS verified 2026-10-23; original cached route timed out.
-192.3.233.253 codex-cloud-backend.chatgpt.com
-# Local extension: TLS verified 2026-10-23; original cached route timed out.
-192.3.233.253 codex-cloud-environments.chatgpt.com
-# Local extension: observed Dot ZIP timed out on old DNS route 2026-10-23; hostname TLS verified.
-192.3.233.253 sdmntprwestcentralus.oaiusercontent.com
-# Local extension: observed Dot image timed out on old DNS route 2026-10-23; hostname TLS verified.
-192.3.233.253 sdmntprcentralus.oaiusercontent.com
-# END CHATGPT-US-WINDOWS

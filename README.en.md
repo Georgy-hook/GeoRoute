@@ -18,7 +18,7 @@ Wait for the initial checks, choose an available route under **Servers**, then u
 
 The manager refreshes provider lists for US/EU/RU hourly and probes endpoints every two minutes. Regional replacement is independent: an EU outage does not prevent updating US or RU profiles. Unavailable, retired and stale endpoints cannot unlock a managed profile. A mixed US+EU route requires both roles to pass. Healthy choices are retained; manual addresses survive provider refresh.
 
-Monitoring has its own sidebar entry, overall and per-server loading indicators, and a single active scan. Gemini-only US/EU profiles are independent of ChatGPT; the combined route sends Gemini through EU. Google CAPTCHA redirects are shown as requiring user action, not as fully healthy model access or a transport outage. No account, Gmail or broad Google-domain routing is added.
+Monitoring has its own sidebar entry, overall and per-server loading indicators, and a single active scan. Every bundled GeoHide profile includes ChatGPT, Gemini and OpenAI files; the mixed route sends Gemini through EU. The retired Gemini-only cards are migrated away with a backup. Gemini failures are visible without disabling a working ChatGPT connection. Automatic selection prefers nodes without Google challenges. Managed profiles include the exact `www.google.com` verification frontend only after its same-node HTTPS probe succeeds; this also routes Google Search on that hostname. Gmail, account login and other Google subdomains are not included.
 
 Automatic selection updates saved profiles. Applying them to Windows requires an explicit connection action and elevation. The ordinary mode manages a marked section of `hosts`, not an all-traffic VPN. Closing the window keeps monitoring in the tray; exiting stops monitoring while applied hosts settings remain. Optional NextDNS Bridge and HTTP proxy features are not enabled automatically.
 
@@ -30,6 +30,6 @@ Based on [noVibe/DnsConf](https://github.com/noVibe/DnsConf). The upstream cloud
 
 Custom profiles: use the **?** button beside **Add server** for the in-app guide, or see the [file format and import limits](README.md#как-добавить-собственный-профиль). Import accepts `.hosts` files up to 1 MiB with 1–512 unique, supported exact domains. Importing adds a local profile without changing the active system configuration; selecting and connecting is a separate action. Custom profiles do not participate in automatic GeoHide endpoint replacement.
 
-Create a profile without a file: **Servers → Add server → By IP**, enter a public server IP, choose ChatGPT or Gemini and the country, then save. A name is optional. The client generates service-specific host mappings locally; saving does not enable the route or verify connectivity. File import remains available as a separate input mode.
+Create a profile without a file: **Servers → Add server → By IP**, enter a public server IP and choose the country, then save. One GeoHide profile includes ChatGPT, Gemini, OpenAI files and the exact Google verification frontend. A name is optional. Saving does not enable the route or verify connectivity; the supplied server must support these hosts. File import remains available as a separate input mode.
 
-<img src="docs/images/add-profile.png" width="640" alt="Installed GeoRoute 0.4.2 profile form: server IP, ChatGPT or Gemini, country and optional name">
+<img src="docs/images/add-profile.png" width="640" alt="Development GeoRoute profile form: one GeoHide profile for ChatGPT and Gemini, server IP, country and optional name">

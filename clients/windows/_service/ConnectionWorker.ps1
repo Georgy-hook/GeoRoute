@@ -13,13 +13,14 @@ if($proxyState.Enabled){
 # Wildcard DNS rewrites belong to the optional NextDNS Bridge. In hosts mode
 # they are neither expected nor a reason to show a permanent warning.
 $bridge=Get-Service -Name NextDNSBridge -ErrorAction SilentlyContinue
-if(-not $bridge -or $bridge.Status -ne 'Running') {
+$hostsText=Get-Content -LiteralPath (Join-Path $env:SystemRoot 'System32\drivers\etc\hosts') -Raw -ErrorAction Stop
+if(Test-ConnectionHostsMode $hostsText ([bool]($bridge -and $bridge.Status -eq 'Running'))) {
     . (Join-Path $PSScriptRoot 'GeoHide.ps1')
     . (Join-Path $PSScriptRoot 'Home.ps1')
     $snapshotPath=Join-Path $PSScriptRoot 'geohide-monitor.json'
     $snapshot=if(Test-Path -LiteralPath $snapshotPath){Get-Content -LiteralPath $snapshotPath -Raw -Encoding UTF8|ConvertFrom-Json}else{$null}
-    $home=Get-GeoHomeState $PSScriptRoot $snapshot
-    $report=[pscustomobject]@{Mode='hosts';State=$home.State;Title=$home.Title;Next=$home.Detail;At=(Get-Date).ToString('o');Checks=@();AttachmentsVerified=$false}
+    $routeHome=Get-GeoHomeState $PSScriptRoot $snapshot
+    $report=[pscustomobject]@{Mode='hosts';State=$routeHome.State;Title=$routeHome.Title;Next=$routeHome.Detail;At=(Get-Date).ToString('o');Checks=@();AttachmentsVerified=$false}
     $report|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $ResultPath -Encoding UTF8
     exit 0
 }
@@ -40,6 +41,6 @@ try {
         }
         [pscustomobject]@{Domain=$item.Route.domain;Label=$item.Route.label;State=$state;Addresses=$addresses;Expected=@($item.Route.addresses)}
     })
-    $report=New-ConnectionReport $checks
+    $report=New-ConnectionReport $checks -ExpectedCount @($config.routes).Count
 } catch {$report=New-ConnectionReport @()}
 $report | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath $ResultPath -Encoding UTF8

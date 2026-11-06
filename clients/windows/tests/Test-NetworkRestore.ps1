@@ -18,3 +18,20 @@ if(-not $rejected -or $script:calls.Count){throw 'Disconnected saved adapter cha
 $backup.Adapters=@($backup.Adapters[0]);Restore-Network $backup
 if(($script:calls -join ',') -ne 'stop,dns-4,cache'){throw 'Available adapter restore did not complete.'}
 Write-Output 'Network restore preflight passed: missing USB leaves DNS and service untouched.'
+$health=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Test-InstalledDNS'},$true)
+. ([scriptblock]::Create($health.Extent.Text))
+$script:resolved=[Collections.Generic.List[string]]::new();$script:dnsMode='ok'
+function Resolve-SetupDNS([string]$HostName){
+ $script:resolved.Add($HostName)
+ if($script:dnsMode -eq 'timeout'){throw 'DNS timeout'}
+ if($script:dnsMode -eq 'empty'){return @()}
+ return @('192.0.2.1')
+}
+Test-InstalledDNS
+if(($script:resolved -join ',') -ne 'example.com,www.microsoft.com'){throw 'Resolver validation must be independent of GeoHide wildcard rules.'}
+foreach($mode in @('timeout','empty')){
+ $script:dnsMode=$mode;$failed=$false
+ try{Test-InstalledDNS}catch{$failed=$true}
+ if(-not $failed){throw ('Invalid resolver was accepted: '+$mode)}
+}
+Write-Output 'Bridge health checks passed: usable DNS is independent of GeoHide rules; timeouts and empty replies still fail.'

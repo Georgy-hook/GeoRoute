@@ -4,11 +4,11 @@ Windows client source: `clients/windows/_service`. PowerShell scripts require Wi
 
 ```powershell
 .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
-.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.4.2
-.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.4.2
+.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.4.3
+.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.4.3
 ```
 
-The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.4.2.zip`, `GeoRoute-Setup-0.4.2-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
+The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.4.3.zip`, `GeoRoute-Setup-0.4.3-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
 
 `GeoRoute.cmd` opens the existing WPF GUI in the system Windows PowerShell process. It accepts only the fixed normal/tray/repair/smoke modes and never forwards arbitrary command text. The process-scoped ExecutionPolicy argument does not change machine execution policy or antivirus settings. `AppInstance.ps1` owns the mutex/event contract; a second launch activates the existing window, background startup does not unhide it, and exit releases ownership. Tray startup quotes the CMD path explicitly and migrates only exact legacy commands belonging to the same app directory. The UI thread retains per-monitor DPI awareness. CI smoke-tests the packaged entry point, and package validation rejects the removed custom EXE files. Experimental compiled launcher implementations remain in Git history, with their measured outcomes in the security experiments report.
 
@@ -17,6 +17,8 @@ The optional DNS bridge now runs directly as a LocalService-hosted Python proces
 `GeoAvailability.ps1` owns regional eligibility, profile requirements and provider-list replacement. `GeoHide.ps1` writes prepared profiles; `Profiles.ps1` is the existing elevated hosts apply/restore boundary. `Home.ps1` distinguishes off/checking/ready/unavailable using actual managed hosts plus current probe evidence. Ordinary hosts mode does not require wildcard NextDNS rewrite checks. The optional bridge retains its separate diagnostics.
 
 Tests cover independent US/EU/RU replacement, provider removal and reappearance, mixed-route failures, stale observations, attachment HTTP failure, manual editing, hosts comparison, recovery and protocol boundaries. UI smoke tests do not change the network. Live results are specific to the tested machine/time; do not promote them to global provider availability.
+
+`ProfileMigration.ps1` upgrades bundled profiles to shared GeoHide routes, backs up the old catalog/files, removes only the two built-in Gemini IDs and the exact retired attachments ID, preserves custom profiles and remaps preferences. It is idempotent and never applies hosts. `Save-GeoProfile` adds the exact `www.google.com` frontend only after its same-node probe succeeds, preventing an unsupported SNI route from breaking Google Search. Gemini failures are explicit warnings on a working shared ChatGPT route; they are not model-access success. Home compares the active marked hosts block with the saved profile before declaring it current. Test live GeoHide endpoints through the physical interface: TUN sniffing can override a curl `--resolve` destination.
 
 Never commit `geohide-settings.json`, `geohide-monitor.json`, `geohide-history.json`, user profiles/credentials, logs or backups. Provider seed lists and generic hosts templates are public. Do not disable certificate validation or add credentials to releases.
 
