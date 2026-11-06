@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.4.2')
+param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.4.3')
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem

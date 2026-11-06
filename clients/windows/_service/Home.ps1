@@ -5,6 +5,14 @@
         if($text -match '# (BEGIN|END) CHATGPT-US-WINDOWS'){return [pscustomobject]@{On=$true;State='error';Title='Настройка повреждена';Detail='Откройте помощь для восстановления hosts.'}}
         return [pscustomobject]@{On=$false;State='off';Title='Выключено';Detail='Выберите маршрут в разделе «Серверы» и включите подключение.'}
     }
+    $pendingGeminiUpdate=$false
+    $catalogPath=Join-Path $Root 'profiles.json'
+    $activeId=[regex]::Match($block.Groups[1].Value,'(?m)^# Profile ID:\s*(\S+)').Groups[1].Value
+    if($activeId -and (Test-Path -LiteralPath $catalogPath)){
+        $catalog=Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8|ConvertFrom-Json
+        $entry=@($catalog.Profiles|Where-Object {$_.id -eq $activeId -and $_.service -eq 'GeoHide'})
+        $pendingGeminiUpdate=$entry.Count -gt 0 -and -not (Get-GeoApplicationState $Root $HostsPath $activeId)
+    }
     $needs=@{}
     foreach($line in ($block.Groups[1].Value -split '\r?\n')){
         $parts=($line -split '#',2)[0].Trim() -split '\s+'
@@ -20,7 +28,8 @@
     }
     if(-not $needs.Count){return [pscustomobject]@{On=$true;State='error';Title='Настройка требует восстановления';Detail='Управляемый hosts пуст. Откройте «Помощь».'}}
     $result=Test-GeoRequirements @($needs.Values) $Report
-    if($result.Ready -and $result.State -eq 'attention'){return [pscustomobject]@{On=$true;State='attention';Title='Подключено · проверка Google';Detail=$result.Reason}}
+    if($result.Ready -and $pendingGeminiUpdate){return [pscustomobject]@{On=$true;State='attention';Title='Включено · обновите профиль';Detail='Сохранённый профиль отличается от адресов в Windows. Откройте «Серверы» и нажмите «Применить снова». Доступность Gemini показана отдельно.'}}
+    if($result.Ready -and $result.State -eq 'attention'){return [pscustomobject]@{On=$true;State='attention';Title='Подключено · Gemini ограничен';Detail=$result.Reason}}
     if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Серверы GeoHide отвечают. Подключение настроено.'}}
     if($Report.running -or $result.Reason -like '*устарела*'){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Ожидаю завершения проверки текущего маршрута.'}}
     return [pscustomobject]@{On=$true;State='unavailable';Title='Сервер недоступен';Detail='Выбранный сервер не отвечает. Откройте «Серверы» и выберите доступный маршрут.'}

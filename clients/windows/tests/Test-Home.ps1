@@ -15,6 +15,13 @@ try{
     $report=[pscustomobject]@{running=$false;rows=@($row)}
     $state=Get-GeoHomeState $temp $report $path
     Assert ($state.On -and $state.State -eq 'ready') 'Healthy applied hosts can be green without NextDNS Bridge'
+    [IO.File]::WriteAllText((Join-Path $temp 'profiles.json'),'{"Profiles":[{"id":"eu-primary","service":"GeoHide","hostsFile":"prepared.hosts"}]}')
+    $oldHosts=[IO.File]::ReadAllText($path)
+    [IO.File]::WriteAllText((Join-Path $temp 'prepared.hosts'),$oldHosts+"37.221.93.128 gemini.google.com`r`n")
+    [IO.File]::WriteAllText($path,$oldHosts.Replace("# BEGIN CHATGPT-US-WINDOWS`r`n","# BEGIN CHATGPT-US-WINDOWS`r`n# Profile ID: eu-primary`r`n"))
+    $state=Get-GeoHomeState $temp $report $path
+    Assert ($state.On -and $state.State -eq 'attention' -and $state.Title -like '*обновите профиль*') 'Old ChatGPT-only hosts cannot pretend the new shared profile is applied'
+    [IO.File]::WriteAllText($path,$oldHosts)
     $row.EligibleEU=$false
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'unavailable') 'A failed applied node is reported honestly'
     $row.EligibleEU=$true;$row.CheckedAt=(Get-Date).AddMinutes(-15).ToString('o')
