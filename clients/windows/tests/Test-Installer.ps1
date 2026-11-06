@@ -15,10 +15,14 @@ $hosts=Join-Path $env:SystemRoot 'System32\drivers\etc\hosts'
 $hostsBefore=(Get-FileHash -LiteralPath $hosts).Hash
 $dnsBefore=Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress
 $proxyBefore=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
-$installer=New-Object -ComObject WindowsInstaller.Installer
-$database=$installer.OpenDatabase($SetupPath,0)
-$view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
-$view.Execute();$productCode=$view.Fetch().StringData(1);$view.Close()
+function Get-MsiCode([string]$Path) {
+ $installer=New-Object -ComObject WindowsInstaller.Installer
+ $database=$installer.OpenDatabase($Path,0)
+ $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
+ $view.Execute();$code=$view.Fetch().StringData(1);$view.Close()
+ return $code
+}
+$productCode=Get-MsiCode $SetupPath
 function Run-Msi([string]$Arguments,[string]$Log) {
  $p=Start-Process -FilePath $msiexec -ArgumentList ($Arguments+' /qn /norestart /l*v "'+(Join-Path $root $Log)+'"') -Wait -PassThru
  if($p.ExitCode -ne 0 -and (Test-Path -LiteralPath (Join-Path $root $Log))){
@@ -58,6 +62,19 @@ try {
  $hashes=@{};foreach($file in $keep){$hashes[$file]=(Get-FileHash -LiteralPath $file).Hash}
  if((Run-Setup 'repair.log' -Repair) -ne 0){throw 'Update/repair failed'}
  foreach($file in $keep){if((Get-FileHash -LiteralPath $file).Hash -ne $hashes[$file]){throw ('Update lost data: '+$file)}}
+ # Build the next version from the same verified payload solely as an upgrade fixture.
+ $match=[regex]::Match([IO.Path]::GetFileName($SetupPath),'-(\d+)\.(\d+)\.(\d+)-x64\.msi$')
+ if(-not $match.Success){throw 'Unexpected setup version filename'}
+ $next=$match.Groups[1].Value+'.'+$match.Groups[2].Value+'.'+([int]$match.Groups[3].Value+1)
+ $fixture=Join-Path $root 'upgrade-fixture'
+ & (Join-Path (Split-Path $PSScriptRoot -Parent) 'Build-Installer.ps1') -Version $next -ArchivePath $ArchivePath -OutputDirectory $fixture
+ $upgrade=Join-Path $fixture ('GeoRoute-Setup-'+$next+'-x64.msi')
+ $entry=Join-Path $app 'GeoRoute.cmd'
+ Add-Content -LiteralPath $entry -Value 'rem upgrade replacement check'
+ if((Run-Msi ('/i "'+$upgrade+'" INSTALLFOLDER="'+$app+'"') 'major-upgrade.log') -ne 0){throw 'Major version upgrade failed'}
+ $productCode=Get-MsiCode $upgrade
+ foreach($file in $keep){if((Get-FileHash -LiteralPath $file).Hash -ne $hashes[$file]){throw ('Major upgrade lost data: '+$file)}}
+ if((Get-FileHash -LiteralPath $entry).Hash -ne (Get-FileHash -LiteralPath (Join-Path $stage 'GeoRoute\GeoRoute.cmd')).Hash){throw 'Major upgrade did not replace code'}
  New-Item -Path $runKey -Force|Out-Null
  New-ItemProperty -Path $runKey -Name $runName -Value 'unrelated-startup-test' -Force|Out-Null
  if((Run-Msi ('/x '+$productCode) 'uninstall.log') -ne 0 -or (Test-Path -LiteralPath (Join-Path $app 'GeoRoute.cmd'))){throw 'Uninstall failed'}
@@ -73,7 +90,7 @@ try {
  if((Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress) -cne $dnsBefore){throw 'Installer changed DNS'}
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
  if($proxyAfter -cne $proxyBefore){throw 'Installer changed proxy'}
- Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, repair/reinstall preservation, uninstall, owned startup and untouched network.'
+ Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, repair/reinstall preservation, uninstall, owned startup and untouched network.'
 } finally {
  if(-not $root.StartsWith(([IO.Path]::GetFullPath($env:RUNNER_TEMP)+'\'),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($root) -notmatch '^GeoRoute-Installer-[a-f0-9]{32}$'){throw 'Unexpected integration-test path'}
  if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
