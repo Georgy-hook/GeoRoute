@@ -2,9 +2,9 @@
 
 Приложение для Windows, которое помогает подключать ChatGPT, Gemini и вложения OpenAI через серверы GeoHide, проверяет доступность узлов и подбирает замену, когда адреса меняются.
 
-**[Скачать GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)** · [Установка по шагам](docs/INSTALL.ru.md) · [English](README.en.md)
+**[Скачать установщик GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/download/v0.4.2/GeoRoute-Setup-0.4.2-x64.msi)** · [Установка по шагам](docs/INSTALL.ru.md) · [Все релизы](https://github.com/Georgy-hook/GeoRoute/releases) · [English](README.en.md)
 
-> **VirusTotal, релиз 0.4.1:** обнаружений нет — **0/71** у ZIP и отдельно проверенных компонентов запуска, GUI и Bridge. Есть неподдерживаемые проверки, ошибки и тайм-ауты; это не сертификат безопасности. [Отчёты, охват, даты и SHA-256](docs/security/virustotal-v0.4.1.md). [Старые срабатывания 0.4.0 и результаты экспериментов](https://github.com/Georgy-hook/GeoRoute/blob/v0.4.1/docs/security/virustotal-experiments-2026-11-05.md) сохранены.
+> **VirusTotal, релиз 0.4.2:** ноль обнаружений у готового MSI, ZIP и отдельно проверенных компонентов. Есть тайм-ауты, ошибки и неподдерживаемые проверки; это не гарантия безопасности. [Результаты, охват, даты и SHA-256](docs/security/README.md).
 
 ![Главный экран GeoRoute](docs/images/home.png)
 
