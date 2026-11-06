@@ -6,7 +6,7 @@
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
-**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.2-x64.msi**, choose **Next → Install**, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.2-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
 **VirusTotal snapshot for 0.4.2 (2026-11-06): zero detections** for the MSI, ZIP and selected source/runtime components. Some engines report unsupported types, failures or timeouts; this is not a safety guarantee. [Reports, actual coverage, analysis dates, hashes and historical evidence](docs/security/README.md).
 
