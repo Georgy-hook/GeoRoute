@@ -16,11 +16,17 @@ $hostsBefore=(Get-FileHash -LiteralPath $hosts).Hash
 $dnsBefore=Get-DnsClientServerAddress|ConvertTo-Json -Depth 5 -Compress
 $proxyBefore=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
 function Get-MsiCode([string]$Path) {
- $installer=New-Object -ComObject WindowsInstaller.Installer
- $database=$installer.OpenDatabase($Path,0)
- $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
- $view.Execute();$code=$view.Fetch().StringData(1);$view.Close()
- return $code
+ $installer=$null;$database=$null;$view=$null;$record=$null
+ try {
+  $installer=New-Object -ComObject WindowsInstaller.Installer
+  $database=$installer.OpenDatabase($Path,0)
+  $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
+  $view.Execute();$record=$view.Fetch();$code=$record.StringData(1)
+  return $code
+ } finally {
+  if($view){$view.Close()}
+  foreach($com in @($record,$view,$database,$installer)){if($com){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)}}
+ }
 }
 $productCode=Get-MsiCode $SetupPath
 function Run-Msi([string]$Arguments,[string]$Log) {
@@ -91,7 +97,10 @@ try {
  $proxyAfter=Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Internet Settings'|Select-Object AutoConfigURL,ProxyEnable,ProxyServer|ConvertTo-Json -Compress
  if($proxyAfter -cne $proxyBefore){throw 'Installer changed proxy'}
  Write-Output 'MSI passed: exact payload, Cyrillic path, shortcut GUI, running-app guard, real version upgrade, repair/reinstall preservation, uninstall, owned startup and untouched network.'
+} catch {
+ Write-Host ('Installer integration failed: '+$_.Exception.Message)
+ throw
 } finally {
  if(-not $root.StartsWith(([IO.Path]::GetFullPath($env:RUNNER_TEMP)+'\'),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($root) -notmatch '^GeoRoute-Installer-[a-f0-9]{32}$'){throw 'Unexpected integration-test path'}
- if(Test-Path -LiteralPath $root){Remove-Item -LiteralPath $root -Recurse -Force}
+ if(Test-Path -LiteralPath $root){try{Remove-Item -LiteralPath $root -Recurse -Force}catch{Write-Warning ('Disposable runner cleanup: '+$_.Exception.Message)}}
 }
