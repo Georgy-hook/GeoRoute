@@ -21,7 +21,7 @@ with zipfile.ZipFile(io.BytesIO(content)) as archive:
     if len(members) != len(archive.infolist()):
         raise RuntimeError('Ambiguous client entries')
     selected = [(path.name, content)]
-    for name in ['GeoRoute.cmd', '_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1', '_service/InstallerActions.ps1', '_service/ProfileDefaults.ps1', '_service/bridge/bridge.py', '_service/bridge/python/python.exe']:
+    for name in ['GeoRoute.cmd', '_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1', '_service/InstallerActions.ps1', '_service/ProfileDefaults.ps1', '_service/gemini_probe.py', '_service/bridge/bridge.py', '_service/bridge/python/python.exe']:
         selected.append((name, archive.read(members['GeoRoute/' + name])))
 
 setups = list(root.glob('GeoRoute-Setup-*-x64.msi'))

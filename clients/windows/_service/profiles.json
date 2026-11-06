@@ -8,89 +8,72 @@
       "countryCode": "EU",
       "hostsFile": "profiles/us-eu.hosts",
       "address": null,
-      "description": "Gemini и файлы через EU. GeoHide: US 192.255.159.240; все известные адреса oaiusercontent.com через EU 45.13.237.213. Меняется подготовленный профиль; примените его кнопкой. Скачивание конкретной GIF проверяется отдельно.",
       "verifiedAt": null,
-      "domainCount": 46
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     },
     {
       "id": "primary",
-      "name": "США — основной",
+      "name": "GeoHide US — основной",
       "region": "US",
       "countryCode": "US",
       "hostsFile": "profiles\\primary.hosts",
-      "description": "GeoHide 192.255.159.240. Адрес управляется вкладкой мониторинга; конкретные вложения проверяются отдельно.",
       "verifiedAt": null,
-      "domainCount": 35,
-      "address": "192.255.159.240"
+      "address": "192.255.159.240",
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     },
     {
       "id": "alternate",
-      "name": "США — запасной",
+      "name": "GeoHide US — запасной",
       "region": "US",
       "countryCode": "US",
       "hostsFile": "profiles\\alternate.hosts",
-      "description": "GeoHide 192.3.233.253. Адрес управляется вкладкой мониторинга; конкретные вложения проверяются отдельно.",
       "verifiedAt": null,
-      "domainCount": 35,
-      "address": "192.3.233.253"
+      "address": "192.3.233.253",
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     },
     {
       "id": "eu-primary",
-      "name": "GeoHide EU — основной",
+      "name": "GeoHide — основной",
       "region": "EU",
       "countryCode": "EU",
       "hostsFile": "profiles\\eu-primary.hosts",
-      "description": "GeoHide 45.13.237.213. Адрес управляется вкладкой мониторинга; конкретные вложения проверяются отдельно.",
       "verifiedAt": null,
-      "domainCount": 35,
-      "address": "45.13.237.213"
+      "address": "143.20.64.192",
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     },
     {
       "id": "eu-alternate",
-      "name": "GeoHide EU — запасной",
+      "name": "GeoHide — запасной",
       "region": "EU",
       "countryCode": "EU",
       "hostsFile": "profiles\\eu-alternate.hosts",
-      "description": "GeoHide 31.25.239.132. Адрес управляется вкладкой мониторинга; конкретные вложения проверяются отдельно.",
       "verifiedAt": null,
-      "domainCount": 35,
-      "address": "31.25.239.132"
+      "address": "37.221.93.141",
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     },
     {
       "id": "ru-primary",
-      "name": "Россия — GeoHide",
+      "name": "GeoHide RU",
       "region": "RU",
       "countryCode": "RU",
       "hostsFile": "profiles/ru-primary.hosts",
+      "verifiedAt": null,
+      "managedRegion": "RU",
       "address": "159.194.200.33",
-      "description": "Узел GeoHide RU. Доступность проверяется перед выбором.",
-      "verifiedAt": null,
-      "domainCount": 37,
-      "managedRegion": "RU"
-    },
-    {
-      "id": "gemini-us",
-      "name": "Gemini — US",
-      "region": "US",
-      "countryCode": "US",
-      "hostsFile": "profiles/gemini-us.hosts",
-      "address": "192.255.159.240",
-      "description": "Только Gemini. HTTPS страницы и API проверяются отдельно от ChatGPT.",
-      "verifiedAt": null,
-      "domainCount": 9,
-      "managedRegion": "US"
-    },
-    {
-      "id": "gemini-eu",
-      "name": "Gemini — EU",
-      "region": "EU",
-      "countryCode": "EU",
-      "hostsFile": "profiles/gemini-eu.hosts",
-      "address": "45.13.237.213",
-      "description": "Только Gemini. HTTPS страницы и API проверяются отдельно от ChatGPT.",
-      "verifiedAt": null,
-      "domainCount": 9,
-      "managedRegion": "EU"
+      "domainCount": 46,
+      "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
+      "service": "GeoHide"
     }
-  ]
+  ],
+  "UnifiedGeoHideVersion": 1
 }

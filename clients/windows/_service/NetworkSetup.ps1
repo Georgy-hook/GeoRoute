@@ -87,11 +87,18 @@ function Restore-Network($Backup) {
  }
  Clear-DnsClientCache
 }
+function Resolve-SetupDNS([string]$HostName) {
+ $task=[Net.Dns]::GetHostAddressesAsync($HostName)
+ if(-not $task.Wait(10000)){throw 'Проверка DNS Windows не получила ответ.'}
+ return @($task.Result|ForEach-Object {$_.IPAddressToString})
+}
 function Test-InstalledDNS {
- $nonce='verify-'+[guid]::NewGuid().ToString('N').Substring(0,12)
- $routeConfig=Get-Content -LiteralPath (Join-Path $PSScriptRoot 'connection-routes.json') -Raw -Encoding UTF8|ConvertFrom-Json
- $checks=@($routeConfig.routes|ForEach-Object{@{Host=($nonce+'.'+$_.domain);Expected=@($_.addresses)}})+@(@{Host='example.com';Expected=@()})
- foreach($check in $checks){$task=[Net.Dns]::GetHostAddressesAsync($check.Host);if(-not $task.Wait(10000)){throw 'Проверка DNS Windows не получила ответ.'};$addresses=@($task.Result|ForEach-Object {$_.IPAddressToString});if(-not $addresses.Count){throw 'DNS вернул пустой ответ.'};if($check.Expected.Count -and @($addresses|Where-Object {$_ -notin $check.Expected}).Count){throw 'Профиль NextDNS вернул неожиданный маршрут.'}}
+ # Installation validates the resolver transport. GeoHide routes and Google
+ # restrictions are diagnosed separately; they must not roll back healthy DNS.
+ foreach($hostName in @('example.com','www.microsoft.com')){
+  $addresses=@(Resolve-SetupDNS $hostName)
+  if(-not $addresses.Count){throw 'DNS вернул пустой ответ.'}
+ }
 }
 try {
  $runRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot 'run-results'))
@@ -118,7 +125,7 @@ try {
   Restart-Service -Name $serviceName
   Clear-DnsClientCache
   Test-InstalledDNS
-  Write-SetupResult 'ok' 'Служба NextDNS Bridge перезапущена; DNS Windows и маршруты файлов проверены. Загрузка GIF проверяется отдельно.'
+  Write-SetupResult 'ok' 'Служба NextDNS Bridge перезапущена; DNS Windows отвечает. Маршруты GeoHide и загрузка вложений проверяются отдельно.'
   exit 0
  }
  $source=Join-Path $PSScriptRoot 'bridge'
@@ -146,7 +153,7 @@ try {
   foreach($record in $backup.Adapters){$adapter=Get-SavedAdapter $record;Set-DnsClientServerAddress -InterfaceIndex $adapter.ifIndex -ServerAddresses @('127.0.0.1','::1')}
   Clear-DnsClientCache;Test-InstalledDNS
   [IO.File]::WriteAllText((Join-Path $installRoot 'enabled.txt'),'1')
-  Write-SetupResult 'ok' 'Подключение NextDNS Bridge восстановлено; DNS Windows и новые адреса файлов проверены.'
+  Write-SetupResult 'ok' 'Подключение NextDNS Bridge восстановлено; DNS Windows отвечает. Доступность серверов и сервисов показана в мониторинге.'
   exit 0
  }
  $adapters=@(Get-NetAdapter -Physical | Where-Object Status -eq Up)
@@ -189,7 +196,7 @@ try {
  Clear-DnsClientCache
  Test-InstalledDNS
  [IO.File]::WriteAllText((Join-Path $installRoot 'enabled.txt'),'1')
- Write-SetupResult 'ok' 'NextDNS восстановлен: локальная служба работает через TLS 1.3 и запускается с Windows до входа. Проверены DNS Windows, общий интернет и новые адреса файлов. Резервная копия сети сохранена.'
+ Write-SetupResult 'ok' 'NextDNS восстановлен: локальная служба работает через TLS 1.3 и запускается с Windows до входа. DNS Windows отвечает. Резервная копия сети сохранена; маршруты GeoHide проверяются отдельно.'
 } catch {
  $message=$_.Exception.Message
  if($changed -and $backup){try{Restore-Network $backup;if(Get-OwnService){Set-Service -Name $serviceName -StartupType Disabled};[IO.File]::WriteAllText((Join-Path $installRoot 'enabled.txt'),'0');$message+=' Предыдущая настройка сети возвращена.'}catch{$message+=' Автоматический возврат требует проверки: '+$_.Exception.Message}}

@@ -18,8 +18,13 @@ def check(path):
                     'GeoRoute/_service/bridge/python/LICENSE.txt',
                     'GeoRoute/_service/GeoServices.ps1', 'GeoRoute/_service/GeoMonitorState.ps1',
                     'GeoRoute/_service/GeoProbe.ps1',
-                    'GeoRoute/_service/profiles/gemini-eu.hosts', 'GeoRoute/_service/profiles/gemini-us.hosts']
+                    'GeoRoute/_service/ProfileMigration.ps1']
+        required += ['GeoRoute/_service/gemini_probe.py', 'GeoRoute/_service/vendor/hashes.json']
         assert all(name in names for name in required)
+        dependencies = json.loads(archive.read('GeoRoute/_service/vendor/hashes.json'))
+        for name, digest in dependencies.items():
+            assert hashlib.sha256(archive.read('GeoRoute/_service/vendor/' + name)).hexdigest() == digest
+        assert not any(name.endswith(('/profiles/gemini-eu.hosts', '/profiles/gemini-us.hosts')) for name in names)
         assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
         assert 'GeoRoute/GeoRoute.exe' not in names
         for name in names:

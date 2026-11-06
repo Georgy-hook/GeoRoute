@@ -20,7 +20,7 @@
     <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <Border Background="#152B38" BorderBrush="#2B4557" BorderThickness="1" CornerRadius="18" Padding="10,6" Margin="0,0,0,8">
     <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-      <StackPanel Orientation="Horizontal"><Image x:Name="DialogImportIcon" Width="52" Height="52" Margin="0,0,12,0"/><StackPanel VerticalAlignment="Center"><TextBlock Text="Добавить профиль" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="IP, страна и сервис — файл создадим сами" Foreground="#9CAEC4" FontSize="13" Margin="0,6,0,0"/></StackPanel></StackPanel>
+      <StackPanel Orientation="Horizontal"><Image x:Name="DialogImportIcon" Width="52" Height="52" Margin="0,0,12,0"/><StackPanel VerticalAlignment="Center"><TextBlock Text="Добавить профиль" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="Один сервер для ChatGPT, Gemini и файлов" Foreground="#9CAEC4" FontSize="13" Margin="0,6,0,0"/></StackPanel></StackPanel>
       <Button Grid.Column="1" x:Name="ImportHelpButton" Content="?" Width="38" Height="38" FontSize="20" VerticalAlignment="Center" ToolTip="Как добавить профиль" AutomationProperties.Name="Инструкция по добавлению профиля"/>
     </Grid>
     </Border>
@@ -34,10 +34,9 @@
           <TextBlock Text="IP-адрес сервера" Foreground="#B9CBE0" FontSize="12" Margin="0,0,0,7"/>
           <TextBox x:Name="ServerAddressBox" MaxLength="64" AutomationProperties.Name="IP-адрес нового сервера"/>
           <TextBlock Text="Адрес GeoHide или совместимого сервера. Без http:// и порта." Foreground="#8FA6C1" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,18"/>
-          <TextBlock Text="Сервис" Foreground="#B9CBE0" FontSize="12" Margin="0,0,0,7"/>
-          <ComboBox x:Name="ServiceBox" SelectedIndex="0" AutomationProperties.Name="Сервис для нового профиля" Margin="0,0,0,18">
-            <ComboBoxItem Tag="ChatGPT" Content="ChatGPT"/><ComboBoxItem Tag="Gemini" Content="Gemini"/>
-          </ComboBox>
+          <Border Background="#15332F" CornerRadius="12" Padding="12,10" Margin="0,0,0,18">
+            <StackPanel><TextBlock Text="Один GeoHide для ChatGPT и Gemini" Foreground="#B6F3DF" FontWeight="SemiBold"/><TextBlock Text="Вложения OpenAI тоже включены. Проверка Google и Поиск на www.google.com используют этот же сервер; он должен поддерживать эти имена." Foreground="#9CAEC4" FontSize="11" TextWrapping="Wrap" Margin="0,5,0,0"/></StackPanel>
+          </Border>
         </StackPanel>
         <StackPanel x:Name="FilePanel" Visibility="Collapsed" Margin="0,0,0,18">
           <TextBlock Text="Готовый файл .hosts" Foreground="#B9CBE0" FontSize="12" Margin="0,0,0,7"/>
@@ -57,7 +56,7 @@
         <TextBlock Text="Страна нужна для подписи и флага; местоположение сервера не меняется." Foreground="#8FA6C1" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,18"/>
         <TextBlock x:Name="ProfileNameLabel" Text="Название · необязательно" Foreground="#B9CBE0" FontSize="12" Margin="0,0,0,7"/>
         <TextBox x:Name="ProfileNameBox" MaxLength="60" AutomationProperties.Name="Название нового профиля, необязательно при создании по IP"/>
-        <TextBlock x:Name="ProfileNameHelp" Text="Оставьте пустым — назовём по сервису и стране." Foreground="#8FA6C1" FontSize="11" Margin="0,6,0,14"/>
+        <TextBlock x:Name="ProfileNameHelp" Text="Оставьте пустым — назовём GeoHide и добавим страну." Foreground="#8FA6C1" FontSize="11" Margin="0,6,0,14"/>
         <TextBlock Text="Сохранение добавит карточку. Для подключения выберите её и нажмите «Включить» на главной. Доступность сервера этим не проверяется." TextWrapping="Wrap" Foreground="#91A6BF" FontSize="12"/>
       </StackPanel>
     </ScrollViewer>

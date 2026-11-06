@@ -1,4 +1,4 @@
-GeoRoute 0.4.2
+﻿GeoRoute
 
 После установки: ярлык GeoRoute в меню «Пуск» или на рабочем столе.
 В версии без установки: GeoRoute.cmd. Откроется тот же графический интерфейс.
@@ -19,4 +19,4 @@ HTTP-прокси включаются отдельно. Личный прокс
 
 Документация и релизы: https://github.com/Georgy-hook/GeoRoute
 
-Gemini: выберите Gemini — EU / US для отдельного подключения или US + EU — ChatGPT + Gemini для обоих сервисов. Если Google просит CAPTCHA, откройте Gemini в браузере после подключения.
+ChatGPT и Gemini включены в общие профили GeoHide. Смешанный US + EU оставляет Gemini и www.google.com на EU. Проверка Google и Google Поиск на www.google.com используют тот же сервер. Если поля CAPTCHA нет, выберите другой узел; очистка DNS сама по себе не устраняет ограничение Google.

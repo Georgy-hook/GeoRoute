@@ -764,20 +764,17 @@ function Set-TaskProfileInputMode {
     $script:taskImport.Ui.AddressPanel.Visibility=if($byIP){'Visible'}else{'Collapsed'}
     $script:taskImport.Ui.FilePanel.Visibility=if($byIP){'Collapsed'}else{'Visible'}
     $script:taskImport.Ui.ProfileNameLabel.Text=if($byIP){'Название · необязательно'}else{'Название профиля'}
-    $script:taskImport.Ui.ProfileNameHelp.Text=if($byIP){'Оставьте пустым — назовём по сервису и стране.'}else{'Укажите название, которое будет видно на карточке.'}
+    $script:taskImport.Ui.ProfileNameHelp.Text=if($byIP){'Оставьте пустым — назовём GeoHide и добавим страну.'}else{'Укажите название, которое будет видно на карточке.'}
     $script:taskImport.Ui.ImportErrorText.Text=''
 }
 function Get-TaskProfileInput {
     $ui=$script:taskImport.Ui
     $country=$ui.CountryBox.SelectedItem
     if(-not $country){throw 'Выберите страну или регион.'}
-    $data=@{CountryCode=[string]$country.Tag;Region=[string]$country.Content;Name=$ui.ProfileNameBox.Text.Trim();SourcePath='';Address='';Service='ChatGPT';InputKind='File'}
+    $data=@{CountryCode=[string]$country.Tag;Region=[string]$country.Content;Name=$ui.ProfileNameBox.Text.Trim();SourcePath='';Address='';Service='GeoHide';InputKind='File'}
     if($ui.CreateByIP.IsChecked -eq $true){
         if(-not $ui.ServerAddressBox.Text.Trim()){throw 'Введите IP-адрес сервера.'}
         $data.Address=Convert-GeoProfileAddress $ui.ServerAddressBox.Text.Trim()
-        if(-not $ui.ServiceBox.SelectedItem){throw 'Выберите сервис: ChatGPT или Gemini.'}
-        $data.Service=[string]$ui.ServiceBox.SelectedItem.Tag
-        if($data.Service -notin @('ChatGPT','Gemini')){throw 'Выберите сервис: ChatGPT или Gemini.'}
         $data.InputKind='Address'
         if(-not $data.Name){$data.Name=$data.Service+' — '+$data.Region}
     }else{

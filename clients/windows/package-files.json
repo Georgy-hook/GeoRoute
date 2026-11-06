@@ -1,7 +1,8 @@
-[
+﻿[
   "AppInstance.ps1",
   "InstallerActions.ps1",
   "ProfileDefaults.ps1",
+  "ProfileMigration.ps1",
   "BridgeStatus.ps1",
   "BrowserRecovery.ps1",
   "Connection.ps1",
@@ -61,13 +62,16 @@
   "GeoServices.ps1",
   "GeoProbe.ps1",
   "GeoMonitorState.ps1",
-  "profiles/gemini-us.hosts",
-  "profiles/gemini-eu.hosts",
   "ProfileHelp.xaml",
   "ProfileCreation.ps1",
   "assets/ui/nav-connect-v1.png",
   "assets/ui/nav-monitor-v1.png",
   "assets/ui/nav-journal-v1.png",
   "assets/ui/nav-settings-v1.png",
-  "assets/ui/network-orbit-v1.png"
+  "assets/ui/network-orbit-v1.png",
+  "gemini_probe.py",
+  "vendor/hashes.json",
+  "vendor/h2-4.4.1-py3-none-any.whl",
+  "vendor/hpack-4.2.0-py3-none-any.whl",
+  "vendor/hyperframe-6.1.0-py3-none-any.whl"
 ]

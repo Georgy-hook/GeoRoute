@@ -11,7 +11,7 @@ param(
     [string]$SourcePath,
     [ValidateSet('File','Address')][string]$InputKind='File',
     [string]$Address,
-    [ValidateSet('ChatGPT','Gemini')][string]$Service='ChatGPT',
+    [ValidateSet('GeoHide','ChatGPT','Gemini')][string]$Service='GeoHide',
     [string]$Name,
     [ValidatePattern('^$|^[A-Za-z]{2}$')][string]$CountryCode,
     [string]$Region,

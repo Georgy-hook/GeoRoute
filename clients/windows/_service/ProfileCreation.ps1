@@ -12,7 +12,7 @@ function Convert-GeoProfileAddress([string]$Text) {
     }
     return $address.ToString().ToLowerInvariant()
 }
-function New-GeoServiceHosts([string]$Address,[ValidateSet('ChatGPT','Gemini')][string]$Service) {
+function New-GeoServiceHosts([string]$Address,[ValidateSet('GeoHide','ChatGPT','Gemini')][string]$Service='GeoHide') {
     if([string]::IsNullOrWhiteSpace($Address)){throw 'Введите IP-адрес сервера.'}
     $ip=Convert-GeoProfileAddress $Address.Trim()
     $domains=if($Service -eq 'Gemini'){@(Get-GeoGeminiDomains)}else{@(
@@ -54,5 +54,6 @@ function New-GeoServiceHosts([string]$Address,[ValidateSet('ChatGPT','Gemini')][
         'www.oaiusercontent.com'
         'www.openai.com'
     )}
-    return ((@('# '+$Service+' profile created by GeoRoute')+@($domains|ForEach-Object {$ip+' '+$_})) -join "`r`n")+"`r`n"
+    if($Service -eq 'GeoHide'){$domains+=@(Get-GeoGeminiDomains)}
+    return ((@('# '+$Service+' profile created by GeoRoute')+@($domains|Sort-Object -Unique|ForEach-Object {$ip+' '+$_})) -join "`r`n")+"`r`n"
 }

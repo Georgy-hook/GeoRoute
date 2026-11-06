@@ -1,6 +1,9 @@
 ﻿#Requires -Version 5.1
-function New-ConnectionReport([object[]]$Checks) {
-    $state=if(@($Checks|Where-Object State -eq 'mismatch').Count){'mismatch'}elseif($Checks.Count -ne 4 -or @($Checks|Where-Object State -ne 'ready').Count){'unavailable'}else{'ready'}
+function Test-ConnectionHostsMode([string]$HostsText,[bool]$BridgeRunning) {
+    return (-not $BridgeRunning -or $HostsText -match '(?m)^# (?:BEGIN|END) CHATGPT-US-WINDOWS')
+}
+function New-ConnectionReport([object[]]$Checks,[ValidateRange(1,64)][int]$ExpectedCount=4) {
+    $state=if(@($Checks|Where-Object State -eq 'mismatch').Count){'mismatch'}elseif($Checks.Count -ne $ExpectedCount -or @($Checks|Where-Object State -ne 'ready').Count){'unavailable'}else{'ready'}
     $title=switch($state){ready{'DNS для файлов настроен'}mismatch{'DNS-маршрут отличается'}default{'DNS-проверка не завершена'}}
     $next=switch($state){
         ready{'Новые адреса хранилищ покрыты общими правилами. Если GIF зависла в Chrome, перезапустите Chrome: очистка DNS Windows не закрывает соединения браузера.'}

@@ -22,10 +22,10 @@ try{
     try{$dialog=[Windows.Markup.XamlReader]::Load($reader)}finally{$reader.Close()}
     $ui=@{};foreach($node in $xaml.SelectNodes('//*[@*[local-name()="Name"]]')){$name=$node.GetAttribute('Name','http://schemas.microsoft.com/winfx/2006/xaml');$ui[$name]=$dialog.FindName($name)}
     $script:taskImport=@{Ui=$ui;SourcePath=''}
-    $ui.ServerAddressBox.Text=' 37.221.93.128 ';$ui.ServiceBox.SelectedIndex=1
+    $ui.ServerAddressBox.Text=' 37.221.93.128 '
     $ui.CountryBox.SelectedItem=@($ui.CountryBox.Items|Where-Object Tag -eq 'DE')[0]
     $formData=Get-TaskProfileInput
-    Assert ($formData.InputKind -eq 'Address' -and $formData.Service -eq 'Gemini' -and $formData.Address -eq '37.221.93.128' -and $formData.Name -eq 'Gemini — Германия') 'Actual dialog fields produce the correct save request with no file'
+    Assert ($formData.InputKind -eq 'Address' -and $formData.Service -eq 'GeoHide' -and $formData.Address -eq '37.221.93.128' -and $formData.Name -eq 'GeoHide — Германия') 'Actual dialog creates one profile for both services without a service selector'
     $ui.CreateFromFile.IsChecked=$true;Set-TaskProfileInputMode
     Assert ($ui.FilePanel.Visibility -eq 'Visible' -and $ui.AddressPanel.Visibility -eq 'Collapsed') 'File mode replaces address fields'
     $ui.CreateByIP.IsChecked=$true;Set-TaskProfileInputMode
@@ -42,13 +42,13 @@ try{
         Assert (Test-Path -LiteralPath $result) 'Worker returns a structured result'
         return (Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json)
     }
-    $gemini=Save-ThroughWorker 'gemini' ' 37.221.93.128 ' 'Gemini'
+    $gemini=Save-ThroughWorker 'geohide' ' 37.221.93.128 ' 'GeoHide'
     Assert ($gemini.Status -eq 'ok') 'Address creation works through the actual GUI worker/backend boundary'
     $catalog=Get-Content -LiteralPath (Join-Path $temp 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
     $entry=@($catalog.Profiles|Where-Object id -eq $gemini.ProfileId)[0]
-    Assert ($entry.name -eq 'Gemini — Германия' -and $entry.countryCode -eq 'DE' -and $entry.service -eq 'Gemini') 'Name, flag and service are saved'
+    Assert ($entry.name -eq 'GeoHide — Германия' -and $entry.countryCode -eq 'DE' -and $entry.service -eq 'GeoHide') 'Name, flag and combined service are saved'
     $text=Get-Content -LiteralPath (Join-Path $temp $entry.hostsFile) -Raw -Encoding UTF8
-    Assert ($text -match '37.221.93.128 gemini.google.com' -and $text -notmatch 'chatgpt.com') 'Gemini profile contains Gemini domains only'
+    Assert ($text -match '37.221.93.128 gemini.google.com' -and $text -match '37.221.93.128 chatgpt.com' -and $text -match '37.221.93.128 www.google.com') 'One profile uses the same server for both services and Google verification'
     $chat=Save-ThroughWorker 'chat' '143.20.64.192' 'ChatGPT'
     Assert ($chat.Status -eq 'ok') 'ChatGPT profile is saved'
     $catalog=Get-Content -LiteralPath (Join-Path $temp 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json

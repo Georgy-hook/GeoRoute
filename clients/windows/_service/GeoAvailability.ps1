@@ -7,7 +7,7 @@ function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[Valid
         if($node.PSObject.Properties['CheckedAt']){$checked=[datetime]::MinValue;$fresh=[datetime]::TryParse([string]$node.CheckedAt,[ref]$checked) -and ((Get-Date)-$checked).TotalMinutes -lt 5}
         $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
         $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
-    }|Sort-Object Address -Unique)
+    }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},@{Expression={if($_.PSObject.Properties['GeminiRouteMs'] -and $_.GeminiRouteMs -gt 0){$_.GeminiRouteMs}else{999999}}},Address -Unique)
 }
 function Get-GeoProfileRegion($Profile) {
     if($Profile.PSObject.Properties['managedRegion']){return [string]$Profile.managedRegion}
@@ -45,6 +45,7 @@ function Get-GeoPairAvailability([string]$US,[string]$EU,$Report) {
 }
 function Test-GeoRequirements([object[]]$Needs,$Report) {
     $issues=@();$warnings=@()
+    $shared=@($Needs|Where-Object {$_.Service -ne 'Gemini'}).Count -gt 0
     foreach($need in $Needs){
         $rows=@($Report.rows|Where-Object {$_.Region -eq $need.Role -and $_.Address -eq $need.Address}|Select-Object -First 1)
         $prefix=$need.Role+' '+$need.Address+': '
@@ -53,12 +54,20 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
         if(-not [datetime]::TryParse([string]$row.CheckedAt,[ref]$checked) -or ((Get-Date)-$checked).TotalMinutes -gt 5){$issues+=$prefix+'проверка устарела';continue}
         if($row.SourceActive -eq $false){$issues+=$prefix+'удалён из списка GeoHide';continue}
         if($row.CheckState -in @('Queued','Checking','Interrupted')){$issues+=$prefix+'проверка ещё не завершена';continue}
-        if($need.Service -eq 'Gemini'){if(-not $row.GeminiReady){$issues+=$prefix+'Gemini: HTTPS страницы / API недоступен'}elseif($row.GeminiChallenge){$warnings+='Gemini: Google просит CAPTCHA — откройте Gemini в браузере после подключения'};continue}
+        if($need.Service -eq 'Gemini'){
+            if(-not $row.GeminiReady){
+                $message=$prefix+$(if($row.GeminiError){$row.GeminiError}else{'Gemini: HTTPS страницы / API недоступен'})
+                if($shared){$warnings+=$message}else{$issues+=$message}
+            }elseif($row.GeminiChallenge){$warnings+='Gemini: ограничение Google / CAPTCHA. Если поля проверки нет, выберите другой сервер'}
+            elseif($row.PSObject.Properties['GeminiVerificationTLS'] -and -not (Test-GeoGoogleRoute $row)){$warnings+='Gemini: HTTPS отвечает, но этот узел не открывает проверку Google. Доступ к модели не подтверждён'}
+            continue
+        }
         $eligible=switch($need.Role){US{$row.EligibleUS}EU{$row.EligibleEU}RU{$row.EligibleRU}}
         if(-not $eligible){$issues+=$prefix+'не прошёл проверку региона / HTTPS';continue}
         if($need.Files -and (-not $row.FilesTLS -or $row.FilesHTTP -notin @(200,204,301,302,400,401,404,405))){$issues+=$prefix+'HTTPS вложений недоступен'}
     }
-    return [pscustomobject]@{Ready=($issues.Count -eq 0);Managed=$true;Reason=$(if($issues.Count){$issues -join '; '}elseif($warnings.Count){$warnings -join '; '}else{'Все необходимые узлы проверены · можно подключить'});State=$(if($issues.Count){'unavailable'}elseif($warnings.Count){'attention'}else{'ready'})}
+    $issues=@($issues|Select-Object -Unique);$warnings=@($warnings|Select-Object -Unique)
+    return [pscustomobject]@{Ready=($issues.Count -eq 0);Managed=$true;Reason=$(if($issues.Count){$issues -join '; '}elseif($warnings.Count){$(if($shared){'ChatGPT доступен · '})+($warnings -join '; ')}else{'Все необходимые узлы проверены · можно подключить'});State=$(if($issues.Count){'unavailable'}elseif($warnings.Count){'attention'}else{'ready'})}
 }
 
 function Set-GeoRegionCatalog($Catalog,[string]$Region,[string[]]$Addresses,[string]$Origin) {
