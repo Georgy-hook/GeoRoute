@@ -19,8 +19,8 @@ if(Test-ConnectionHostsMode $hostsText ([bool]($bridge -and $bridge.Status -eq '
     . (Join-Path $PSScriptRoot 'Home.ps1')
     $snapshotPath=Join-Path $PSScriptRoot 'geohide-monitor.json'
     $snapshot=if(Test-Path -LiteralPath $snapshotPath){Get-Content -LiteralPath $snapshotPath -Raw -Encoding UTF8|ConvertFrom-Json}else{$null}
-    $home=Get-GeoHomeState $PSScriptRoot $snapshot
-    $report=[pscustomobject]@{Mode='hosts';State=$home.State;Title=$home.Title;Next=$home.Detail;At=(Get-Date).ToString('o');Checks=@();AttachmentsVerified=$false}
+    $routeHome=Get-GeoHomeState $PSScriptRoot $snapshot
+    $report=[pscustomobject]@{Mode='hosts';State=$routeHome.State;Title=$routeHome.Title;Next=$routeHome.Detail;At=(Get-Date).ToString('o');Checks=@();AttachmentsVerified=$false}
     $report|ConvertTo-Json -Depth 6|Set-Content -LiteralPath $ResultPath -Encoding UTF8
     exit 0
 }

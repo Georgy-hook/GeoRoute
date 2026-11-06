@@ -16,6 +16,35 @@ Assert (Test-ConnectionHostsMode '# BEGIN CHATGPT-US-WINDOWS' $true) 'Managed ho
 Assert (Test-ConnectionHostsMode '# END CHATGPT-US-WINDOWS' $true) 'Damaged managed markers are diagnosed by the hosts reader'
 Assert (Test-ConnectionHostsMode '' $false) 'Disabled Bridge retains hosts diagnostics'
 Assert (-not (Test-ConnectionHostsMode '' $true)) 'DNS-only mode still checks NextDNS routing rules'
+$workerTemp=Join-Path ([IO.Path]::GetTempPath()) ('georoute-worker-'+[guid]::NewGuid().ToString('N'))
+$workerShell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+try{
+ [IO.Directory]::CreateDirectory((Join-Path $workerTemp 'System32\drivers\etc'))|Out-Null
+ foreach($name in @('ConnectionWorker.ps1','Connection.ps1','Home.ps1')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination $workerTemp}
+ [IO.File]::WriteAllText((Join-Path $workerTemp 'GeoHide.ps1'),'# Network boundaries are isolated for this worker test.')
+ [IO.File]::WriteAllText((Join-Path $workerTemp 'HttpProxy.ps1'),"function Get-HttpProxyState { [pscustomobject]@{Enabled=`$false} }`r`nfunction Get-Service { [pscustomobject]@{Status='Running'} }")
+ [IO.File]::WriteAllText((Join-Path $workerTemp 'System32\drivers\etc\hosts'),"# BEGIN CHATGPT-US-WINDOWS`r`n192.0.2.1 chatgpt.com`r`n# END CHATGPT-US-WINDOWS`r`n")
+ $workerResult=Join-Path $workerTemp 'result.json'
+ [IO.File]::WriteAllText((Join-Path $workerTemp 'run-worker.ps1'),@'
+function Get-Content {
+ param([string]$LiteralPath,[switch]$Raw,[string]$Encoding,[string]$ErrorAction)
+ if($LiteralPath -eq (Join-Path $env:SystemRoot 'System32\drivers\etc\hosts')){
+  $PSBoundParameters['LiteralPath']=Join-Path $PSScriptRoot 'System32\drivers\etc\hosts'
+ }
+ Microsoft.PowerShell.Management\Get-Content @PSBoundParameters
+}
+& (Join-Path $PSScriptRoot 'ConnectionWorker.ps1') -ResultPath (Join-Path $PSScriptRoot 'result.json')
+exit $LASTEXITCODE
+'@)
+ & $workerShell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $workerTemp 'run-worker.ps1')
+ Assert ($LASTEXITCODE -eq 0) 'Actual hosts worker exits successfully with a running Bridge'
+ $workerReport=Get-Content -LiteralPath $workerResult -Raw|ConvertFrom-Json
+ Assert ($workerReport.Mode -eq 'hosts' -and $workerReport.State -eq 'checking' -and -not $workerReport.AttachmentsVerified) 'Actual worker reports hosts status without inventing network success'
+}finally{
+ $full=[IO.Path]::GetFullPath($workerTemp)
+ if(-not $full.StartsWith([IO.Path]::GetTempPath(),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($full) -notmatch '^georoute-worker-[a-f0-9]{32}$'){throw 'Unsafe worker cleanup'}
+ Remove-Item -LiteralPath $full -Recurse -Force
+}
 $all[2].State='unavailable'
 Assert ((New-ConnectionReport $all).State -eq 'unavailable') 'Timeout must not be green'
 $all[1].State='mismatch'
