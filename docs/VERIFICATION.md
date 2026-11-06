@@ -1,6 +1,6 @@
 # Что проверяется
 
-[Релизная сборка 0.4.3](https://github.com/Georgy-hook/GeoRoute/actions/runs/42260390593) прошла тесты клиента, установку, обновление, запуск и удаление в Windows VM.
+[Релизная сборка 0.4.3](https://github.com/Georgy-hook/GeoRoute/actions/runs/42261969010) прошла тесты клиента, установку, обновление, запуск и удаление в Windows VM.
 
 Проверки GitHub Actions охватывают DNS-протокол Bridge, восстановление, профили ChatGPT/Gemini, региональный выбор, запуск GUI и автозапуск.
 
