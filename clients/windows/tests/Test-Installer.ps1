@@ -21,10 +21,10 @@ function Get-MsiCode([string]$Path) {
   $installer=New-Object -ComObject WindowsInstaller.Installer
   $database=$installer.OpenDatabase($Path,0)
   $view=$database.OpenView("SELECT ``Value`` FROM ``Property`` WHERE ``Property``='ProductCode'")
-  $view.Execute();$record=$view.Fetch();$code=$record.StringData(1)
+  [void]$view.Execute();$record=$view.Fetch();$code=$record.StringData(1)
   return $code
  } finally {
-  if($view){$view.Close()}
+  if($view){[void]$view.Close()}
   foreach($com in @($record,$view,$database,$installer)){if($com){[void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($com)}}
  }
 }
