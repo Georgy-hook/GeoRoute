@@ -105,8 +105,26 @@ def analysis_id(data):
     return None
 
 
+def has_engine_results(report):
+    data = report.get('data', {})
+    stats = data.get('last_analysis_stats', {})
+    return bool(data.get('analysis_date') and data.get('coverage', {}).get('engines', 0) > 0
+                and sum(value for value in stats.values() if isinstance(value, int)) > 0)
+
+
+def completed_analysis_report(analysis, digest):
+    """A completed analysis is evidence even when the file lookup is still cached."""
+    if analysis.get('sha256') != digest or analysis_status(analysis) not in ('completed', 'finished'):
+        return None
+    report = {'data': {'id': digest, 'last_analysis_stats': analysis.get('stats', {}),
+                      'coverage': analysis.get('coverage', {}), 'analysis_date': analysis.get('analysis_date'),
+                      'report_url': 'https://www.virustotal.com/gui/file/' + digest,
+                      'evidence_source': 'completed-analysis', 'source': analysis.get('source')}}
+    return report if has_engine_results(report) else None
+
+
 def main():
-    tag = os.environ.get('RELEASE_TAG', 'v0.4.0')
+    tag = os.environ.get('RELEASE_TAG', '')
     repo = os.environ.get('GITHUB_REPOSITORY', 'Georgy-hook/GeoRoute')
     if not re.fullmatch(r'v\d+\.\d+\.\d+', tag) or repo != 'Georgy-hook/GeoRoute':
         raise RuntimeError('Expected an explicit GeoRoute release tag in its own repository')
@@ -140,6 +158,13 @@ def main():
         paths += [bridge_path, '_service/bridge/python/python.exe']
         selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in
                     paths]
+    setup_names = ['GeoRoute-Setup-' + tag[1:] + '-x64' + suffix for suffix in ('.msi', '.exe')]
+    setup_asset = next((a for name in setup_names for a in release['assets'] if a['name'] == name), None)
+    if setup_asset:
+        status, setup = fetch(setup_asset['browser_download_url'], timeout=90)
+        if status != 200 or setup_asset.get('digest') != 'sha256:' + hashlib.sha256(setup).hexdigest():
+            raise RuntimeError('Published installer digest mismatch')
+        selected.append((setup_asset['name'], setup))
     save('release-manifest.json', {'tag': tag, 'release_url': release['html_url'],
                                   'download_url': asset['browser_download_url'], 'zip_sha256': sha256,
                                   'files': [{'name': name, 'size': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
@@ -167,9 +192,19 @@ def audit_files(selected):
                   'report_url': 'https://www.virustotal.com/gui/file/' + digest + '/detection'}
         status, report = api('/api/v3/files/' + digest)
         save(f'{number}-lookup.json', {'http_status': status, 'body': report})
-        if status == 200:
+        if status == 200 and has_engine_results(report):
             record.update(state='existing-report', report=report)
             print(name + ': existing VirusTotal report')
+        elif status == 200:
+            # A placeholder 0/0 card is not a completed scan. Recover the prior
+            # submission without sending the public file again.
+            status, receipt = api('/api/v3/submissions/' + digest)
+            save(f'{number}-receipt.json', {'http_status': status, 'body': receipt})
+            record.update(state='existing-report-incomplete', receipt=receipt)
+            identifier = analysis_id(receipt)
+            if status in (200, 202) and identifier:
+                pending[number] = identifier
+                record['state'] = 'awaiting-existing-analysis'
         elif status == 404:
             print(name + ': confirmed unknown; submitting authorized public release bytes')
             # Persist intent before dispatch. Never retry an uncertain POST.
@@ -201,8 +236,13 @@ def audit_files(selected):
             print(results[number]['name'] + ': analysis HTTP ' + str(status) + ' / ' + str(state))
             if status == 200 and state in ('completed', 'finished'):
                 status, report = api('/api/v3/files/' + results[number]['sha256'])
-                results[number].update(state='completed' if status == 200 else 'report-pending', report=report)
-                del pending[number]
+                if status != 200 or not has_engine_results(report):
+                    report = completed_analysis_report(analysis, results[number]['sha256'])
+                if report and has_engine_results(report):
+                    results[number].update(state='completed', report=report)
+                    del pending[number]
+                else:
+                    results[number]['state'] = 'report-pending'
             elif status not in (200, 202, 404):
                 results[number].update(state='analysis-needs-review', analysis_http=status)
                 del pending[number]

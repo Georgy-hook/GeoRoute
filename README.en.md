@@ -2,11 +2,11 @@
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
-**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download the `GeoRoute-Windows-x64` ZIP asset, extract the whole folder, and open **GeoRoute.cmd** to launch the graphical interface. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.2-x64.msi**, choose **Next → Install**, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
-**VirusTotal snapshot for 0.4.1 (2026-11-05): zero detections (0/71)** for the ZIP and individually checked entry/GUI/Bridge components. Some engines report unsupported types, failures or timeouts; this is not a safety certificate. [Reports, coverage, dates and exact SHA-256 hashes](docs/security/virustotal-v0.4.1.md). [Historical detections and measured experiments](docs/security/virustotal-experiments-2026-11-05.md) remain available.
+**VirusTotal snapshot for 0.4.2 (2026-11-06): zero detections** for the MSI, ZIP and selected source/runtime components. Some engines report unsupported types, failures or timeouts; this is not a safety guarantee. [Reports, actual coverage, analysis dates, hashes and historical evidence](docs/security/README.md).
 
-Version 0.4.1 removes custom EXE wrappers while retaining the WPF GUI, tray and profiles. Close the old app through its tray menu, then launch GeoRoute.cmd. Replace old EXE shortcuts; enabled startup entries belonging to the same app directory are migrated automatically.
+The per-user installer creates shortcuts and a Windows uninstall entry. Exit GeoRoute through its tray menu before updating; profiles/settings/logs are retained. Disable the route and optional Bridge/proxy before uninstalling. The portable ZIP is an additional option: extract it fully and run `GeoRoute.cmd`. Portable and installed settings are separate.
 
 Wait for the initial checks, choose an available route under **Servers**, then use the single **Enable / Disable** control on the home page and confirm the Windows elevation request. The interface is currently Russian.
 
@@ -18,7 +18,7 @@ Automatic selection updates saved profiles. Applying them to Windows requires an
 
 A green check proves the tested HTTPS transport/configuration only, not an authenticated ChatGPT conversation, a specific GIF download or computer-control session. Availability depends on the local network and GeoHide endpoints.
 
-[Installation guide](docs/INSTALL.ru.md) · [Verification limits](clients/windows/VERIFICATION.md) · [Development](docs/DEVELOPMENT.md) · [Changelog](CHANGELOG.md).
+[Installation guide](docs/INSTALL.ru.md) · [Verification limits](docs/VERIFICATION.md) · [Development](docs/DEVELOPMENT.md) · [Changelog](CHANGELOG.md).
 
 Based on [noVibe/DnsConf](https://github.com/noVibe/DnsConf). The upstream cloud DNS tools remain available separately: [technical manual](DNS-CONFIGURER.md). No NextDNS account or API key is needed for the ordinary desktop hosts mode. GeoRoute is an independent client, not an official GeoHide/NextDNS product.
 

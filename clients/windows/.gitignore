@@ -1,5 +1,6 @@
 .build/
 dist/
+installer-test-evidence/
 _service/bin/
 _service/bridge/python/
 _service/bridge/NextDNSBridge.exe
