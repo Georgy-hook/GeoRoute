@@ -66,6 +66,7 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
         if(-not $eligible){$issues+=$prefix+'не прошёл проверку региона / HTTPS';continue}
         if($need.Files -and (-not $row.FilesTLS -or $row.FilesHTTP -notin @(200,204,301,302,400,401,404,405))){$issues+=$prefix+'HTTPS вложений недоступен'}
     }
+    $issues=@($issues|Select-Object -Unique);$warnings=@($warnings|Select-Object -Unique)
     return [pscustomobject]@{Ready=($issues.Count -eq 0);Managed=$true;Reason=$(if($issues.Count){$issues -join '; '}elseif($warnings.Count){$(if($shared){'ChatGPT доступен · '})+($warnings -join '; ')}else{'Все необходимые узлы проверены · можно подключить'});State=$(if($issues.Count){'unavailable'}elseif($warnings.Count){'attention'}else{'ready'})}
 }
 
