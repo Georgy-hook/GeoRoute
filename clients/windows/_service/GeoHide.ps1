@@ -16,7 +16,7 @@ function Test-GeoAddress([string]$Address) {
 function Read-GeoSettings([string]$Root) {
     $path=Join-Path $Root 'geohide-settings.json'
     if(Test-Path -LiteralPath $path){$v=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json;if(-not $v.PSObject.Properties['ru']){$v|Add-Member -MemberType NoteProperty -Name ru -Value '159.194.200.33'};return $v}
-    return [pscustomobject]@{version=1;autoSelect=$true;us='192.255.159.241';eu='45.13.237.213';ru='159.194.200.33';manualServers=@()}
+    return [pscustomobject]@{version=1;autoSelect=$true;us='192.255.159.241';eu='143.20.64.192';ru='159.194.200.33';manualServers=@()}
 }
 function Get-GeoSelection($Settings,$Report) {
     $selected=[ordered]@{ready=$false}

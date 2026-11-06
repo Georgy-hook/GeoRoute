@@ -44,7 +44,7 @@ try{
     Assert (Get-GeoProfileAvailability $temp 'eu-primary' $report).Ready 'One regional profile covers ChatGPT, Gemini and files'
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Combined profile still requires ChatGPT'
     $text=Get-Content -LiteralPath (Join-Path $temp 'profiles/us-eu.hosts') -Raw -Encoding UTF8
-    Assert ($text -match '45.13.237.213 gemini.google.com') 'Combined route sends Gemini through EU'
+    Assert ($text -match ([regex]::Escape($settings.eu)+'\s+gemini\.google\.com(?:\s|$)')) 'Combined route sends Gemini through EU'
     $geminiText=Get-Content -LiteralPath (Join-Path $temp 'profiles/eu-primary.hosts') -Raw -Encoding UTF8
     Assert ($geminiText -match '37.221.93.128 gemini.google.com' -and $geminiText -match '37.221.93.128 www.google.com' -and $geminiText -match '37.221.93.128 chatgpt.com') 'Gemini and Google verification use the same endpoint in a shared profile'
     $catalog=Get-Content -LiteralPath (Join-Path $temp 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
