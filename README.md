@@ -1,10 +1,14 @@
 # GeoRoute
 
+[![Релиз](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
+[![Windows 10 и 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
+[![VirusTotal — MSI 0.4.2: 0 обнаружений, снимок 06.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.4.2%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/8b7b473e9598a1a304eb4ec850b63ca566bdb12bf032271d96ee9b5dec18dba3/detection)
+
 Приложение для Windows, которое помогает подключать ChatGPT, Gemini и вложения OpenAI через серверы GeoHide, проверяет доступность узлов и подбирает замену, когда адреса меняются.
 
 **[Скачать установщик GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/download/v0.4.2/GeoRoute-Setup-0.4.2-x64.msi)** · [Установка по шагам](docs/INSTALL.ru.md) · [Все релизы](https://github.com/Georgy-hook/GeoRoute/releases) · [English](README.en.md)
 
-> **VirusTotal, релиз 0.4.2:** ноль обнаружений у готового MSI, ZIP и отдельно проверенных компонентов. Есть тайм-ауты, ошибки и неподдерживаемые проверки; это не гарантия безопасности. [Результаты, охват, даты и SHA-256](docs/security/README.md).
+> **VirusTotal · снимок от 06.11.2026:** ноль обнаружений у MSI 0.4.2, ZIP и выбранных компонентов. Бейдж ведёт на отчёт именно этого установщика. Есть тайм-ауты, ошибки и неподдерживаемые проверки; это не гарантия безопасности. [Охват, даты и SHA-256](docs/security/README.md).
 
 ![Главный экран GeoRoute](docs/images/home.png)
 
@@ -37,6 +41,10 @@
 Кнопка **?** рядом с «Добавить сервер» и в окне импорта открывает пошаговую инструкцию. Встроенные профили уже готовы к использованию; импорт нужен для собственного списка адресов.
 
 ### Без файла: IP + страна + сервис
+
+<img src="docs/images/add-profile.png" width="640" alt="Окно добавления профиля: IP-адрес, сервис ChatGPT или Gemini, страна и необязательное название">
+
+*Интерфейс установленной версии 0.4.2: профиль можно добавить прямо в приложении.*
 
 1. Откройте **Серверы → Добавить сервер → По IP-адресу**.
 2. Введите публичный IP совместимого сервера без схемы URL, порта или маски сети. Поддерживаются IPv4 и IPv6.

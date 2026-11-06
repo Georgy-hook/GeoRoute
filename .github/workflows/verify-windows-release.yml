@@ -1,0 +1,71 @@
+name: Verify published Windows release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release to install (no rebuild of release files)
+        required: true
+        default: v0.4.2
+  push:
+    branches: ['feature/**']
+    paths:
+      - '.github/workflows/verify-windows-release.yml'
+      - 'clients/windows/tests/Test-Installer.ps1'
+
+permissions:
+  contents: read
+
+jobs:
+  published:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[verify-release]')
+    runs-on: windows-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+          architecture: x64
+      - name: Download and verify the exact public release assets
+        env:
+          RELEASE_TAG: ${{ inputs.tag || 'v0.4.2' }}
+        run: |
+          $ErrorActionPreference='Stop'
+          $tag=$env:RELEASE_TAG
+          if($tag -notmatch '^v\d+\.\d+\.\d+$'){throw 'Invalid release tag'}
+          $release=Invoke-RestMethod ('https://api.github.com/repos/'+$env:GITHUB_REPOSITORY+'/releases/tags/'+$tag)
+          if($release.draft -or $release.prerelease){throw 'Expected a public stable release'}
+          $folder=Join-Path $env:RUNNER_TEMP 'published-release'
+          New-Item -ItemType Directory -Path $folder|Out-Null
+          $security=(Invoke-WebRequest -UseBasicParsing ('https://raw.githubusercontent.com/'+$env:GITHUB_REPOSITORY+'/'+$tag+'/docs/security/README.md')).Content
+          foreach($name in @(('GeoRoute-Setup-'+$tag.Substring(1)+'-x64.msi'),('GeoRoute-Windows-x64-'+$tag.Substring(1)+'.zip'))){
+            $asset=@($release.assets|Where-Object name -eq $name)
+            if($asset.Count -ne 1){throw ('Missing release asset: '+$name)}
+            $path=Join-Path $folder $name
+            Invoke-WebRequest -UseBasicParsing $asset[0].browser_download_url -OutFile $path
+            $hash=(Get-FileHash -LiteralPath $path).Hash.ToLowerInvariant()
+            if($asset[0].digest -cne ('sha256:'+$hash) -or $asset[0].size -ne (Get-Item -LiteralPath $path).Length){throw 'GitHub asset digest mismatch'}
+            if(-not $security.Contains($hash)){throw 'Published bytes do not match the versioned security report'}
+            $sidecar=@($release.assets|Where-Object name -eq ($name+'.sha256'))
+            if($sidecar.Count -ne 1){throw 'Missing checksum sidecar'}
+            $sidecarPath=$path+'.sha256'
+            Invoke-WebRequest -UseBasicParsing $sidecar[0].browser_download_url -OutFile $sidecarPath
+            $checksum=[IO.File]::ReadAllText($sidecarPath).Trim().Split(' ')[0]
+            if($checksum -cne $hash){throw 'Checksum sidecar mismatch'}
+            Write-Output ($name+' SHA256 '+$hash)
+          }
+      - name: Install, launch, update, preserve data and uninstall published bytes
+        run: |
+          $folder=Join-Path $env:RUNNER_TEMP 'published-release'
+          .\clients\windows\tests\Test-Installer.ps1 -SetupPath (Get-ChildItem $folder -Filter *.msi).FullName -ArchivePath (Get-ChildItem $folder -Filter *.zip).FullName -ScreenshotDirectory (Join-Path $env:RUNNER_TEMP 'release-screenshots') -CheckDefaultLocation
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-release-screenshots
+          path: ${{ runner.temp }}/release-screenshots/
+          retention-days: 30
+          if-no-files-found: warn

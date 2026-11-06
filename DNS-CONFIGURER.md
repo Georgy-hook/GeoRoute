@@ -1,6 +1,6 @@
 🌐 Languages: [󠁧󠁢󠁥󠁮󠁧󠁿**English**](README.md) | [**Русский**](README.ru.md)
 
-[![Last Build](../../actions/workflows/github_action.yml/badge.svg?branch=main)](../../actions/workflows/github_action.yml)<br>
+[![Last Build](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml/badge.svg?branch=main)](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml)<br>
 
 # DNS Block&Redirect Configurer
 
@@ -33,7 +33,7 @@ Use the configurator https://dns-conf-ui.vercel.app in **Quick** mode. It will a
 and perform all required GitHub setup steps.
 
 You only need to sign in with GitHub and provide **CLIENT_ID** and **AUTH_SECRET**. More details on where to find these
-values here: [Setup credentials](#setup-credentials)
+values here: [Setup credentials](#set-up-credentials)
 
 ## Standard Setup
 
@@ -298,7 +298,7 @@ Your fork is a public repository. Check the run history periodically: a previous
 that scheduled runs are still enabled.
 
 **How to check:** Click the badge below (the same one is at the top of the README) to go to the run history.<br>
-[![Last Build](../../actions/workflows/github_action.yml/badge.svg?branch=main)](../../actions/workflows/github_action.yml)<br>
+[![Last Build](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml/badge.svg?branch=main)](https://github.com/Georgy-hook/GeoRoute/actions/workflows/github_action.yml)<br>
 A disabled workflow will have a notice that scheduled runs are turned off. In the run history (workflow runs), you can see the date of the last run.
 
 **How to turn it on again:**
