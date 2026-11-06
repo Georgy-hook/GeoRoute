@@ -42,7 +42,7 @@ jobs:
           $folder=Join-Path $env:RUNNER_TEMP 'published-release'
           New-Item -ItemType Directory -Path $folder|Out-Null
           $security=(Invoke-WebRequest -UseBasicParsing ('https://raw.githubusercontent.com/'+$env:GITHUB_REPOSITORY+'/'+$tag+'/docs/security/README.md')).Content
-          foreach($name in @('GeoRoute-Setup-'+$tag.Substring(1)+'-x64.msi','GeoRoute-Windows-x64-'+$tag.Substring(1)+'.zip')){
+          foreach($name in @(('GeoRoute-Setup-'+$tag.Substring(1)+'-x64.msi'),('GeoRoute-Windows-x64-'+$tag.Substring(1)+'.zip'))){
             $asset=@($release.assets|Where-Object name -eq $name)
             if($asset.Count -ne 1){throw ('Missing release asset: '+$name)}
             $path=Join-Path $folder $name
@@ -52,7 +52,9 @@ jobs:
             if(-not $security.Contains($hash)){throw 'Published bytes do not match the versioned security report'}
             $sidecar=@($release.assets|Where-Object name -eq ($name+'.sha256'))
             if($sidecar.Count -ne 1){throw 'Missing checksum sidecar'}
-            $checksum=(Invoke-WebRequest -UseBasicParsing $sidecar[0].browser_download_url).Content.Trim().Split(' ')[0]
+            $sidecarPath=$path+'.sha256'
+            Invoke-WebRequest -UseBasicParsing $sidecar[0].browser_download_url -OutFile $sidecarPath
+            $checksum=[IO.File]::ReadAllText($sidecarPath).Trim().Split(' ')[0]
             if($checksum -cne $hash){throw 'Checksum sidecar mismatch'}
             Write-Output ($name+' SHA256 '+$hash)
           }
