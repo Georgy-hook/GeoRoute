@@ -180,7 +180,8 @@ def probe(settings):
             result = provider.query(packet)
             if result[3] & 15 not in (0, 3):
                 raise ValueError('DNS returned an error')
-            return dict(server=server, ok=True, ms=round((time.monotonic()-start)*1000), rcode=result[3] & 15)
+            return dict(server=server, ok=True, ms=round((time.monotonic()-start)*1000), rcode=result[3] & 15,
+                        answers=int.from_bytes(result[6:8], 'big'))
         except (OSError, ValueError, EOFError) as exc:
             return dict(server=server, ok=False, error=type(exc).__name__ + ': ' + str(exc)[:160])
         finally:

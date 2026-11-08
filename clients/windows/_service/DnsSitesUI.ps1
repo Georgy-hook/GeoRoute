@@ -101,7 +101,7 @@ function New-DnsSitesDialog($Owner) {
  $ui.DnsEnable.Background=Get-TaskBrush '#91F2D2';$ui.DnsEnable.Foreground=Get-TaskBrush '#0C2823'
  return @{Window=$window;Ui=$ui;Run=$null;Timer=$null;Catalogue=@()}
 }
-function Show-DnsSitesDialog {
+function Show-DnsSitesDialog($Provider=$null) {
  if($script:taskBusy -or $SmokeTest -or $RenderPreview){return}
  try {
   $script:dnsDialog=New-DnsSitesDialog $script:taskWindow
@@ -109,6 +109,7 @@ function Show-DnsSitesDialog {
   Register-TaskDarkTitleBar $script:dnsDialog.Window
   Register-TaskDialogKeys $script:dnsDialog.Window
   $config=Read-SelectiveDnsConfig $script:taskRoot
+  if($Provider){$config.url=[string]$Provider.url;$config.servers=@($Provider.servers)}
   $ui.DnsUrl.Text=[string]$config.url;$ui.DnsServers.Text=@($config.servers) -join ', '
   $ui.DnsSelectedSites.Text=@($config.domains) -join "`r`n";$ui.DnsSubdomains.IsChecked=[bool]$config.subdomains
   $providers=@((Get-Content (Join-Path $script:taskRoot 'dns-providers.json') -Raw -Encoding UTF8|ConvertFrom-Json).providers)+@([pscustomobject]@{id='custom';name='Свой DNS…';url='';servers=@()})

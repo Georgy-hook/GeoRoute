@@ -21,6 +21,7 @@ def check(path):
                     'GeoRoute/_service/ProfileMigration.ps1']
         required += ['GeoRoute/_service/gemini_probe.py', 'GeoRoute/_service/vendor/hashes.json']
         required += ['GeoRoute/_service/bridge/selective_dns.py', 'GeoRoute/_service/DnsSites.xaml',
+                     'GeoRoute/_service/bridge/dns_monitor.py', 'GeoRoute/_service/DnsMonitorUI.ps1',
                      'GeoRoute/_service/DnsSitesUI.ps1', 'GeoRoute/_service/SelectiveDnsSetup.ps1',
                      'GeoRoute/_service/dns-providers.json', 'GeoRoute/_service/geohide-domains.txt']
         assert all(name in names for name in required)
