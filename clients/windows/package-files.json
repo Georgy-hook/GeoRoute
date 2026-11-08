@@ -1,4 +1,4 @@
-﻿[
+[
   "AppInstance.ps1",
   "InstallerActions.ps1",
   "ProfileDefaults.ps1",
@@ -73,5 +73,14 @@
   "vendor/hashes.json",
   "vendor/h2-4.4.1-py3-none-any.whl",
   "vendor/hpack-4.2.0-py3-none-any.whl",
-  "vendor/hyperframe-6.1.0-py3-none-any.whl"
+  "vendor/hyperframe-6.1.0-py3-none-any.whl",
+  "SelectiveDns.ps1",
+  "SelectiveDnsSetup.ps1",
+  "DnsSitesUI.ps1",
+  "DnsSites.xaml",
+  "dns-providers.json",
+  "geohide-domains.txt",
+  "bridge/selective_dns.py",
+  "DnsMonitorUI.ps1",
+  "bridge/dns_monitor.py"
 ]

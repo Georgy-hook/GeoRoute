@@ -4,11 +4,11 @@ Windows client source: `clients/windows/_service`. PowerShell scripts require Wi
 
 ```powershell
 .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
-.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.4.3
-.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.4.3
+.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.5.0
+.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.5.0
 ```
 
-The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.4.3.zip`, `GeoRoute-Setup-0.4.3-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
+The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.5.0.zip`, `GeoRoute-Setup-0.5.0-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
 
 `GeoRoute.cmd` opens the existing WPF GUI in the system Windows PowerShell process. It accepts only the fixed normal/tray/repair/smoke modes and never forwards arbitrary command text. The process-scoped ExecutionPolicy argument does not change machine execution policy or antivirus settings. `AppInstance.ps1` owns the mutex/event contract; a second launch activates the existing window, background startup does not unhide it, and exit releases ownership. Tray startup quotes the CMD path explicitly and migrates only exact legacy commands belonging to the same app directory. The UI thread retains per-monitor DPI awareness. CI smoke-tests the packaged entry point, and package validation rejects the removed custom EXE files. Experimental compiled launcher implementations remain in Git history, with their measured outcomes in the security experiments report.
 
@@ -39,3 +39,5 @@ Run `python tools/check_docs.py` to check tracked Markdown targets, images and h
 The VirusTotal header badge is an explicitly dated snapshot for one MSI version and links to that file's full SHA-256 report. It is not a live status or a certification badge. When publishing a new installer, update the version, date, verdict and report URL together only after meaningful analysis results are available. Preserve coverage limitations in the security report. The ordinary Shields format follows examples in [kObsidian](https://github.com/bezata/kObsidian#readme) and [VirusTotal Action](https://github.com/cssnr/virustotal-action/discussions/27); see [Shields static badges](https://shields.io/badges/static-badge). The official [VT widget](https://docs.virustotal.com/reference/widgeturl) is an iframe integration, rather than a GitHub Markdown badge.
 
 `verify-windows-release.yml` downloads the public MSI/ZIP without rebuilding them, checks GitHub digests, checksum sidecars and the tag's security report, then exercises the installer in a disposable Windows VM. It also tests the default per-user location, both shortcuts and Windows Installer registration. Screenshots are WPF renders from the installed release in a fresh verification profile; diagnostic previews do not run live network actions or prove model availability. Release tags and published bytes remain immutable when documentation is updated.
+
+`bridge/dns_monitor.py` runs bounded, read-only DoH availability probes with a fixed public test name. `DnsMonitorUI.ps1` owns run IDs, progress, freshness and provider selection into `DnsSitesUI.ps1`; selecting a result does not enable the route. Tests cover duplicate starts, stale output, single-result selection on Windows PowerShell 5.1, expiry, timeout recovery and both tables at small/maximized sizes.

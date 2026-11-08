@@ -10,11 +10,19 @@ $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe
 if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_gemini_http2.py')
 if($LASTEXITCODE -ne 0){throw 'Gemini HTTP2 tests failed.'}
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_selective_dns.py')
+if($LASTEXITCODE -ne 0){throw 'Selected DNS tests failed.'}
+& (Join-Path $PSScriptRoot 'Test-SelectiveDns.ps1')
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_dns_monitor.py')
+if($LASTEXITCODE -ne 0){throw 'DNS monitor checks failed.'}
+& (Join-Path $PSScriptRoot 'Test-DnsMonitor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHide.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')
 & (Join-Path $PSScriptRoot 'Test-Home.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoMonitor.ps1')
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitorLayout.ps1')
+if($LASTEXITCODE -ne 0){throw 'Monitor resize checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-Gemini.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileMigration.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileCreation.ps1')

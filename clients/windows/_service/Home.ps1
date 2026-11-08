@@ -40,12 +40,14 @@ function Update-GeoHome([switch]$Force) {
     $script:homeAt=Get-Date
     try{
         $script:homeState=Get-GeoHomeState $script:taskRoot $script:geoReport
+        if(Get-Command Update-DnsSitesSummary -ErrorAction SilentlyContinue){Update-DnsSitesSummary}
         $id=$script:taskSelectedProfileId
         if(-not $id){$id=Get-GeoCombinedId $script:taskRoot}
         $profile=@($script:taskProfiles|Where-Object Id -eq $id|Select-Object -First 1)
         $availability=Get-GeoProfileAvailability $script:taskRoot $id $script:geoReport
         $script:taskUi.HomeRoute.Text=if($profile.Count){'Выбранный маршрут: '+$profile[0].Name}else{'Выберите маршрут в разделе «Серверы»'}
-        $script:taskUi.HomeTitle.Text=$script:homeState.Title
+        $displayTitle=if($script:dnsCurrentState -and $script:dnsCurrentState.Active -and -not $script:homeState.On){'Основной профиль выключен'}else{$script:homeState.Title}
+        $script:taskUi.HomeTitle.Text=$displayTitle
         $script:taskUi.HomeDetail.Text=$script:homeState.Detail
         if(-not $script:homeState.On -and -not $availability.Ready){$script:taskUi.HomeDetail.Text='Для выбранного маршрута пока нет проверенных серверов. Выберите доступный маршрут в разделе «Серверы».'}
         $script:taskUi.HomeToggle.IsEnabled=(-not $script:taskBusy -and ($script:homeState.On -or $availability.Ready))
@@ -53,7 +55,7 @@ function Update-GeoHome([switch]$Force) {
         $color=switch($script:homeState.State){ready{'#91F2D2'}checking{'#A4D5F2'}off{'#9CAEC4'}default{'#F6C56B'}}
         $script:taskUi.HomeTitle.Foreground=Get-TaskBrush $color
         $script:taskUi.HomeToggle.Foreground=Get-TaskBrush $color
-        if($script:taskTray){$script:taskTray.Icon=if($script:homeState.State -in @('unavailable','error')){[Drawing.SystemIcons]::Warning}else{$script:taskTrayIcon};$script:taskTray.Text=('GeoRoute · '+$script:homeState.Title).Substring(0,[Math]::Min(63,('GeoRoute · '+$script:homeState.Title).Length));$script:taskTrayStatus.Text=$script:homeState.Title}
+        if($script:taskTray){$trayTitle=if($script:dnsCurrentState -and $script:dnsCurrentState.Active -and -not $script:homeState.On){'DNS выбранных сайтов включён'}else{$displayTitle};$script:taskTray.Icon=if($script:homeState.State -in @('unavailable','error')){[Drawing.SystemIcons]::Warning}else{$script:taskTrayIcon};$script:taskTray.Text=('GeoRoute · '+$trayTitle).Substring(0,[Math]::Min(63,('GeoRoute · '+$trayTitle).Length));$script:taskTrayStatus.Text=$trayTitle}
     }catch{$script:taskUi.HomeTitle.Text='Не удалось прочитать настройки';$script:taskUi.HomeDetail.Text=$_.Exception.Message}
 }
 function Invoke-GeoHomeToggle {

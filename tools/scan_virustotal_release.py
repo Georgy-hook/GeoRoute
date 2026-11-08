@@ -155,7 +155,7 @@ def main():
         paths = [entry_path]
         if 'GeoRoute/_service/AppInstance.ps1' in members:
             paths += ['_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1']
-        paths += [path for path in ['_service/InstallerActions.ps1', '_service/ProfileDefaults.ps1', '_service/gemini_probe.py']
+        paths += [path for path in ['_service/InstallerActions.ps1', '_service/ProfileDefaults.ps1', '_service/gemini_probe.py', '_service/DnsMonitorUI.ps1', '_service/SelectiveDnsSetup.ps1', '_service/SelectiveDns.ps1', '_service/DnsSitesUI.ps1', '_service/bridge/selective_dns.py', '_service/bridge/dns_monitor.py']
                   if 'GeoRoute/' + path in members]
         paths += [bridge_path, '_service/bridge/python/python.exe']
         selected = [(filename, archive)] + [(path, package.read(members['GeoRoute/' + path])) for path in

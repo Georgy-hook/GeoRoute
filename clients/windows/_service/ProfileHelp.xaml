@@ -17,7 +17,11 @@
         <Border Background="#1B3440" CornerRadius="14" Padding="16">
           <TextBlock Text="Для обычного подключения ничего добавлять не нужно. В разделе «Серверы» уже есть общие профили GeoHide для ChatGPT и Gemini. Выберите подходящий и нажмите «Включить» на главной." Foreground="#B6F3DF"/>
         </Border>
-        <TextBlock Text="1. Откройте создание профиля" Style="{StaticResource Step}"/>
+        <TextBlock Text="Хотите подключать другие сайты?" Style="{StaticResource Step}"/>
+        <TextBlock Text="Откройте «Серверы → Сайты и DNS». Выберите GeoHide EU, US, RU или свой DNS. Найдите сайт в каталоге или вставьте его ссылку, затем добавьте его в список. При необходимости добавьте другие домены того же сервиса. Нажмите «Проверить DNS», затем «Включить / обновить» и подтвердите Windows. Остальные сайты продолжат использовать ваш обычный DNS. Настройка сохраняется после перезагрузки; для отключения нажмите «Выключить» в том же окне." Style="{StaticResource Description}"/>
+        <TextBlock Text="Что важно о собственных сайтах" Style="{StaticResource Step}"/>
+        <TextBlock Text="DNS-провайдер должен поддерживать нужный сайт. Добавление домена не превращает обычный DNS в прокси. Каталог показывает список GeoHide, а у других провайдеров он может отличаться. Проверка DNS не подтверждает вход в аккаунт или работу сайта целиком. Hosts-профили ниже остаются отдельным способом для ChatGPT и Gemini." Style="{StaticResource Description}"/>
+        <TextBlock Text="1. Откройте создание hosts-профиля" Style="{StaticResource Step}"/>
         <TextBlock Text="Перейдите в «Серверы» → «Добавить сервер». По умолчанию выбран способ «По IP-адресу»: готовить файл не нужно." Style="{StaticResource Description}"/>
         <TextBlock Text="2. Введите IP сервера" Style="{StaticResource Step}"/>
         <TextBlock Text="Укажите IP сервера GeoHide или другого совместимого сервера. Программа создаст один профиль для ChatGPT, Gemini и вложений OpenAI. Страница проверки www.google.com пойдёт через тот же сервер, что и Gemini; это также касается Google Поиска на www.google.com. Вводите только IP, без http:// и порта." Style="{StaticResource Description}"/>

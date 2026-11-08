@@ -101,7 +101,7 @@ def main():
     # Fixed visible read-only checks: no encoded commands, downloads or network changes.
     prefix = '"[System64Folder]WindowsPowerShell\\v1.0\\powershell.exe" -NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -Command '
     running = "try{$name='Global\\GeoRoute.Setup.Application.'+[Security.Principal.WindowsIdentity]::GetCurrent().User.Value;$m=[Threading.Mutex]::OpenExisting($name);$m.Dispose();Write-Error 'Close GeoRoute through its tray menu first';exit 1}catch [Threading.WaitHandleCannotBeOpenedException]{exit 0}"
-    hosts = "$p=Join-Path $env:SystemRoot 'System32\\drivers\\etc\\hosts';try{if([IO.File]::ReadAllText($p).Contains('# BEGIN CHATGPT-US-WINDOWS')){Write-Error 'Disable GeoRoute before uninstalling';exit 1}}catch{Write-Error $_;exit 1}"
+    hosts = "$p=Join-Path $env:SystemRoot 'System32\\drivers\\etc\\hosts';try{if([IO.File]::ReadAllText($p).Contains('# BEGIN CHATGPT-US-WINDOWS')){Write-Error 'Disable GeoRoute before uninstalling';exit 1};if(@(Get-DnsClientNrptRule -ErrorAction Stop|Where-Object {$_.Comment -ceq 'GeoRoute selective DNS v1'}).Count){Write-Error 'Disable GeoRoute selected-site DNS before uninstalling';exit 1}}catch{Write-Error $_;exit 1}"
     sequence = element(product, 'InstallExecuteSequence')
     for name, code, condition, after in [
         ('CheckRunningApp', running, 'NOT UPGRADINGPRODUCTCODE', 'CostFinalize'),
