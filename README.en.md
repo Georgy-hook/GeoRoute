@@ -34,3 +34,5 @@ Custom profiles: use the **?** button beside **Add server** for the in-app guide
 Create a profile without a file: **Servers → Add server → By IP**, enter a public server IP and choose the country, then save. One GeoHide profile includes ChatGPT, Gemini, OpenAI files and the exact Google verification frontend. A name is optional. Saving does not enable the route or verify connectivity; the supplied server must support these hosts. File import remains available as a separate input mode.
 
 <img src="docs/images/add-profile.png" width="640" alt="GeoRoute profile form: one GeoHide profile for ChatGPT and Gemini, server IP, country and optional name">
+
+In development for 0.5.0: **Servers → Sites and DNS** routes only selected namespaces through GeoHide EU/US/RU or a custom HTTPS DoH endpoint. All other DNS stays unchanged. Includes a searchable GeoHide catalogue, custom domains, certificate-validated probes and a separate LocalService/NRPT route. This feature is not in stable 0.4.3 yet. [Scope and technical details](docs/SELECTIVE-DNS.md).

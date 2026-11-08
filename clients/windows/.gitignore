@@ -18,5 +18,7 @@ __pycache__/
 _service/geohide-settings.json
 _service/geohide-monitor.json
 _service/geohide-history.json
+_service/selective-dns.json
+_service/dns-catalogue.json
 _service/profiles/*.geohide-backup
 _service/*.tmp

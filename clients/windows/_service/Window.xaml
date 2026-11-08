@@ -639,7 +639,15 @@
           </StackPanel>
         </Grid>
         <ScrollViewer Grid.Row="1" x:Name="ServersPanel" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Focusable="False" Margin="0,8,-4,0">
-          <UniformGrid x:Name="ProfilesPanel" Columns="2" VerticalAlignment="Top" />
+          <StackPanel>
+            <Border Background="#153036" CornerRadius="18" Padding="18" Margin="0,0,4,16">
+              <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel Margin="0,0,16,0"><TextBlock Text="GeoHide умеет больше, чем ChatGPT" FontSize="16" FontWeight="SemiBold"/><TextBlock Text="Добавьте другие сайты и выберите для них DNS. Остальные сайты останутся на вашем обычном DNS." Foreground="#AFC5D6" TextWrapping="Wrap" FontSize="12" Margin="0,7,0,6"/><TextBlock x:Name="DnsSitesSummary" Text="DNS для выбранных сайтов выключен" Foreground="#91F2D2" TextWrapping="Wrap" FontSize="12"/></StackPanel>
+                <Button Grid.Column="1" x:Name="DnsSitesButton" Content="Сайты и DNS…" Style="{StaticResource ActionButton}" VerticalAlignment="Center"/>
+              </Grid>
+            </Border>
+            <UniformGrid x:Name="ProfilesPanel" Columns="2" VerticalAlignment="Top" />
+          </StackPanel>
         </ScrollViewer>
         <Border Grid.Row="2" Background="#172C3A" BorderBrush="#345569" BorderThickness="1" CornerRadius="20" Padding="15,11" Margin="0,10,0,0">
           <Grid>
@@ -793,6 +801,7 @@
           <TextBlock x:Name="HomeToggleCaption" Text="Включить" FontSize="21" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,18,0,0" />
           <TextBlock x:Name="HomeRoute" Text="US + EU" Foreground="#B3C9DD" FontSize="16" TextAlignment="Center" Margin="0,28,0,0" TextWrapping="Wrap" />
           <TextBlock x:Name="HomeDetail" Text="Проверяю настройки…" Foreground="#9CAEC4" FontSize="14" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0" />
+          <TextBlock x:Name="HomeDnsSummary" Text="Другие сайты: DNS выключен" Foreground="#9CAEC4" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,18,0,0" />
           <TextBlock Text="При включении или выключении Windows попросит подтверждение." Foreground="#7890AD" FontSize="11" TextWrapping="Wrap" TextAlignment="Center" Margin="0,26,0,0" />
         </StackPanel>
       </Grid>

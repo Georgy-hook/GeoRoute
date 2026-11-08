@@ -6,12 +6,14 @@ on:
     paths:
       - 'clients/windows/_service/bridge/**'
       - 'clients/windows/tests/Test-BridgeService.ps1'
+      - 'clients/windows/tests/Test-SelectiveDnsService.ps1'
       - 'clients/windows/tests/test_bridge_protocol.py'
       - '.github/workflows/bridge-tests.yml'
   pull_request:
     paths:
       - 'clients/windows/_service/bridge/**'
       - 'clients/windows/tests/Test-BridgeService.ps1'
+      - 'clients/windows/tests/Test-SelectiveDnsService.ps1'
       - 'clients/windows/tests/test_bridge_protocol.py'
       - '.github/workflows/bridge-tests.yml'
 
@@ -38,3 +40,4 @@ jobs:
           python -I clients/windows/tools/prepare_runtime.py --destination (Join-Path $runtime 'python')
           if($LASTEXITCODE -ne 0){throw 'Runtime packaging failed'}
           .\clients\windows\tests\Test-BridgeService.ps1 -RuntimeRoot $runtime
+          .\clients\windows\tests\Test-SelectiveDnsService.ps1 -RuntimeRoot $runtime

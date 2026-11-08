@@ -20,6 +20,9 @@ def check(path):
                     'GeoRoute/_service/GeoProbe.ps1',
                     'GeoRoute/_service/ProfileMigration.ps1']
         required += ['GeoRoute/_service/gemini_probe.py', 'GeoRoute/_service/vendor/hashes.json']
+        required += ['GeoRoute/_service/bridge/selective_dns.py', 'GeoRoute/_service/DnsSites.xaml',
+                     'GeoRoute/_service/DnsSitesUI.ps1', 'GeoRoute/_service/SelectiveDnsSetup.ps1',
+                     'GeoRoute/_service/dns-providers.json', 'GeoRoute/_service/geohide-domains.txt']
         assert all(name in names for name in required)
         dependencies = json.loads(archive.read('GeoRoute/_service/vendor/hashes.json'))
         for name, digest in dependencies.items():
@@ -32,7 +35,7 @@ def check(path):
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name
             assert not any(part.lower() in {'backups', 'run-results', '__pycache__', 'bin'} for part in parts), name
             assert not name.lower().endswith(('.log', '.lock', '-state.json', '.pyc')), name
-            assert parts[-1].lower() not in {'profile.txt', 'enabled.txt', 'gui-settings.json', 'geohide-settings.json', 'geohide-history.json', 'geohide-monitor.json', 'status.json', 'boot-check.json', 'boot-verified.json'}, name
+            assert parts[-1].lower() not in {'profile.txt', 'enabled.txt', 'gui-settings.json', 'geohide-settings.json', 'geohide-history.json', 'geohide-monitor.json', 'status.json', 'boot-check.json', 'boot-verified.json', 'selective-dns.json', 'dns-catalogue.json'}, name
             if name.endswith('.ps1'):
                 assert archive.read(name).startswith(b'\xef\xbb\xbf'), name
             if PurePosixPath(name).suffix.lower() in {'.ps1', '.py', '.cs', '.json', '.txt', '.xaml', '.hosts', '.config'}:

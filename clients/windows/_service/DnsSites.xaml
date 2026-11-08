@@ -1,0 +1,48 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Сайты и DNS — GeoRoute" Width="940" Height="800" MinWidth="740" MinHeight="520" WindowStartupLocation="CenterOwner" Background="#0F1825" Foreground="#EEF4FC" FontFamily="Segoe UI" FontSize="14" ShowInTaskbar="False" UseLayoutRounding="True">
+ <Window.Resources>
+  <Style TargetType="TextBox"><Setter Property="Background" Value="#172A3C"/><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="BorderBrush" Value="#3D536C"/><Setter Property="Padding" Value="12,9"/><Setter Property="CaretBrush" Value="#91F2D2"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="TextBox"><Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12"><ScrollViewer x:Name="PART_ContentHost"/></Border></ControlTemplate></Setter.Value></Setter></Style>
+  <Style TargetType="ComboBoxItem"><Setter Property="Background" Value="#18283B"/><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="Padding" Value="10,8"/><Style.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#2E4B60"/></Trigger></Style.Triggers></Style>
+  <Style TargetType="ComboBox"><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="Background" Value="#18283B"/><Setter Property="BorderBrush" Value="#3D536C"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBox"><Grid>
+   <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12"><Grid><TextBlock Text="{Binding SelectedItem.name, RelativeSource={RelativeSource TemplatedParent}}" TextTrimming="CharacterEllipsis" Margin="11,9,28,9" VerticalAlignment="Center"/><TextBlock Text="⌄" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="#91F2D2"/></Grid></Border>
+   <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"><ToggleButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></ToggleButton.Template></ToggleButton>
+   <Popup IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False"><Border Background="#18283B" BorderBrush="#3D536C" BorderThickness="1" MinWidth="300" MaxHeight="280"><ScrollViewer><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer></Border></Popup>
+  </Grid></ControlTemplate></Setter.Value></Setter></Style>
+  <Style x:Key="Hint" TargetType="TextBlock"><Setter Property="Foreground" Value="#9CAEC4"/><Setter Property="FontSize" Value="12"/><Setter Property="TextWrapping" Value="Wrap"/></Style>
+ </Window.Resources>
+ <Grid Margin="24">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+  <Border Background="#163136" CornerRadius="20" Padding="18" Margin="0,0,0,18">
+   <StackPanel><TextBlock Text="Сайты и DNS" FontSize="25" FontWeight="SemiBold"/><TextBlock Text="Не только ChatGPT: выберите DNS и добавьте сайты, которые он умеет проксировать." Style="{StaticResource Hint}" Margin="0,7,0,8"/><TextBlock x:Name="DnsCurrentStatus" Text="Читаю состояние…" Foreground="#91F2D2" TextWrapping="Wrap"/><TextBlock Text="Остальные сайты используют ваш прежний DNS. Сохранённый список и включённый маршрут — разные состояния." Style="{StaticResource Hint}" Margin="0,7,0,0"/></StackPanel>
+  </Border>
+  <Grid Grid.Row="1">
+   <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="18"/><ColumnDefinition Width="1.1*"/></Grid.ColumnDefinitions>
+   <Border Background="#132235" CornerRadius="18" Padding="16">
+    <Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <StackPanel><TextBlock Text="1 · Найдите сайт" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="Каталог GeoHide. Выбор другого провайдера не гарантирует поддержку тех же сайтов." Style="{StaticResource Hint}" Margin="0,8,0,12"/></StackPanel>
+     <TextBox Grid.Row="1" x:Name="DnsSearch" AutomationProperties.Name="Поиск сайта в каталоге GeoHide" ToolTip="Например claude, notion или spotify" Margin="0,0,0,10"/>
+     <ListBox Grid.Row="2" x:Name="DnsCatalogue" Background="#132235" Foreground="#DCEAF6" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled" AutomationProperties.Name="Каталог сайтов GeoHide"><ListBox.ItemContainerStyle><Style TargetType="ListBoxItem"><Setter Property="Padding" Value="8,7"/></Style></ListBox.ItemContainerStyle></ListBox>
+     <StackPanel Grid.Row="3" Margin="0,12,0,0"><Button x:Name="DnsAddCatalogue" Content="Добавить выбранный сайт →"/><Button x:Name="DnsRefreshCatalogue" Content="Обновить каталог GeoHide" Margin="0,8,0,0"/><TextBlock x:Name="DnsCatalogueInfo" Text="Встроенный каталог · 08.11.2026" Style="{StaticResource Hint}" Margin="0,8,0,0"/></StackPanel>
+    </Grid>
+   </Border>
+   <Border Grid.Column="2" Background="#152638" CornerRadius="18" Padding="16">
+    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,8,0">
+     <TextBlock Text="2 · Выберите DNS" FontSize="17" FontWeight="SemiBold"/>
+     <ComboBox x:Name="DnsProvider" DisplayMemberPath="name" AutomationProperties.Name="DNS-провайдер для выбранных сайтов" Margin="0,12,0,8"/>
+     <Expander Header="Адрес DoH и bootstrap IP" Foreground="#B5C8DD" Margin="0,0,0,14"><StackPanel Margin="0,10,0,0"><TextBox x:Name="DnsUrl" AutomationProperties.Name="HTTPS адрес DNS over HTTPS"/><TextBox x:Name="DnsServers" AutomationProperties.Name="Публичные bootstrap IP через запятую" Margin="0,8,0,0"/><TextBlock Text="Для своего DNS введите https://имя/dns-query. Bootstrap IP необязательны: пустое поле использует текущий DNS для поиска сервера. HTTPS-сертификат проверяется." Style="{StaticResource Hint}" Margin="0,8,0,0"/></StackPanel></Expander>
+     <TextBlock Text="3 · Ваши сайты" FontSize="17" FontWeight="SemiBold"/>
+     <Grid Margin="0,10,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBox x:Name="DnsNewSite" AutomationProperties.Name="Домен или ссылка для добавления" ToolTip="Вставьте ссылку или домен"/><Button Grid.Column="1" x:Name="DnsAddSite" Content="+" Width="42" Margin="8,0,0,0" ToolTip="Добавить сайт" AutomationProperties.Name="Добавить введённый сайт"/></Grid>
+     <TextBox x:Name="DnsSelectedSites" AcceptsReturn="True" Height="135" VerticalScrollBarVisibility="Auto" AutomationProperties.Name="Выбранные сайты, по одному в строке"/>
+     <CheckBox x:Name="DnsSubdomains" Content="Включая поддомены выбранных сайтов" Foreground="#DCEAF6" IsChecked="True" Margin="0,10,0,10"/>
+     <TextBlock Text="Один сайт в строке. Можно вставлять ссылки — останется домен. Свои сайты тоже разрешены, но их должен поддерживать DNS-провайдер. Некоторые сервисы используют несколько доменов: добавьте нужные имена из каталога." Style="{StaticResource Hint}"/>
+     <Border Background="#21362F" CornerRadius="12" Padding="12" Margin="0,16,0,0"><StackPanel><TextBlock Text="4 · Проверьте и включите" Foreground="#B6F3DF" FontWeight="SemiBold"/><TextBlock Text="«Проверить DNS» не меняет подключение. «Включить» проверит DNS ещё раз и попросит подтверждение Windows. Выбор сохраняется после перезагрузки. Недоступный провайдер не заменяется другим автоматически." Style="{StaticResource Hint}" Margin="0,7,0,0"/></StackPanel></Border>
+     <Expander Header="Если сайт не открылся" Foreground="#B5C8DD" Margin="0,14,0,0"><TextBlock Text="Сначала проверьте поддержку сайта провайдером. Браузер с собственным Secure DNS может игнорировать DNS Windows — выберите в нём системный DNS. Записи hosts имеют приоритет: GeoRoute сообщит о пересечении перед включением. Зелёная DNS-проверка не доказывает вход в аккаунт или ответ сервиса." Style="{StaticResource Hint}" Margin="0,8,0,0"/></Expander>
+    </StackPanel></ScrollViewer>
+   </Border>
+  </Grid>
+  <StackPanel Grid.Row="2" Margin="0,14,0,0">
+   <ProgressBar x:Name="DnsProgress" IsIndeterminate="True" Height="4" Visibility="Collapsed" Foreground="#91F2D2"/>
+   <ScrollViewer MaxHeight="112" VerticalScrollBarVisibility="Auto" Margin="0,8,0,8"><TextBlock x:Name="DnsActionStatus" Text="Добавьте сайты из каталога или введите свои." Foreground="#AFC5D6" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/></ScrollViewer>
+   <WrapPanel HorizontalAlignment="Right"><Button x:Name="DnsDisable" Content="Выключить" Margin="0,0,8,8"/><Button x:Name="DnsSave" Content="Сохранить список" Margin="0,0,8,8"/><Button x:Name="DnsProbe" Content="Проверить DNS" Margin="0,0,8,8"/><Button x:Name="DnsEnable" Content="Включить / обновить" Margin="0,0,0,8"/></WrapPanel>
+  </StackPanel>
+ </Grid>
+</Window>

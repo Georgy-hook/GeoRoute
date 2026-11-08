@@ -55,6 +55,7 @@ $script:taskAppLaunchTarget = ''
 $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'Connection.ps1')
 . (Join-Path $PSScriptRoot 'ProfileCreation.ps1')
+. (Join-Path $PSScriptRoot 'DnsSitesUI.ps1')
 . (Join-Path $PSScriptRoot 'Tray.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
 
@@ -405,7 +406,7 @@ function Update-TaskStatus([switch]$LogChange) {
 
 function Set-TaskBusy([bool]$Value) {
     $script:taskBusy = $Value
-    foreach ($taskName in @('ImportButton','CheckButton','CacheButton','RestoreButton','ApplyProfileButton','ClearLogButton')) { $script:taskUi[$taskName].IsEnabled = -not $Value }
+    foreach ($taskName in @('ImportButton','DnsSitesButton','CheckButton','CacheButton','RestoreButton','ApplyProfileButton','ClearLogButton')) { $script:taskUi[$taskName].IsEnabled = -not $Value }
     foreach ($taskControl in $script:taskProfileControls.Values) { $taskControl.Button.IsEnabled = -not $Value }
     Update-GeoProfileCards
     $taskAnyBusy = $Value -or $script:taskHealthRun -or $script:taskCleanupRun
@@ -990,6 +991,24 @@ public static class NextDnsWindowChrome {
             Write-Output ('Profile help preview saved: '+$helpPath)
         }
         $help.Close()
+        $dnsPreview=New-DnsSitesDialog $script:taskWindow
+        $dnsPreview.Ui.DnsCurrentStatus.Text='DNS для выбранных сайтов выключен'
+        $dnsPreview.Ui.DnsUrl.Text='https://eu.geohide.ru/dns-query'
+        $dnsPreview.Ui.DnsProvider.ItemsSource=@([pscustomobject]@{name='GeoHide EU'})
+        $dnsPreview.Ui.DnsProvider.SelectedIndex=0
+        $dnsPreview.Ui.DnsSelectedSites.Text="claude.ai`r`nnotion.so"
+        $dnsPreview.Ui.DnsCatalogue.ItemsSource=[string[]]@('claude.ai','claude.com','claudeusercontent.com','notion.com','notion.so','spotify.com')
+        $dnsPreview.Window.Content.Measure([Windows.Size]::new(892,730))
+        $dnsPreview.Window.Content.Arrange([Windows.Rect]::new(0,0,892,730))
+        $dnsPreview.Window.Content.UpdateLayout()
+        if($RenderPreview){
+            $bitmap=[Windows.Media.Imaging.RenderTargetBitmap]::new(892,730,96,96,[Windows.Media.PixelFormats]::Pbgra32)
+            $bitmap.Render($dnsPreview.Window.Content)
+            $encoder=[Windows.Media.Imaging.PngBitmapEncoder]::new();$encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
+            $path=[IO.Path]::ChangeExtension($taskImportPreviewPath,$null).TrimEnd('.')+'-dns.png'
+            $stream=[IO.File]::Open($path,[IO.FileMode]::Create);try{$encoder.Save($stream)}finally{$stream.Dispose()}
+        }
+        $dnsPreview.Window.Close()
         $taskImportWindow.Close()
         Write-Output ('Smoke test OK: main, import and profile help WPF/XAML loaded; ' + $script:taskUi.Count + ' named controls; ' + $script:taskProfiles.Count + ' profiles; no backend action started.')
         $script:taskWindow.Close()
@@ -997,6 +1016,8 @@ public static class NextDnsWindowChrome {
     }
 
     $script:taskUi.ProfileHelpButton.Add_Click({Show-TaskProfileHelp})
+    $script:taskUi.DnsSitesButton.Add_Click({Show-DnsSitesDialog})
+    Update-DnsSitesSummary
     $script:taskUi.ImportButton.Add_Click({ Show-TaskImportDialog })
     $script:taskUi.CheckButton.Add_Click({ Start-TaskAction 'ClearCache' })
     $script:taskUi.CacheButton.Add_Click({ Start-TaskAction 'Check' })
