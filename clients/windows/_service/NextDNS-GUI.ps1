@@ -732,6 +732,8 @@ function Export-TaskPreview([string]$Path) {
     $taskContent.Measure([Windows.Size]::new($taskWidth,$taskHeight))
     $taskContent.Arrange([Windows.Rect]::new(0,0,$taskWidth,$taskHeight))
     $taskContent.UpdateLayout()
+    $taskContent.Dispatcher.Invoke([Action]{},[Windows.Threading.DispatcherPriority]::ApplicationIdle)
+    $taskContent.UpdateLayout()
     $taskBitmap = [Windows.Media.Imaging.RenderTargetBitmap]::new($taskWidth,$taskHeight,96,96,[Windows.Media.PixelFormats]::Pbgra32)
     $taskBitmap.Render($taskContent)
     $taskEncoder = [Windows.Media.Imaging.PngBitmapEncoder]::new()
@@ -957,7 +959,10 @@ public static class NextDnsWindowChrome {
             Export-TaskPreview ($geoPreviewPath.Replace('.png','-loading.png'))
             Set-GeoMonitorBusy $false
             if($previewReport){Update-GeoRows $previewReport}else{$script:geoReport=$null}
-            $script:taskWindow.FindName('GeoPage').ScrollToBottom()
+            $script:taskWindow.FindName('GeoDetails').IsExpanded=$true
+            $script:taskWindow.Content.UpdateLayout()
+            Update-GeoMonitorLayout
+            $script:taskWindow.FindName('GeoDetailsScroll').ScrollToEnd()
             $savedAuto=$script:taskUi.GeoAuto.IsChecked
             $script:taskUi.GeoManual.IsChecked=$true
             Update-GeoEditorState -Force
@@ -965,6 +970,7 @@ public static class NextDnsWindowChrome {
             $script:taskUi.GeoAuto.IsChecked=$savedAuto
             $script:taskUi.GeoManual.IsChecked=-not $savedAuto
             Update-GeoEditorState -Force
+            $script:taskWindow.FindName('GeoDetails').IsExpanded=$false
             Set-TaskPage 'Overview'
             $taskImportPreviewPath = if ($PreviewPath) { [IO.Path]::Combine([IO.Path]::GetDirectoryName($PreviewPath),([IO.Path]::GetFileNameWithoutExtension($PreviewPath) + '-import.png')) } else { Join-Path $script:taskRoot 'GUI-preview-import.png' }
             $taskImportBitmap = [Windows.Media.Imaging.RenderTargetBitmap]::new(640,660,96,96,[Windows.Media.PixelFormats]::Pbgra32)

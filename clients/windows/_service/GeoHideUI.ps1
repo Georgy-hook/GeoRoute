@@ -4,6 +4,28 @@
 . (Join-Path $PSScriptRoot 'Home.ps1')
 . (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
 $script:geoRegionFilter='ALL';$script:geoDisplayRows=@()
+function Update-GeoMonitorLayout {
+    if(-not $script:taskUi.ContainsKey('GeoMonitorHeader')){return}
+    $page=$script:taskUi.GeoPage
+    if($page.ActualHeight -le 0){return}
+    $compact=$page.ActualHeight -lt 640
+    $description=if($compact){'Collapsed'}else{'Visible'}
+    $art=if($compact -or $page.ActualWidth -lt 1100){'Collapsed'}else{'Visible'}
+    if([string]$script:taskUi.GeoHeaderDescription.Visibility -ne $description){$script:taskUi.GeoHeaderDescription.Visibility=$description}
+    if([string]$script:taskUi.GeoHeaderArt.Visibility -ne $art){$script:taskUi.GeoHeaderArt.Visibility=$art}
+    $legend=if($compact){'Collapsed'}else{'Visible'}
+    if([string]$script:taskUi.GeoLegend.Visibility -ne $legend){$script:taskUi.GeoLegend.Visibility=$legend}
+    # Keep the editor scrollable without taking the table out of its finite viewport.
+    $available=$page.ActualHeight-$script:taskUi.GeoMonitorHeader.ActualHeight-$script:taskUi.GeoLegend.ActualHeight-194
+    $limit=[Math]::Max(70,[Math]::Min(400,$available))
+    if([Math]::Abs($script:taskUi.GeoDetailsScroll.MaxHeight-$limit) -gt 1){$script:taskUi.GeoDetailsScroll.MaxHeight=$limit}
+}
+function Initialize-GeoMonitorLayout {
+    $script:taskUi.GeoPage.Add_SizeChanged({Update-GeoMonitorLayout})
+    $script:taskUi.GeoMonitorHeader.Add_SizeChanged({Update-GeoMonitorLayout})
+    $script:taskUi.GeoLegend.Add_SizeChanged({Update-GeoMonitorLayout})
+    Update-GeoMonitorLayout
+}
 $script:geoRun=$null;$script:geoAt=[datetime]::MinValue;$script:geoSourceAt=[datetime]::MinValue;$script:geoReport=$null;$script:geoStamp=''
 function Set-GeoMonitorBusy([bool]$Busy) {
     foreach($name in @('GeoCheck','GeoRefresh','GeoAdd')){if($script:taskUi[$name]){$script:taskUi[$name].IsEnabled=-not $Busy}}
@@ -90,6 +112,7 @@ function Poll-GeoMonitor {
     }elseif(((Get-Date)-$script:geoAt).TotalSeconds -ge 120){Start-GeoMonitor -Refresh:(((Get-Date)-$script:geoSourceAt).TotalMinutes -ge 60)}
 }
 function Initialize-GeoMonitor {
+    Initialize-GeoMonitorLayout
     Initialize-GeoHistory
     foreach($code in @('US','EU','RU')){$script:taskUi[('GeoFlag'+$code)].Source=Get-TaskImage ('flag-'+$code+'.png')}
     $script:taskUi.GeoSearch.Add_TextChanged({Show-GeoFilteredRows})
