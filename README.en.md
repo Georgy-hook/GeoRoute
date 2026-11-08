@@ -2,14 +2,14 @@
 
 [![Release](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
 [![Windows 10 and 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
-[![VirusTotal — MSI 0.4.3: zero detections, snapshot 2026-11-06](https://img.shields.io/badge/VirusTotal-MSI%200.4.3%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/0134f84ebf9c1b7ca51cb9bb408d199db913c93559fa6885f938c308a15e4c9a/detection)
+[![VirusTotal — MSI 0.5.0: zero detections, snapshot 2026-11-08](https://img.shields.io/badge/VirusTotal-MSI%200.5.0%20%7C%200%20detections%20%7C%202026--11--08-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/d21a981e1d02d531d7d565c5334824cfe84ea349e7304c1f3224d5ff8725dce6/detection)
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
 **[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.5.0-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
 
-**VirusTotal snapshot (2026-11-06): zero detections** for the exact 0.4.3 MSI, ZIP and eight selected components. The MSI has 58 undetected results, one timeout and 12 unsupported types; absence of detections is not a safety guarantee. [Reports, coverage, dates and hashes](docs/security/README.md).
+**VirusTotal snapshot (2026-11-08): zero detections** for the exact 0.5.0 MSI, ZIP and fourteen selected components. The MSI has 59 undetected results, 0 timeouts, 0 failures and 12 unsupported types; absence of detections is not a safety guarantee. [Reports, coverage, dates and hashes](docs/security/README.md).
 
 ![GeoRoute main screen](docs/images/home.png)
 

@@ -1,6 +1,6 @@
 # Что проверяется
 
-Клиент 0.5.0 проходит тесты, установку, обновление, запуск и удаление в [Windows CI](../.github/workflows/windows-client.yml). Точный запуск релизной сборки указан в [отчёте безопасности](security/README.md).
+[Релизная сборка 0.5.0](https://github.com/Georgy-hook/GeoRoute/actions/runs/42494096217) прошла тесты клиента, установку, обновление, запуск и удаление в Windows VM. Точные SHA-256 и VirusTotal указаны в [отчёте безопасности](security/README.md).
 
 Проверки GitHub Actions охватывают DNS-протокол Bridge, восстановление, профили ChatGPT/Gemini, региональный выбор, запуск GUI и автозапуск.
 

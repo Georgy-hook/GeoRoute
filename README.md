@@ -2,14 +2,14 @@
 
 [![Релиз](https://img.shields.io/github/v/release/Georgy-hook/GeoRoute?style=flat-square&logo=github&labelColor=172b3a&color=216f87&label=release)](https://github.com/Georgy-hook/GeoRoute/releases/latest)
 [![Windows 10 и 11 x64](https://img.shields.io/badge/Windows-10%20%2F%2011%20x64-216f87?style=flat-square&labelColor=172b3a)](docs/INSTALL.ru.md)
-[![VirusTotal — MSI 0.4.3: 0 обнаружений, снимок 06.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.4.3%20%7C%200%20detections%20%7C%202026--11--06-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/0134f84ebf9c1b7ca51cb9bb408d199db913c93559fa6885f938c308a15e4c9a/detection)
+[![VirusTotal — MSI 0.5.0: 0 обнаружений, снимок 08.11.2026](https://img.shields.io/badge/VirusTotal-MSI%200.5.0%20%7C%200%20detections%20%7C%202026--11--08-20735f?style=flat-square&logo=virustotal&logoColor=white&labelColor=172b3a)](https://www.virustotal.com/gui/file/d21a981e1d02d531d7d565c5334824cfe84ea349e7304c1f3224d5ff8725dce6/detection)
 
 Приложение для Windows, которое помогает подключать ChatGPT, Gemini и вложения OpenAI через серверы GeoHide, проверяет доступность узлов и подбирает замену, когда адреса меняются. Другие поддерживаемые сайты можно добавить через GeoHide DNS: остальные запросы останутся на вашем обычном DNS.
 
 **[Скачать установщик GeoRoute для Windows](https://github.com/Georgy-hook/GeoRoute/releases/download/v0.5.0/GeoRoute-Setup-0.5.0-x64.msi)** · [Установка по шагам](docs/INSTALL.ru.md) · [Все релизы](https://github.com/Georgy-hook/GeoRoute/releases) · [English](README.en.md)
 
 
-> **VirusTotal · снимок от 06.11.2026:** ноль обнаружений у MSI 0.4.3, ZIP и восьми выбранных компонентов. У MSI 58 ответов `undetected`, один тайм-аут и 12 неподдерживаемых проверок; это не гарантия безопасности. [Отчёты, охват, даты и SHA-256](docs/security/README.md).
+> **VirusTotal · снимок от 08.11.2026:** ноль обнаружений у MSI 0.5.0, ZIP и четырнадцати выбранных компонентов. У MSI 59 ответов `undetected`, 0 тайм-аутов, 0 ошибок и 12 неподдерживаемых проверок; это не гарантия безопасности. [Отчёты, охват, даты и SHA-256](docs/security/README.md).
 
 ![Главный экран GeoRoute](docs/images/home.png)
 
