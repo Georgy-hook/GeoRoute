@@ -9,6 +9,7 @@ param(
     [ValidateRange(900,2000)][int]$PreviewWidth = 1160,
     [ValidateRange(560,1500)][int]$PreviewHeight = 910,
     [string]$HealthSnapshotPath,
+    [string]$DnsSnapshotPath,
     [ValidatePattern('^Local\\NextDNS\.Manager\.S-\d+(?:-\d+)+\.[A-F0-9]{24}\.(?:Main|Repair)\.Activate$')][string]$ActivationEvent
 )
 $ErrorActionPreference = 'Stop'
@@ -56,6 +57,7 @@ $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'Connection.ps1')
 . (Join-Path $PSScriptRoot 'ProfileCreation.ps1')
 . (Join-Path $PSScriptRoot 'DnsSitesUI.ps1')
+. (Join-Path $PSScriptRoot 'DnsMonitorUI.ps1')
 . (Join-Path $PSScriptRoot 'Tray.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
 
@@ -282,15 +284,19 @@ function Select-TaskProfile([string]$ProfileId) {
 
 function Set-TaskPage([string]$Page) {
     $script:taskPage=$Page
-    $pages=@{Home='HomePage';Overview='OverviewPage';Servers='ServersPage';Geo='GeoPage';Journal='JournalPage';Settings='SettingsPage'}
+    $pages=@{Home='HomePage';Overview='OverviewPage';Servers='ServersPage';Geo='GeoPage';Dns='DnsMonitorPage';Journal='JournalPage';Settings='SettingsPage'}
     foreach($key in $pages.Keys){$script:taskUi[$pages[$key]].Visibility=if($Page -eq $key){'Visible'}else{'Collapsed'}}
-    $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг';Journal='Журнал';Settings='Настройки'}
+    $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг';Dns='Мониторинг';Journal='Журнал';Settings='Настройки'}
     $subtitles=@{Home='GeoRoute';Overview='Понятные действия при проблемах с подключением';Servers='Выберите доступный маршрут';Geo='Доступность узлов RU, US и EU';Journal='История действий и результаты проверок';Settings='Запуск, внешний вид и дополнительные возможности'}
     $script:taskUi.PageTitle.Text=$titles[$Page];$script:taskUi.PageSubtitle.Text=$subtitles[$Page]
+    if($Page -eq 'Dns'){$script:taskUi.PageSubtitle.Text='Доступность DoH и выбор DNS'}
+    $script:taskUi.MonitorTabs.Visibility=if($Page -in @('Geo','Dns')){'Visible'}else{'Collapsed'}
+    $script:taskUi.MonitorServersTab.IsChecked=$Page -eq 'Geo';$script:taskUi.MonitorDnsTab.IsChecked=$Page -eq 'Dns'
     $nav=@{HomeNavButton='Home';OverviewNavButton='Overview';ServersNavButton='Servers';MonitorNavButton='Geo';JournalNavButton='Journal';SettingsNavButton='Settings'}
-    foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name];$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
+    foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name] -or ($Page -eq 'Dns' -and $name -eq 'MonitorNavButton');$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
     if(-not $script:taskReducedMotion -and -not $SmokeTest -and -not $RenderPreview){$fade=[Windows.Media.Animation.DoubleAnimation]::new(0.88,1,[Windows.Duration]::new([timespan]::FromMilliseconds(160)));$script:taskUi[$pages[$Page]].BeginAnimation([Windows.UIElement]::OpacityProperty,$fade)}
     if($Page -eq 'Home'){Update-GeoHome -Force}
+    if($Page -eq 'Dns' -and -not $script:dnsMonitorReport){Start-DnsMonitor}
 }
 
 function Read-TaskHosts {
@@ -919,6 +925,7 @@ public static class NextDnsWindowChrome {
     $script:taskReducedMotion = ($script:taskReducedMotion -or -not [Windows.SystemParameters]::ClientAreaAnimation)
     Load-TaskProfiles -Force
     Initialize-GeoMonitor
+    Initialize-DnsMonitor
     Load-TaskHistory
     $initialGeoSettings=Read-GeoSettings $script:taskRoot
     if($initialGeoSettings.PSObject.Properties['preferredProfileId'] -and @($script:taskProfiles|Where-Object Id -eq $initialGeoSettings.preferredProfileId).Count){$script:taskSelectedProfileId=$initialGeoSettings.preferredProfileId}
@@ -981,7 +988,8 @@ public static class NextDnsWindowChrome {
             try { $taskImportEncoder.Save($taskImportStream) } finally { $taskImportStream.Dispose() }
             Write-Output ('Import preview saved: ' + $taskImportPreviewPath)
         }
-        foreach($checkPage in @('Journal','Settings')){Set-TaskPage $checkPage;$script:taskWindow.Content.UpdateLayout()}
+        if($RenderPreview -and $DnsSnapshotPath){$script:dnsMonitorReport=Get-Content -LiteralPath $DnsSnapshotPath -Raw -Encoding UTF8|ConvertFrom-Json;Update-DnsMonitorRows}
+        foreach($checkPage in @('Journal','Settings','Dns')){Set-TaskPage $checkPage;$script:taskWindow.Content.UpdateLayout();if($RenderPreview -and $checkPage -eq 'Dns'){Export-TaskPreview ($taskServerPreviewPath.Replace('-servers.png','-dns-monitor.png'))}}
         $help=New-TaskProfileHelp $script:taskWindow
         $help.Content.Measure([Windows.Size]::new(630,690))
         $help.Content.Arrange([Windows.Rect]::new(0,0,630,690))
@@ -1063,6 +1071,7 @@ public static class NextDnsWindowChrome {
     $script:taskTimer.Interval = [timespan]::FromMilliseconds(200)
     $script:taskTimer.Add_Tick({
         Poll-GeoMonitor
+        Poll-DnsMonitor
         Poll-TaskHealth
         Poll-TaskConnection
         Update-GeoHome
@@ -1121,7 +1130,7 @@ public static class NextDnsWindowChrome {
             $script:taskUi.ActivityDetail.Text = 'Дождитесь завершения действия, затем закройте окно.'
             Add-TaskLog 'Окно останется открытым до завершения текущего действия.'
         }
-        else { $script:taskClosing = $true; $script:taskTimer.Stop();Stop-GeoMonitor;Close-TaskTray }
+        else { $script:taskClosing = $true; $script:taskTimer.Stop();Stop-GeoMonitor;Stop-DnsMonitor;Close-TaskTray }
     })
     $script:taskWindow.Add_Closed({$script:taskApplication.Shutdown()})
     Initialize-TaskTray

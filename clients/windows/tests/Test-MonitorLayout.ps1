@@ -88,5 +88,18 @@ try{
  $restore=Layout 1220 910
  Assert ([Math]::Abs($restore.TableHeight-$normal.TableHeight) -le 1) 'Restoring a window must restore the table viewport'
  @($small,$normal,$fullHD,$large,$editor,$editorLoading,$loading)|ConvertTo-Json -Compress
+ $script:taskUi.GeoPage.Visibility='Collapsed';$script:taskUi.DnsMonitorPage.Visibility='Visible'
+ $dns=$script:taskUi.DnsMonitorGrid
+ $dns.ItemsSource=@(1..20|ForEach-Object {[pscustomobject]@{Name=('DNS '+$_);Url='https://dns.example/dns-query';Status='DNS отвечает';Color='#91F2D2';Loading='Collapsed';Latency='1200 мс';Addresses='143.20.64.192, 45.13.237.213';Checked='08.11 18:00:00';Error='';Flag=$null}})
+ $sizes=@(foreach($size in @(@(980,640),@(2560,1400))){
+  $root=$window.Content;$root.Width=$size[0];$root.Height=$size[1]
+  $root.Measure([Windows.Size]::new($size[0],$size[1]));$root.Arrange([Windows.Rect]::new(0,0,$size[0],$size[1]));$root.UpdateLayout()
+  Assert ($dns.ActualHeight -ge 100) 'DNS table needs a usable viewport on small screens'
+  $bottom=$dns.TransformToAncestor($script:taskUi.DnsMonitorPage).Transform([Windows.Point]::new(0,$dns.ActualHeight)).Y
+  Assert ($bottom -le $script:taskUi.DnsMonitorPage.ActualHeight+1) 'DNS table must fit inside the page'
+  if($size[0] -ge 1920){Assert (($dns.Columns|Measure-Object ActualWidth -Sum).Sum -le $dns.ActualWidth+1) 'DNS columns must fit wide screens'}
+  [pscustomobject]@{Height=$dns.ActualHeight;Width=$dns.ActualWidth}
+ })
+ Assert ($sizes[1].Height -gt $sizes[0].Height+500 -and $sizes[1].Width -gt $sizes[0].Width+1000) 'DNS table must grow with the window'
  Write-Output 'Monitor layout passed: small/restored/maximized viewports, star columns, scrollable settings and loading state.'
 }finally{$window.Close()}

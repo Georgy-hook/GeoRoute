@@ -80,5 +80,7 @@
   "DnsSites.xaml",
   "dns-providers.json",
   "geohide-domains.txt",
-  "bridge/selective_dns.py"
+  "bridge/selective_dns.py",
+  "DnsMonitorUI.ps1",
+  "bridge/dns_monitor.py"
 ]

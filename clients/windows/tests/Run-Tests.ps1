@@ -13,6 +13,9 @@ if($LASTEXITCODE -ne 0){throw 'Gemini HTTP2 tests failed.'}
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_selective_dns.py')
 if($LASTEXITCODE -ne 0){throw 'Selected DNS tests failed.'}
 & (Join-Path $PSScriptRoot 'Test-SelectiveDns.ps1')
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_dns_monitor.py')
+if($LASTEXITCODE -ne 0){throw 'DNS monitor checks failed.'}
+& (Join-Path $PSScriptRoot 'Test-DnsMonitor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHide.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')
