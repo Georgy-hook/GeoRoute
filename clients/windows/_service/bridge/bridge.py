@@ -113,6 +113,8 @@ class DoH:
         if not re.fullmatch(r'[a-fA-F0-9]{6}', profile):
             raise ValueError('Invalid NextDNS profile ID')
         self.profile = profile.lower()
+        self.host, self.path, self.servers = HOST, '/' + self.profile, SERVERS
+        self.fragment_hello, self.request_timeout = True, 5
         self.context = ssl.create_default_context()
         self.context.minimum_version = ssl.TLSVersion.TLSv1_3
         self.context.maximum_version = ssl.TLSVersion.TLSv1_3
@@ -134,25 +136,26 @@ class DoH:
     def query(self, query):
         with self.lock:
             first = self.preferred
+            servers = self.servers
         last_error = None
-        for attempt in range(len(SERVERS)):
+        for attempt in range(len(servers)):
             with self.lock:
                 if self.closed:
                     raise OSError('DNS worker is stopping')
-            index = (first + attempt) % len(SERVERS)
+            index = (first + attempt) % len(servers)
             try:
-                reply = self.request(query, SERVERS[index])
+                reply = self.request(query, servers[index])
                 if len(reply) < 12 or reply[:2] != query[:2] or not reply[2] & 128:
                     raise ValueError('DoH reply does not match DNS request')
                 with self.lock:
-                    self.preferred = index
+                    self.preferred = self.servers.index(servers[index]) if servers[index] in self.servers else 0
                 return reply
             except (OSError, EOFError, ValueError, ssl.SSLError) as exc:
                 last_error = exc
-        raise OSError('NextDNS: ' + type(last_error).__name__)
+        raise OSError('DoH: ' + type(last_error).__name__)
 
     def request(self, query, server):
-        deadline = time.monotonic() + 5
+        deadline = time.monotonic() + self.request_timeout
         raw = socket.create_connection((server, 443), 2.0)
         raw.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
         with self.lock:
@@ -161,7 +164,7 @@ class DoH:
                 raise OSError('DNS worker is stopping')
             self.active.add(raw)
         incoming, outgoing = ssl.MemoryBIO(), ssl.MemoryBIO()
-        tls = self.context.wrap_bio(incoming, outgoing, server_side=False, server_hostname=HOST)
+        tls = self.context.wrap_bio(incoming, outgoing, server_side=False, server_hostname=self.host)
         def receive():
             remaining = deadline - time.monotonic()
             if remaining <= 0:
@@ -175,8 +178,8 @@ class DoH:
             data = outgoing.read()
             if not data:
                 return
-            if first:
-                data = split_hello(data)
+            if first and self.fragment_hello:
+                data = split_hello(data, self.host)
                 # Send two valid records; TLS handshake bytes remain identical.
                 length = 5 + int.from_bytes(data[3:5], 'big')
                 raw.sendall(data[:length])
@@ -195,7 +198,7 @@ class DoH:
                     first = False
                     receive()
             flush()
-            header = (f'POST /{self.profile} HTTP/1.1\r\nHost: {HOST}\r\n'
+            header = (f'POST {self.path} HTTP/1.1\r\nHost: {self.host}\r\n'
                       'Accept: application/dns-message\r\nContent-Type: application/dns-message\r\n'
                       f'Content-Length: {len(query)}\r\nConnection: close\r\n\r\n').encode('ascii')
             tls.write(header + query)
@@ -255,14 +258,14 @@ class DoH:
             with self.lock:
                 self.active.discard(raw)
 
-def split_hello(data):
+def split_hello(data, host=HOST):
     if len(data) < 5 or data[0] != 22 or data[1] != 3:
         raise ValueError('Expected TLS ClientHello')
     length = int.from_bytes(data[3:5], 'big')
     if length < 1 or len(data) < length + 5:
         raise ValueError('Incomplete TLS record')
     payload = data[5:5+length]
-    index = payload.find(HOST.encode('ascii'))
+    index = payload.find(host.encode('ascii'))
     if index < 0:
         raise ValueError('Unexpected TLS destination')
     split = index + 5
@@ -279,8 +282,9 @@ def failure(query):
     return bytes(data)
 
 class Bridge:
-    def __init__(self, profile, port, data_root):
-        self.doh = DoH(profile)
+    def __init__(self, profile, port, data_root, *, doh=None, bindings=None):
+        self.doh = doh if doh is not None else DoH(profile)
+        self.bindings = bindings if bindings is not None else ((socket.AF_INET, '127.0.0.1'), (socket.AF_INET6, '::1'))
         self.port = port
         self.root = Path(data_root)
         self.stop = threading.Event()
@@ -290,7 +294,7 @@ class Bridge:
         self.lock = threading.RLock()
         self.sessions = set()
         self.stats = dict(version=1, startedAt=self.now(), at=self.now(), lastSuccessAt=None,
-                          successCount=0, failureCount=0, upstream=SERVERS[0], lastError='', running=True)
+                          successCount=0, failureCount=0, upstream=self.doh.servers[0], lastError='', running=True)
         ticks = ctypes.windll.kernel32.GetTickCount64
         ticks.restype = ctypes.c_uint64
         self.boot_at = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(milliseconds=ticks())).isoformat()
@@ -365,7 +369,9 @@ class Bridge:
         try:
             answer = self.doh.query(query)
             with self.lock:
-                self.stats.update(lastSuccessAt=self.now(), lastError='', upstream=SERVERS[self.doh.preferred])
+                with self.doh.lock:
+                    upstream = self.doh.servers[self.doh.preferred]
+                self.stats.update(lastSuccessAt=self.now(), lastError='', upstream=upstream)
                 self.stats['successCount'] += 1
             return answer
         except Exception as exc:
@@ -378,7 +384,7 @@ class Bridge:
 
     def start(self, on_ready=None):
         try:
-            for family, ip in ((socket.AF_INET, '127.0.0.1'), (socket.AF_INET6, '::1')):
+            for family, ip in self.bindings:
                 for kind in (socket.SOCK_DGRAM, socket.SOCK_STREAM):
                     sock = socket.socket(family, kind)
                     sock.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)

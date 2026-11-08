@@ -10,6 +10,9 @@ $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe
 if($LASTEXITCODE -ne 0){throw 'Bridge tests failed.'}
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_gemini_http2.py')
 if($LASTEXITCODE -ne 0){throw 'Gemini HTTP2 tests failed.'}
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_selective_dns.py')
+if($LASTEXITCODE -ne 0){throw 'Selected DNS tests failed.'}
+& (Join-Path $PSScriptRoot 'Test-SelectiveDns.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHide.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')

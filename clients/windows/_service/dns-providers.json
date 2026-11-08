@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "source": "GeoHide owner message supplied by user, 2026-11-08. Each endpoint requires a fresh check.",
+  "providers": [
+    {"id":"geohide-eu","name":"GeoHide EU","url":"https://eu.geohide.ru/dns-query","servers":["143.20.64.192","37.221.93.141","5.175.161.40","5.175.161.3","37.221.93.128","45.13.237.213","31.25.239.132"]},
+    {"id":"geohide-us","name":"GeoHide US","url":"https://us.geohide.ru/dns-query","servers":["107.175.76.134","192.255.159.240","192.255.159.241","192.3.233.253"]},
+    {"id":"geohide-ru","name":"GeoHide RU — сообщается о блокировке","url":"https://geohide.ru/dns-query","servers":[]},
+    {"id":"bezmezhau","name":"dns.bezmezhau.com — другой провайдер","url":"https://dns.bezmezhau.com/dns-query","servers":[]},
+    {"id":"commonnet","name":"dns.commonnet.work — другой провайдер","url":"https://dns.commonnet.work/dns-query","servers":[]},
+    {"id":"comss","name":"dns.comss.one — другой провайдер","url":"https://dns.comss.one/dns-query","servers":[]},
+    {"id":"comss-router","name":"router.comss.one — другой провайдер","url":"https://router.comss.one/dns-query","servers":[]},
+    {"id":"dagami","name":"dns.dagami.ru — другой провайдер","url":"https://dns.dagami.ru/dns-query","servers":[]},
+    {"id":"dns-ai","name":"dns.dns-ai.ru — другой провайдер","url":"https://dns.dns-ai.ru/dns-query","servers":[]},
+    {"id":"mafioznik","name":"dns.mafioznik.xyz — другой провайдер","url":"https://dns.mafioznik.xyz/dns-query","servers":[]},
+    {"id":"malw","name":"dns.malw.link — другой провайдер","url":"https://dns.malw.link/dns-query","servers":[]},
+    {"id":"magicdns","name":"dns.magicdns.ru — другой провайдер","url":"https://dns.magicdns.ru/dns-query","servers":[]},
+    {"id":"zapret","name":"dns.zapret.moe — другой провайдер","url":"https://dns.zapret.moe/dns-query","servers":[]},
+    {"id":"wlrus","name":"dns.wlrus.cfd — другой провайдер","url":"https://dns.wlrus.cfd/dns-query","servers":[]},
+    {"id":"webshift","name":"d.webshiftvpn.ru — другой провайдер","url":"https://d.webshiftvpn.ru/dns-query","servers":[]},
+    {"id":"shecan","name":"free.shecan.ir — другой провайдер","url":"https://free.shecan.ir/dns-query","servers":[]}
+  ]
+}

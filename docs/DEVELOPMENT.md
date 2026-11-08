@@ -4,11 +4,11 @@ Windows client source: `clients/windows/_service`. PowerShell scripts require Wi
 
 ```powershell
 .\clients\windows\tests\Run-Tests.ps1 -PythonExe python.exe
-.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.4.3
-.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.4.3
+.\clients\windows\Build.ps1 -PythonExe python.exe -Version 0.5.0
+.\clients\windows\Build-Installer.ps1 -PythonExe python.exe -Version 0.5.0
 ```
 
-The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.4.3.zip`, `GeoRoute-Setup-0.4.3-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
+The build produces `clients/windows/dist/GeoRoute-Windows-x64-0.5.0.zip`, `GeoRoute-Setup-0.5.0-x64.msi` and their SHA-256 files. Package verification rejects private user paths, account-specific NextDNS URLs, runtime state/logs/backups, and inconsistent runtime hashes.
 
 `GeoRoute.cmd` opens the existing WPF GUI in the system Windows PowerShell process. It accepts only the fixed normal/tray/repair/smoke modes and never forwards arbitrary command text. The process-scoped ExecutionPolicy argument does not change machine execution policy or antivirus settings. `AppInstance.ps1` owns the mutex/event contract; a second launch activates the existing window, background startup does not unhide it, and exit releases ownership. Tray startup quotes the CMD path explicitly and migrates only exact legacy commands belonging to the same app directory. The UI thread retains per-monitor DPI awareness. CI smoke-tests the packaged entry point, and package validation rejects the removed custom EXE files. Experimental compiled launcher implementations remain in Git history, with their measured outcomes in the security experiments report.
 

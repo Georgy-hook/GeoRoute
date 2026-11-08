@@ -96,7 +96,7 @@ function Assert-Administrator {
 function Assert-Domain([string]$Domain) {
     if ($Domain.Length -gt 253 -or $Domain -cnotmatch '^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*$') { throw ('Некорректное имя домена: '+$Domain) }
     if (@($Domain -split '\.' | Where-Object {$_.Length -gt 63}).Count) { throw ('Слишком длинная часть домена: '+$Domain) }
-    if ($Domain -notmatch '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -and -not (Test-GeoGeminiDomain $Domain)) { throw ('Профиль содержит посторонний домен: '+$Domain) }
+    if ($Domain -notmatch '(^|\.)(chatgpt\.com|openai\.com|oaistatic\.com|oaiusercontent\.com)$' -and -not (Test-GeoGeminiDomain $Domain)) { throw ('Этот hosts-профиль предназначен для ChatGPT и Gemini. Другие сайты добавляйте через «Серверы → Сайты и DNS»: '+$Domain) }
 }
 function Convert-Address([string]$Text) { return (Convert-GeoProfileAddress $Text) }
 function Convert-HostsText([string]$Text) {
