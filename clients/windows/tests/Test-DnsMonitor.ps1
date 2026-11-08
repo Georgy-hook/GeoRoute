@@ -38,6 +38,7 @@ try{
  $selected=Get-DnsMonitorSelection $good
  Assert ($selected.url -eq $good.url -and $selected.servers[0] -eq '8.8.8.8') 'Selection retains the checked provider and bootstrap address'
  $good.at=(Get-Date).AddMinutes(-6).ToString('o')
+ $script:dnsMonitorReport.rows[0].at=$good.at
  Update-DnsMonitorSelection
  Assert (-not $script:taskUi.DnsMonitorUse.IsEnabled) 'The Use button must lock when a selected result becomes stale'
  Assert (-not(Test-DnsMonitorFresh $good)) 'Old healthy answers cannot unlock provider selection'
