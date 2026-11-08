@@ -32,9 +32,14 @@ try{
  $script:dnsMonitorRun.Process.HasExited=$true
  Poll-DnsMonitor
  Assert ($script:taskUi.DnsMonitorCheck.IsEnabled -and -not $script:dnsMonitorRun) 'Completion must unlock scan controls'
+ $script:taskUi.DnsMonitorGrid.SelectedItem=$script:taskUi.DnsMonitorGrid.ItemsSource[0]
+ Update-DnsMonitorSelection
+ Assert ($script:taskUi.DnsMonitorUse.IsEnabled) 'Selecting one fresh healthy DNS must enable the Use button in Windows PowerShell 5.1'
  $selected=Get-DnsMonitorSelection $good
  Assert ($selected.url -eq $good.url -and $selected.servers[0] -eq '8.8.8.8') 'Selection retains the checked provider and bootstrap address'
  $good.at=(Get-Date).AddMinutes(-6).ToString('o')
+ Update-DnsMonitorSelection
+ Assert (-not $script:taskUi.DnsMonitorUse.IsEnabled) 'The Use button must lock when a selected result becomes stale'
  Assert (-not(Test-DnsMonitorFresh $good)) 'Old healthy answers cannot unlock provider selection'
  $rejected=$false;try{Get-DnsMonitorSelection $good|Out-Null}catch{$rejected=$true};Assert $rejected 'Stale selection must be rejected'
  Start-DnsMonitor;$script:dnsMonitorRun.At=(Get-Date).AddSeconds(-151)

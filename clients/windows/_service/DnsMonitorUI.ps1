@@ -16,7 +16,7 @@ function Set-DnsMonitorBusy([bool]$Busy) {
 }
 function Update-DnsMonitorSelection {
  $selected=$script:taskUi.DnsMonitorGrid.SelectedItem
- $row=if($selected){@($script:dnsMonitorReport.rows|Where-Object url -eq $selected.Url|Select-Object -First 1)}else{@()}
+ $row=@(if($selected){$script:dnsMonitorReport.rows|Where-Object url -eq $selected.Url|Select-Object -First 1})
  $ready=-not $script:dnsMonitorRun -and -not $script:taskBusy -and $row.Count -eq 1 -and (Test-DnsMonitorFresh $row[0])
  $script:taskUi.DnsMonitorUse.IsEnabled=$ready
  $script:taskUi.DnsMonitorSelected.Text=if($ready){$row[0].name+' · '+$row[0].ms+' мс · можно выбрать'}elseif($selected){'Для выбора нужна успешная свежая проверка DNS'}else{'Выберите отвечающий DNS в таблице'}
