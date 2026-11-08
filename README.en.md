@@ -6,7 +6,7 @@
 
 Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint availability. [Русский](README.md).
 
-**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.4.3-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
+**[Download for Windows](https://github.com/Georgy-hook/GeoRoute/releases/latest)**. Download **GeoRoute-Setup-0.5.0-x64.msi**, choose **Далее (Next) → Установить (Install)** in the Russian setup wizard, then open **GeoRoute** from the desktop or Start menu. Python and Java are not required. Requirements: Windows 10/11 x64, Windows PowerShell 5.1 and .NET Framework 4.8.
 
 
 **VirusTotal snapshot (2026-11-06): zero detections** for the exact 0.4.3 MSI, ZIP and eight selected components. The MSI has 58 undetected results, one timeout and 12 unsupported types; absence of detections is not a safety guarantee. [Reports, coverage, dates and hashes](docs/security/README.md).
@@ -35,4 +35,10 @@ Create a profile without a file: **Servers → Add server → By IP**, enter a p
 
 <img src="docs/images/add-profile.png" width="640" alt="GeoRoute profile form: one GeoHide profile for ChatGPT and Gemini, server IP, country and optional name">
 
-In development for 0.5.0: **Servers → Sites and DNS** routes only selected namespaces through GeoHide EU/US/RU or a custom HTTPS DoH endpoint. All other DNS stays unchanged. Includes a searchable GeoHide catalogue, custom domains, certificate-validated probes and a separate LocalService/NRPT route. This feature is not in stable 0.4.3 yet. [Scope and technical details](docs/SELECTIVE-DNS.md).
+Available since 0.5.0: **Servers → Sites and DNS** routes only selected namespaces through GeoHide EU/US/RU or a custom HTTPS DoH endpoint. All other DNS stays unchanged. Includes a searchable GeoHide catalogue, custom domains, certificate-validated probes and a separate LocalService/NRPT route. [Scope and technical details](docs/SELECTIVE-DNS.md).
+
+**Monitoring → DNS providers** performs read-only HTTPS DoH checks with certificate validation and a DNS answer for the fixed public `example.com`. Your site list is not sent to other candidates. Per-row loading, latency, checked bootstrap IPs, time and failures are visible; healthy results sort first. Select a successful result under five minutes old → **Use DNS…** to open the existing site list with that provider. Enabling it remains a separate elevated action. A healthy DNS transport does not guarantee support for any particular service. The saved custom DoH endpoint is also included. Both monitoring tables resize with the window.
+
+![GeoRoute DNS provider monitoring](docs/images/dns-monitor.png)
+
+*GeoRoute screen with local checks from 2026-11-08; availability and latency vary by network and time.*

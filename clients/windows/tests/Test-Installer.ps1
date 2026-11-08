@@ -71,7 +71,10 @@ try {
  $profile=Join-Path $app '_service\profiles\primary.hosts';Add-Content -LiteralPath $profile -Value '# preservation test'
  $custom=Join-Path $app '_service\profiles\user-test.hosts';[IO.File]::WriteAllText($custom,'# user profile')
  $prefs=Join-Path $app '_service\GUI-settings.json';[IO.File]::WriteAllText($prefs,'{"reducedMotion":true}')
- $keep=@($catalog,$routes,$profile,$custom,$prefs)
+ $selectedDns=Join-Path $app '_service\selective-dns.json'
+ [IO.File]::WriteAllText($selectedDns,'{"version":1,"url":"https://eu.geohide.ru/dns-query","servers":["143.20.64.192"],"domains":["claude.ai"],"subdomains":true}')
+ $dnsCatalogue=Join-Path $app '_service\dns-catalogue.json';[IO.File]::WriteAllText($dnsCatalogue,'{"domains":["claude.ai","notion.so"]}')
+ $keep=@($catalog,$routes,$profile,$custom,$prefs,$selectedDns,$dnsCatalogue)
  $hashes=@{};foreach($file in $keep){$hashes[$file]=(Get-FileHash -LiteralPath $file).Hash}
  if((Run-Setup 'repair.log' -Repair) -ne 0){throw 'Update/repair failed'}
  foreach($file in $keep){if((Get-FileHash -LiteralPath $file).Hash -ne $hashes[$file]){throw ('Update lost data: '+$file)}}
