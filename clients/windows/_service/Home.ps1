@@ -30,7 +30,7 @@
     $result=Test-GeoRequirements @($needs.Values) $Report
     if($result.Ready -and $pendingGeminiUpdate){return [pscustomobject]@{On=$true;State='attention';Title='Включено · обновите профиль';Detail='Сохранённый профиль отличается от адресов в Windows. Откройте «Серверы», выберите нужный профиль и примените его кнопкой внизу. Доступность Gemini показана отдельно.'}}
     if($result.Ready -and $result.State -eq 'attention'){return [pscustomobject]@{On=$true;State='attention';Title='Подключено · Gemini ограничен';Detail=$result.Reason}}
-    if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Серверы GeoHide отвечают. Подключение настроено.'}}
+    if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Последняя проверка серверов успешна. Автопроверка раз в 2 часа.'}}
     if($Report.running -or $result.Reason -like '*устарела*'){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Ожидаю завершения проверки текущего маршрута.'}}
     return [pscustomobject]@{On=$true;State='unavailable';Title='Сервер недоступен';Detail='Выбранный сервер не отвечает. Откройте «Серверы» и выберите доступный маршрут.'}
 }

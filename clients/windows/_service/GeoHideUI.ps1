@@ -70,7 +70,7 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoEU.ItemsSource=@($Report.rows|Where-Object Region -eq 'EU'|ForEach-Object Address)
     $settings=Read-GeoSettings $script:taskRoot
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
-    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · автоматическая проверка через 2 мин'}
+    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · автопроверка раз в 2 часа'}
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}
@@ -109,7 +109,7 @@ function Poll-GeoMonitor {
             try{$script:geoRun.Process.Kill()}finally{Complete-GeoMonitor}
             $script:taskUi.GeoStatus.Text='Общий тайм-аут проверки. Незавершённые строки отмечены отдельно; можно повторить.'
         }
-    }elseif(((Get-Date)-$script:geoAt).TotalSeconds -ge 120){Start-GeoMonitor -Refresh:(((Get-Date)-$script:geoSourceAt).TotalMinutes -ge 60)}
+    }elseif(Test-GeoMonitoringDue $script:geoAt){Start-GeoMonitor -Refresh:(Test-GeoMonitoringDue $script:geoSourceAt)}
 }
 function Initialize-GeoMonitor {
     Initialize-GeoMonitorLayout

@@ -118,9 +118,9 @@ function Poll-TaskConnection {
                 } catch {Add-TaskLog 'Не удалось сохранить историю DNS-проверки.' -Kind Problems}
             }
         }
-    } elseif(((Get-Date)-$script:taskConnectionAttempt).TotalSeconds -ge 300) {Start-TaskConnection}
+    } elseif(Test-GeoMonitoringDue $script:taskConnectionAttempt) {Start-TaskConnection}
     if($script:taskConnectionReport) {
-        $script:taskUi.HealthAtText.Text=$(if($script:taskConnectionReport.Mode -eq 'http-proxy'){'US-прокси · '}else{'DNS · '})+([datetime]$script:taskConnectionReport.At).ToString('HH:mm:ss')+$(if($script:taskConnectionRun){' · обновляется…'}else{' · авто: 5 мин'})
+        $script:taskUi.HealthAtText.Text=$(if($script:taskConnectionReport.Mode -eq 'http-proxy'){'US-прокси · '}else{'DNS · '})+([datetime]$script:taskConnectionReport.At).ToString('HH:mm:ss')+$(if($script:taskConnectionRun){' · обновляется…'}else{' · авто: 2 часа'})
     }
     if($script:taskActivationEvent -and $script:taskActivationEvent.WaitOne(0)) {Show-TaskManager}
     elseif(('NextDNS.Desktop.DesktopInstance' -as [type]) -and [NextDNS.Desktop.DesktopInstance]::ConsumeActivation()) {Show-TaskManager}
