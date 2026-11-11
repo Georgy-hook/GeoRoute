@@ -4,6 +4,46 @@
 . (Join-Path $PSScriptRoot 'Home.ps1')
 . (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
 $script:geoRegionFilter='ALL';$script:geoDisplayRows=@()
+function Save-GeoGuiPreference([string]$Path,[hashtable]$Values) {
+    $settings=[ordered]@{}
+    if(Test-Path -LiteralPath $Path){
+        $previous=Get-Content -LiteralPath $Path -Raw -Encoding UTF8|ConvertFrom-Json
+        if($null -eq $previous -or $previous -isnot [pscustomobject]){throw 'Файл настроек повреждён; изменения не сохранены.'}
+        foreach($p in $previous.PSObject.Properties){$settings[$p.Name]=$p.Value}
+    }
+    foreach($key in $Values.Keys){$settings[$key]=$Values[$key]}
+    Write-GeoJson $Path ([pscustomobject]$settings)
+}
+function Update-GeoMonitoringSettingView {
+    $off=(Get-GeoMonitoringMinutes) -eq 0
+    $script:taskUi.AutoCheckHelp.Text=if($off){'Автопроверки отключены, в том числе при запуске. Проверяйте серверы вручную в «Мониторинге». Настроенное подключение сохраняется.'}else{'Серверы GeoHide, их списки и диагностика подключения проверяются с выбранным интервалом. Ручная проверка доступна в любой момент.'}
+    $script:taskUi.AutoCheckHelp.Text+=' Выбор сохраняется автоматически. Уже начатая проверка завершится.'
+    if($script:geoReport -and -not $script:geoReport.running){$script:taskUi.GeoStatus.Text='Проверено '+([datetime]$script:geoReport.at).ToString('HH:mm:ss')+' · '+$script:geoReport.interface+' · '+(Get-GeoMonitoringSummary)}
+}
+function Initialize-GeoMonitoringSettings {
+    Set-GeoMonitoringMinutes (Read-GeoMonitoringPreference $script:taskSettingsPath)
+    $script:taskUi.AutoCheckInterval.ItemsSource=@(Get-GeoMonitoringChoices)
+    $script:taskUi.AutoCheckInterval.SelectedValue=Get-GeoMonitoringMinutes
+    Update-GeoMonitoringSettingView
+    $script:taskUi.AutoCheckInterval.Add_SelectionChanged({
+        param($sender,$eventArgs)
+        if($script:monitoringSettingReverting -or $eventArgs.AddedItems.Count -ne 1){return}
+        $old=Get-GeoMonitoringMinutes;$value=[int]$eventArgs.AddedItems[0].Minutes
+        if($old -eq $value){return}
+        try {
+            if(-not $SmokeTest -and -not $RenderPreview){Save-GeoGuiPreference $script:taskSettingsPath @{AutoCheckMinutes=$value}}
+            Set-GeoMonitoringMinutes $value
+            $script:geoAt=Get-Date;$script:geoSourceAt=Get-Date;$script:taskConnectionAttempt=Get-Date
+            Update-GeoMonitoringSettingView;Update-GeoHome -Force
+        }catch{
+            $script:monitoringSettingReverting=$true
+            [void]$sender.Dispatcher.BeginInvoke([Action]{
+                try{$script:taskUi.AutoCheckInterval.SelectedValue=Get-GeoMonitoringMinutes}finally{$script:monitoringSettingReverting=$false}
+            },[Windows.Threading.DispatcherPriority]::Background)
+            $script:taskUi.AutoCheckHelp.Text='Не удалось сохранить интервал: '+$_.Exception.Message
+        }
+    })
+}
 function Update-GeoMonitorLayout {
     if(-not $script:taskUi.ContainsKey('GeoMonitorHeader')){return}
     $page=$script:taskUi.GeoPage
@@ -70,7 +110,7 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoEU.ItemsSource=@($Report.rows|Where-Object Region -eq 'EU'|ForEach-Object Address)
     $settings=Read-GeoSettings $script:taskRoot
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
-    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · автопроверка раз в 2 часа'}
+    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · '+(Get-GeoMonitoringSummary)}
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}

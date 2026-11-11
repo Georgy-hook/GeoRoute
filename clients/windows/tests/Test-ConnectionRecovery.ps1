@@ -20,8 +20,8 @@ $workerTemp=Join-Path ([IO.Path]::GetTempPath()) ('georoute-worker-'+[guid]::New
 $workerShell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 try{
  [IO.Directory]::CreateDirectory((Join-Path $workerTemp 'System32\drivers\etc'))|Out-Null
- foreach($name in @('ConnectionWorker.ps1','Connection.ps1','Home.ps1')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination $workerTemp}
- [IO.File]::WriteAllText((Join-Path $workerTemp 'GeoHide.ps1'),'# Network boundaries are isolated for this worker test.')
+ foreach($name in @('ConnectionWorker.ps1','Connection.ps1','Home.ps1','GeoServices.ps1')){Copy-Item -LiteralPath (Join-Path $root $name) -Destination $workerTemp}
+ [IO.File]::WriteAllText((Join-Path $workerTemp 'GeoHide.ps1'),'. (Join-Path $PSScriptRoot ''GeoServices.ps1'')')
  [IO.File]::WriteAllText((Join-Path $workerTemp 'HttpProxy.ps1'),"function Get-HttpProxyState { [pscustomobject]@{Enabled=`$false} }`r`nfunction Get-Service { [pscustomobject]@{Status='Running'} }")
  [IO.File]::WriteAllText((Join-Path $workerTemp 'System32\drivers\etc\hosts'),"# BEGIN CHATGPT-US-WINDOWS`r`n192.0.2.1 chatgpt.com`r`n# END CHATGPT-US-WINDOWS`r`n")
  $workerResult=Join-Path $workerTemp 'result.json'

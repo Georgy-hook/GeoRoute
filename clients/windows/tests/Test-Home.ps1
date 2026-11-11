@@ -29,6 +29,9 @@ try{
     $row.EligibleEU=$true;$row.CheckedAt=(Get-Date).AddMinutes(-131).ToString('o')
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'checking') 'Stale result is checking, not green or a permanent warning'
     Assert ((Get-GeoHomeState $temp $null $path).State -eq 'checking') 'Missing probe is not green'
+    Set-GeoMonitoringMinutes 0
+    Assert ((Get-GeoHomeState $temp $report $path).Title -like '*ручная проверка*') 'Never asks for manual checking rather than pretending a scan is running'
+    Set-GeoMonitoringMinutes 120
     [IO.File]::WriteAllText($path,'# BEGIN CHATGPT-US-WINDOWS')
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'error') 'Broken managed block is a real configuration error'
     Write-Output 'Home states passed: off, checking, ready without Bridge, real failure, stale result and broken configuration.'

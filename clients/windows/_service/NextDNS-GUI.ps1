@@ -296,7 +296,7 @@ function Set-TaskPage([string]$Page) {
     foreach($name in $nav.Keys){$selected=$Page -eq $nav[$name] -or ($Page -eq 'Dns' -and $name -eq 'MonitorNavButton');$script:taskUi[$name].Background=Get-TaskBrush $(if($selected){'#254550'}else{'Transparent'})}
     if(-not $script:taskReducedMotion -and -not $SmokeTest -and -not $RenderPreview){$fade=[Windows.Media.Animation.DoubleAnimation]::new(0.88,1,[Windows.Duration]::new([timespan]::FromMilliseconds(160)));$script:taskUi[$pages[$Page]].BeginAnimation([Windows.UIElement]::OpacityProperty,$fade)}
     if($Page -eq 'Home'){Update-GeoHome -Force}
-    if($Page -eq 'Dns' -and -not $script:dnsMonitorReport){Start-DnsMonitor}
+    if($Page -eq 'Dns' -and -not $script:dnsMonitorReport -and (Get-GeoMonitoringMinutes) -gt 0){Start-DnsMonitor}
 }
 
 function Read-TaskHosts {
@@ -470,7 +470,7 @@ function Set-TaskMotion {
         }
     }
     if (-not $SmokeTest -and -not $RenderPreview) {
-        try { [pscustomobject]@{ReducedMotion=($script:taskUi.ReducedMotion.IsChecked -eq $true)} | ConvertTo-Json | Set-Content -LiteralPath $script:taskSettingsPath -Encoding UTF8 }
+        try { Save-GeoGuiPreference $script:taskSettingsPath @{ReducedMotion=($script:taskUi.ReducedMotion.IsChecked -eq $true)} }
         catch { Add-TaskLog 'Не удалось сохранить настройку анимаций. Она действует до закрытия окна.' }
     }
 }
@@ -923,6 +923,7 @@ public static class NextDnsWindowChrome {
     }
     $script:taskUi.ReducedMotion.IsChecked = $script:taskReducedMotion
     $script:taskReducedMotion = ($script:taskReducedMotion -or -not [Windows.SystemParameters]::ClientAreaAnimation)
+    Initialize-GeoMonitoringSettings
     Load-TaskProfiles -Force
     Initialize-GeoMonitor
     Initialize-DnsMonitor
@@ -1110,9 +1111,11 @@ public static class NextDnsWindowChrome {
             }
         }
         $script:taskTimer.Start()
-        Start-GeoMonitor -Refresh
-        Start-TaskHealth 'Check'
-        Start-TaskConnection
+        if((Get-GeoMonitoringMinutes) -gt 0){
+            Start-GeoMonitor -Refresh
+            Start-TaskHealth 'Check'
+            Start-TaskConnection
+        }else{$script:taskUi.HealthAtText.Text='Автопроверка выключена; проверяйте вручную в мониторинге'}
         if($Tray){Hide-TaskManager}
     })
     $taskWorkArea = [Windows.SystemParameters]::WorkArea
