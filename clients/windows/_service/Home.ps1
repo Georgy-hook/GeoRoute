@@ -18,7 +18,7 @@
         $parts=($line -split '#',2)[0].Trim() -split '\s+'
         if($parts.Count -lt 2){continue}
         $row=@($Report.rows|Where-Object Address -eq $parts[0]|Select-Object -First 1)
-        if(-not $row.Count){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Адреса применены в Windows. Ожидаю актуальную сетевую проверку.'}}
+        if(-not $row.Count){return [pscustomobject]@{On=$true;State='checking';Title=$(if((Get-GeoMonitoringMinutes) -eq 0){'Включено · нужна ручная проверка'}else{'Включено · проверяю серверы'});Detail=$(if((Get-GeoMonitoringMinutes) -eq 0){'Автопроверка выключена. Нажмите «Проверить серверы» в мониторинге.'}else{'Адреса применены в Windows. Ожидаю актуальную сетевую проверку.'})}}
         foreach($domain in $parts[1..($parts.Count-1)]){
             $gemini=Test-GeoGeminiDomain $domain
             $key=$row[0].Region+'|'+$parts[0]+'|'+$(if($gemini){'Gemini'}else{'ChatGPT'})
@@ -30,8 +30,8 @@
     $result=Test-GeoRequirements @($needs.Values) $Report
     if($result.Ready -and $pendingGeminiUpdate){return [pscustomobject]@{On=$true;State='attention';Title='Включено · обновите профиль';Detail='Сохранённый профиль отличается от адресов в Windows. Откройте «Серверы», выберите нужный профиль и примените его кнопкой внизу. Доступность Gemini показана отдельно.'}}
     if($result.Ready -and $result.State -eq 'attention'){return [pscustomobject]@{On=$true;State='attention';Title='Подключено · Gemini ограничен';Detail=$result.Reason}}
-    if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Последняя проверка серверов успешна. Автопроверка раз в 2 часа.'}}
-    if($Report.running -or $result.Reason -like '*устарела*'){return [pscustomobject]@{On=$true;State='checking';Title='Включено · проверяю серверы';Detail='Ожидаю завершения проверки текущего маршрута.'}}
+    if($result.Ready){return [pscustomobject]@{On=$true;State='ready';Title='Включено';Detail='Последняя проверка серверов успешна. '+(Get-GeoMonitoringSummary)+'.'}}
+    if($Report.running -or $result.Reason -like '*устарела*'){return [pscustomobject]@{On=$true;State='checking';Title=$(if(-not $Report.running -and (Get-GeoMonitoringMinutes) -eq 0){'Включено · нужна ручная проверка'}else{'Включено · проверяю серверы'});Detail=$(if(-not $Report.running -and (Get-GeoMonitoringMinutes) -eq 0){'Автопроверка выключена. Нажмите «Проверить серверы» в мониторинге.'}else{'Ожидаю завершения проверки текущего маршрута.'})}}
     return [pscustomobject]@{On=$true;State='unavailable';Title='Сервер недоступен';Detail='Выбранный сервер не отвечает. Откройте «Серверы» и выберите доступный маршрут.'}
 }
 function Update-GeoHome([switch]$Force) {

@@ -584,7 +584,7 @@
             <ScrollViewer x:Name="GeoDetailsScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="240">
               <StackPanel Margin="0,0,10,0">
               <Expander Header="Источники и время обновления" Foreground="#8FA6BD" FontSize="11" Margin="0,10,0,0">
-                <TextBlock x:Name="GeoSourceStatus" Text="Официальные списки GeoHide; обновление раз в 2 часа" TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,8,0,0"/>
+                <TextBlock x:Name="GeoSourceStatus" Text="Официальные списки GeoHide; обновление по выбранному интервалу" TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="11" Margin="0,8,0,0"/>
               </Expander>
           <Border Background="#142131" BorderBrush="#345865" BorderThickness="1" CornerRadius="20" Padding="22" Margin="0,0,0,16">
             <StackPanel>
@@ -738,6 +738,21 @@
               <CheckBox x:Name="StartWithWindows" Style="{StaticResource SettingsToggle}" Content="Открывать GeoRoute в трее при входе в Windows" ToolTip="Запускать менеджер в трее после входа в Windows"/>
               <CheckBox x:Name="ReducedMotion" Style="{StaticResource SettingsToggle}" Content="Уменьшить анимации" AutomationProperties.Name="Уменьшить движение интерфейса" ToolTip="Также учитываются системные настройки анимаций Windows"/>
               <TextBlock Text="Закрытие окна сворачивает GeoRoute в трей. Полный выход останавливает мониторинг, а применённые адреса сохраняются в Windows." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="2,13,2,0"/>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <StackPanel>
+              <TextBlock Text="Автопроверка серверов" FontSize="18" FontWeight="SemiBold"/>
+              <TextBlock Text="Как часто проверять подключение" Foreground="#A4B7CE" Margin="0,10,0,8"/>
+              <ComboBox x:Name="AutoCheckInterval" DisplayMemberPath="Label" SelectedValuePath="Minutes" MinHeight="44" MinWidth="250" MaxWidth="340" HorizontalAlignment="Left" FontSize="14" Foreground="#EEF4FC" Background="#18283B" BorderBrush="#3D536C" AutomationProperties.Name="Интервал автоматической проверки серверов">
+                <ComboBox.ItemContainerStyle><Style TargetType="ComboBoxItem"><Setter Property="Foreground" Value="#EEF4FC"/><Setter Property="Background" Value="#18283B"/><Setter Property="Padding" Value="12,10"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="ComboBoxItem"><Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}"><ContentPresenter/></Border></ControlTemplate></Setter.Value></Setter><Style.Triggers><Trigger Property="IsHighlighted" Value="True"><Setter Property="Background" Value="#2E4B60"/></Trigger><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#28505D"/></Trigger></Style.Triggers></Style></ComboBox.ItemContainerStyle>
+                <ComboBox.Template><ControlTemplate TargetType="ComboBox"><Grid>
+                  <Border x:Name="ScheduleSurface" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="12"><Grid><TextBlock Text="{Binding SelectedItem.Label, RelativeSource={RelativeSource TemplatedParent}}" TextTrimming="CharacterEllipsis" Margin="12,9,32,9" VerticalAlignment="Center"/><TextBlock Text="⌄" Foreground="#91F2D2" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/></Grid></Border>
+                  <ToggleButton Focusable="False" IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"><ToggleButton.Template><ControlTemplate><Border Background="Transparent"/></ControlTemplate></ToggleButton.Template></ToggleButton>
+                  <Popup x:Name="PART_Popup" IsOpen="{TemplateBinding IsDropDownOpen}" Placement="Bottom" AllowsTransparency="True" Focusable="False"><Border Background="#18283B" BorderBrush="#3D536C" BorderThickness="1" CornerRadius="12" Padding="4" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}"><ScrollViewer MaxHeight="320" CanContentScroll="True"><ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained"/></ScrollViewer></Border></Popup>
+                </Grid><ControlTemplate.Triggers><Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="ScheduleSurface" Property="BorderBrush" Value="#91F2D2"/></Trigger></ControlTemplate.Triggers></ControlTemplate></ComboBox.Template>
+              </ComboBox>
+              <TextBlock x:Name="AutoCheckHelp" Text="Настройка сохраняется автоматически и действует сразу." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="0,12,0,0" AutomationProperties.LiveSetting="Polite"/>
             </StackPanel>
           </Border>
           <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
