@@ -4,7 +4,7 @@ function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[Valid
     return @($Report.rows|Where-Object {
         $node=$_
         $fresh=$true
-        if($node.PSObject.Properties['CheckedAt']){$checked=[datetime]::MinValue;$fresh=[datetime]::TryParse([string]$node.CheckedAt,[ref]$checked) -and ((Get-Date)-$checked).TotalMinutes -lt 5}
+        if($node.PSObject.Properties['CheckedAt']){$fresh=Test-GeoObservationFresh $node}
         $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
         $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
     }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},@{Expression={if($_.PSObject.Properties['GeminiRouteMs'] -and $_.GeminiRouteMs -gt 0){$_.GeminiRouteMs}else{999999}}},Address -Unique)
@@ -50,8 +50,8 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
         $rows=@($Report.rows|Where-Object {$_.Region -eq $need.Role -and $_.Address -eq $need.Address}|Select-Object -First 1)
         $prefix=$need.Role+' '+$need.Address+': '
         if(-not $rows.Count){$issues+=$prefix+'нет актуальной проверки или адрес удалён из списка';continue}
-        $row=$rows[0];$checked=[datetime]::MinValue
-        if(-not [datetime]::TryParse([string]$row.CheckedAt,[ref]$checked) -or ((Get-Date)-$checked).TotalMinutes -gt 5){$issues+=$prefix+'проверка устарела';continue}
+        $row=$rows[0]
+        if(-not (Test-GeoObservationFresh $row)){$issues+=$prefix+'проверка устарела';continue}
         if($row.SourceActive -eq $false){$issues+=$prefix+'удалён из списка GeoHide';continue}
         if($row.CheckState -in @('Queued','Checking','Interrupted')){$issues+=$prefix+'проверка ещё не завершена';continue}
         if($need.Service -eq 'Gemini'){

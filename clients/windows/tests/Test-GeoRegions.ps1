@@ -35,7 +35,7 @@ try{
     Assert (-not $state.Ready -and $state.Reason -like '*EU*') 'Dead EU blocks mixed profile despite healthy US'
     $eu.EligibleEU=$true;$eu.FilesHTTP=503
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Attachment HTTP 503 is not healthy TLS'
-    $eu.FilesHTTP=404;$eu.CheckedAt=(Get-Date).AddMinutes(-10).ToString('o')
+    $eu.FilesHTTP=404;$eu.CheckedAt=(Get-Date).AddMinutes(-131).ToString('o')
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Stale measurements do not unlock a card'
     $eu.CheckedAt=(Get-Date).ToString('o');$eu.SourceActive=$false
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Provider-retired endpoint cannot be selected'

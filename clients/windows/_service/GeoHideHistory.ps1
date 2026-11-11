@@ -24,7 +24,7 @@ function Update-GeoHistory($Report) {
         $samples=@($script:geoHistory[$key]|Where-Object{$null -ne $_})
         if(-not $pending -and -not $interrupted -and $row.CheckedAt -and $row.SourceActive -ne $false -and -not @($samples|Where-Object at -eq $row.CheckedAt).Count){$samples+=@([pscustomobject]@{at=$row.CheckedAt;ms=$row.LatencyMs;ok=($row.TLS -and $row.HTTP -eq 200 -and [bool]$row.Country);tcp=$row.TCP})}
         $samples=@($samples|Select-Object -Last 24);$script:geoHistory[$key]=$samples
-        $fresh=-not $pending -and -not $interrupted -and $row.CheckedAt -and ((Get-Date)-[datetime]$row.CheckedAt).TotalMinutes -lt 5 -and $row.SourceActive -ne $false
+        $fresh=-not $pending -and -not $interrupted -and (Test-GeoObservationFresh $row) -and $row.SourceActive -ne $false
         $ok=$fresh -and $row.TLS -and $row.HTTP -eq 200 -and [bool]$row.Country
         $color=if($pending){'#A4D5F2'}elseif(-not $fresh){'#9CAEC4'}elseif($ok){'#91F2D2'}elseif($row.TCP){'#F6C56B'}else{'#FF8E9E'}
         $label=if($pending){if($row.CheckState -eq 'Checking'){'Проверяю…'}else{'В очереди…'}}elseif($interrupted){'Проверка прервана'}elseif($row.SourceActive -eq $false){'○  Удалён из списка'}elseif(-not $fresh){'○  Проверка устарела'}elseif($ok){'●  Доступен'}elseif($row.TCP){'◐  Только TCP'}else{'●  Нет ответа'}
@@ -49,7 +49,7 @@ function Update-GeoHistory($Report) {
         $available=@($all|Where-Object{$_.AvailableNow})
         $pendingRegion=@($all|Where-Object {Test-GeoPendingRow $_}).Count -gt 0
         $script:taskUi[('GeoCount'+$region)].Text=if($pendingRegion){'…'}else{[string]$available.Count+' / '+$all.Count}
-        if($script:taskUi[('GeoGeminiCount'+$region)]){$script:taskUi[('GeoGeminiCount'+$region)].Text=if($pendingRegion){'Gemini: проверяю…'}else{'Gemini: '+@($all|Where-Object {$_.GeminiReady -and $_.SourceActive -ne $false -and $_.CheckedAt -and ((Get-Date)-[datetime]$_.CheckedAt).TotalMinutes -lt 5}).Count+' / '+$all.Count+' маршрутов'}}
+        if($script:taskUi[('GeoGeminiCount'+$region)]){$script:taskUi[('GeoGeminiCount'+$region)].Text=if($pendingRegion){'Gemini: проверяю…'}else{'Gemini: '+@($all|Where-Object {$_.GeminiReady -and $_.SourceActive -ne $false -and (Test-GeoObservationFresh $_)}).Count+' / '+$all.Count+' маршрутов'}}
     }
     Show-GeoFilteredRows
     if(-not $Report.running -and -not $SmokeTest -and -not $RenderPreview){Write-GeoJson (Join-Path $script:taskRoot 'geohide-history.json') $script:geoHistory}
