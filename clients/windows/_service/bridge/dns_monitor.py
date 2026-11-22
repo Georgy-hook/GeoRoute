@@ -24,6 +24,9 @@ def providers(raw, custom=None):
 def check(provider):
     row = dict(id=provider['id'], name=provider['name'], url=provider['url'],
                state='complete', ready=False, at=dns.bridge.Bridge.now(), servers=[], ms=None, error='')
+    if provider.get('disabled'):
+        row.update(state='retired', error=provider.get('reason', 'Провайдер закрыт'))
+        return row
     try:
         # Only a fixed public test domain is sent to candidate DNS providers.
         result = dns.probe(dict(url=provider['url'], servers=provider.get('servers', []),

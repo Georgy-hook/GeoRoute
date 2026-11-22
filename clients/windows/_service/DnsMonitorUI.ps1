@@ -1,6 +1,6 @@
 ﻿$script:dnsMonitorRun=$null;$script:dnsMonitorReport=$null
 function Test-DnsMonitorFresh($Row) {
- if(-not $Row -or $Row.state -ne 'complete' -or -not $Row.ready){return $false}
+ if(-not $Row -or $Row.url -eq 'https://geohide.ru/dns-query' -or $Row.state -ne 'complete' -or -not $Row.ready){return $false}
  $at=[datetime]::MinValue
  return ([datetime]::TryParse([string]$Row.at,[ref]$at) -and ((Get-Date)-$at).TotalSeconds -ge -60 -and ((Get-Date)-$at).TotalMinutes -lt 5)
 }
@@ -28,7 +28,7 @@ function Update-DnsMonitorRows {
   if($filter -and ($r.name+' '+$r.url).IndexOf($filter,[StringComparison]::OrdinalIgnoreCase) -lt 0){continue}
   $pending=$r.state -in @('queued','checking')
   $fresh=Test-DnsMonitorFresh $r
-  $label=if($r.state -eq 'queued'){'В очереди…'}elseif($r.state -eq 'checking'){'Проверяю…'}elseif($r.state -eq 'interrupted'){'Не завершено'}elseif($fresh){'DNS отвечает'}elseif($r.ready){'Проверка устарела'}else{'Нет ответа DNS'}
+  $label=if($r.state -eq 'retired'){'Закрыт владельцем'}elseif($r.state -eq 'queued'){'В очереди…'}elseif($r.state -eq 'checking'){'Проверяю…'}elseif($r.state -eq 'interrupted'){'Не завершено'}elseif($fresh){'DNS отвечает'}elseif($r.ready){'Проверка устарела'}else{'Нет ответа DNS'}
   $color=if($pending){'#A4D5F2'}elseif($fresh){'#91F2D2'}elseif($r.ready){'#F6C56B'}else{'#FFAC9A'}
   $code=switch($r.id){'geohide-eu'{'EU'}'geohide-us'{'US'}'geohide-ru'{'RU'}default{''}}
   $time=[datetime]::MinValue;$checked=if([datetime]::TryParse([string]$r.at,[ref]$time)){$time.ToLocalTime().ToString('dd.MM HH:mm:ss')}else{'—'}

@@ -112,7 +112,7 @@ function Show-DnsSitesDialog($Provider=$null) {
   if($Provider){$config.url=[string]$Provider.url;$config.servers=@($Provider.servers)}
   $ui.DnsUrl.Text=[string]$config.url;$ui.DnsServers.Text=@($config.servers) -join ', '
   $ui.DnsSelectedSites.Text=@($config.domains) -join "`r`n";$ui.DnsSubdomains.IsChecked=[bool]$config.subdomains
-  $providers=@((Get-Content (Join-Path $script:taskRoot 'dns-providers.json') -Raw -Encoding UTF8|ConvertFrom-Json).providers)+@([pscustomobject]@{id='custom';name='Свой DNS…';url='';servers=@()})
+  $providers=@((Get-Content (Join-Path $script:taskRoot 'dns-providers.json') -Raw -Encoding UTF8|ConvertFrom-Json).providers|Where-Object {-not $_.disabled})+@([pscustomobject]@{id='custom';name='Свой DNS…';url='';servers=@()})
   $ui.DnsProvider.ItemsSource=$providers
   $selected=@($providers|Where-Object url -eq $config.url|Select-Object -First 1)
   $ui.DnsProvider.SelectedItem=if($selected.Count){$selected[0]}else{$providers[-1]}

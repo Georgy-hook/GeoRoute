@@ -485,7 +485,7 @@
             <TextBox x:Name="GeoSearch" Tag="Найти IP-адрес" Width="190" />
           </WrapPanel>
         </StackPanel>
-          <DataGrid x:Name="GeoGrid" Grid.Row="1" MinHeight="100" EnableRowVirtualization="True" EnableColumnVirtualization="True" FrozenColumnCount="1" VerticalScrollBarVisibility="Auto" RowHeight="62" ColumnHeaderHeight="42" FontSize="14" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" Background="#142131" Foreground="#EDF4FD" RowBackground="#142131" AlternatingRowBackground="#182A3D" GridLinesVisibility="None" HeadersVisibility="Column" BorderThickness="0" HorizontalScrollBarVisibility="Auto" SelectionMode="Single">
+          <DataGrid x:Name="GeoGrid" Grid.Row="1" MinHeight="100" EnableRowVirtualization="True" EnableColumnVirtualization="True" FrozenColumnCount="2" VerticalScrollBarVisibility="Auto" RowHeight="62" ColumnHeaderHeight="42" FontSize="14" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" Background="#142131" Foreground="#EDF4FD" RowBackground="#142131" AlternatingRowBackground="#182A3D" GridLinesVisibility="None" HeadersVisibility="Column" BorderThickness="0" HorizontalScrollBarVisibility="Auto" SelectionMode="Single">
             <DataGrid.Resources>
               <Style x:Key="GeoValueCell" TargetType="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="TextTrimming" Value="CharacterEllipsis"/><Setter Property="ToolTip" Value="{Binding Text, RelativeSource={RelativeSource Self}}"/></Style>
               <Style TargetType="DataGridColumnHeader">
@@ -501,6 +501,11 @@
               </Style>
             </DataGrid.Resources>
             <DataGrid.Columns>
+              <DataGridTemplateColumn Header="Подключение" Width="125" MinWidth="125">
+                <DataGridTemplateColumn.CellTemplate><DataTemplate>
+                  <Button Content="Подключить" Tag="GeoConnect" ToolTipService.ShowOnDisabled="True" IsEnabled="{Binding CanConnect}" ToolTip="{Binding ConnectHint}" Style="{StaticResource ActionButton}" Padding="10,7" Margin="4" AutomationProperties.Name="Подключить выбранный узел GeoHide"/>
+                </DataTemplate></DataGridTemplateColumn.CellTemplate>
+              </DataGridTemplateColumn>
               <DataGridTemplateColumn Header="Сервер" Width="1.4*" MinWidth="180">
                 <DataGridTemplateColumn.CellTemplate>
                   <DataTemplate>
@@ -530,7 +535,7 @@
                   <DataTemplate>
                     <StackPanel VerticalAlignment="Center" ToolTip="{Binding GeminiError}">
                       <TextBlock Text="{Binding GeminiLabel}" TextTrimming="CharacterEllipsis" Foreground="{Binding GeminiColor}" FontWeight="SemiBold" />
-                      <TextBlock Text="Страница + API TLS" Foreground="#9CAEC4" FontSize="10" />
+                      <TextBlock Text="Страница · API · ресурсы" Foreground="#9CAEC4" FontSize="10" />
                     </StackPanel>
                   </DataTemplate>
                 </DataGridTemplateColumn.CellTemplate>
@@ -649,7 +654,7 @@
             <TextBox x:Name="DnsMonitorSearch" Tag="Найти DNS по имени или адресу" AutomationProperties.Name="Поиск DNS-провайдера" MaxWidth="480" HorizontalAlignment="Stretch"/>
           </StackPanel>
         </Border>
-        <DataGrid x:Name="DnsMonitorGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" RowHeight="64" ColumnHeaderHeight="40" HeadersVisibility="Column" GridLinesVisibility="None" SelectionMode="Single" Background="#142131" Foreground="#EDF4FD" RowBackground="#142131" AlternatingRowBackground="#182A3D" BorderThickness="0" FrozenColumnCount="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+        <DataGrid x:Name="DnsMonitorGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" RowHeight="64" ColumnHeaderHeight="40" HeadersVisibility="Column" GridLinesVisibility="None" SelectionMode="Single" Background="#142131" Foreground="#EDF4FD" RowBackground="#142131" AlternatingRowBackground="#182A3D" BorderThickness="0" FrozenColumnCount="2" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
           <DataGrid.Resources>
             <Style TargetType="DataGridColumnHeader"><Setter Property="Background" Value="#253C51"/><Setter Property="Foreground" Value="#EDF4FD"/><Setter Property="Padding" Value="9"/></Style>
             <Style TargetType="DataGridCell"><Setter Property="Background" Value="Transparent"/><Setter Property="Foreground" Value="#EDF4FD"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="Padding" Value="9,3"/><Setter Property="ClipToBounds" Value="True"/><Setter Property="BorderThickness" Value="0"/><Setter Property="Template"><Setter.Value><ControlTemplate TargetType="DataGridCell"><Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" ClipToBounds="True"><ContentPresenter VerticalAlignment="Center"/></Border></ControlTemplate></Setter.Value></Setter><Style.Triggers><Trigger Property="IsSelected" Value="True"><Setter Property="Background" Value="#28505D"/><Setter Property="Foreground" Value="#EDF4FD"/></Trigger></Style.Triggers></Style>
@@ -664,7 +669,7 @@
             <DataGridTemplateColumn Header="Подробности" Width="2*" MinWidth="220"><DataGridTemplateColumn.CellTemplate><DataTemplate><TextBlock Text="{Binding Error}" TextWrapping="Wrap" TextTrimming="CharacterEllipsis" MaxHeight="48" FontSize="12" VerticalAlignment="Center"><TextBlock.ToolTip><ToolTip><TextBlock Text="{Binding Error}" TextWrapping="Wrap" MaxWidth="420"/></ToolTip></TextBlock.ToolTip></TextBlock></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
           </DataGrid.Columns>
         </DataGrid>
-        <Border Grid.Row="2" Background="#172C3A" CornerRadius="16" Padding="14" Margin="0,12,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Margin="0,0,12,0"><TextBlock x:Name="DnsMonitorSelected" Text="Выберите отвечающий DNS в таблице" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Text="Выбор откроет список сайтов. Подключение включается отдельно с подтверждением Windows. Ответ DNS не гарантирует работу каждого сайта." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="11" Margin="0,6,0,0"/></StackPanel><Button x:Name="DnsMonitorUse" Grid.Column="1" Content="Использовать DNS…" IsEnabled="False" Style="{StaticResource ActionButton}" VerticalAlignment="Center"/></Grid></Border>
+        <Border Grid.Row="2" Background="#172C3A" CornerRadius="16" Padding="14" Margin="0,12,0,0"><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel Margin="0,0,12,0"><TextBlock x:Name="DnsMonitorSelected" Text="Выберите отвечающий DNS в таблице" TextWrapping="Wrap" FontWeight="SemiBold"/><TextBlock Text="Выбор откроет список сайтов. Подключение включается отдельно с подтверждением Windows. Ответ DNS не гарантирует работу каждого сайта." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="11" Margin="0,6,0,0"/></StackPanel><Button x:Name="DnsMonitorUse" Grid.Column="1" Content="Настроить этот DNS…" IsEnabled="False" Style="{StaticResource ActionButton}" VerticalAlignment="Center"/></Grid></Border>
       </Grid>
       <Grid Grid.Row="1" x:Name="ServersPage" Visibility="Collapsed">
         <Grid.RowDefinitions>

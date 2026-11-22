@@ -4,7 +4,7 @@ $root=Join-Path (Split-Path $PSScriptRoot -Parent) '_service'
 function Assert($Value,$Message){if(-not $Value){throw $Message}}
 function Node($Region,$Address){return [pscustomobject]@{Region=$Region;Address=$Address;SourceActive=$true;CheckedAt=(Get-Date).ToString('o');EligibleUS=($Region -eq 'US');EligibleEU=($Region -eq 'EU');EligibleRU=($Region -eq 'RU');GeminiReady=$true;FilesTLS=$true;FilesHTTP=404}}
 $settings=[pscustomobject]@{us='192.255.159.240';eu='45.13.237.213';ru='159.194.200.33';autoSelect=$true;manualServers=@()}
-$us=Node US '192.255.159.240';$eu=Node EU '37.221.93.128';$ru=Node RU '193.233.112.67'
+$us=Node US '192.255.159.240';$eu=Node EU '37.221.93.128';$ru=Node RU '9.9.9.9'
 $report=[pscustomobject]@{rows=@($us,$eu,$ru)}
 $selection=Get-GeoSelection $settings $report
 Assert ($selection.us -eq $settings.us -and $selection.eu -eq $eu.Address) 'A failed EU is replaced without changing healthy US'

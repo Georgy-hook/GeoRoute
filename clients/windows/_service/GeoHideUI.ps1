@@ -78,7 +78,7 @@ function Start-GeoMonitor([switch]$Refresh) {
     $runId=[guid]::NewGuid().ToString('N')
     try{
         Set-GeoMonitorBusy $true
-        $catalog=Get-Content -LiteralPath (Join-Path $script:taskRoot 'geohide-servers.json') -Raw -Encoding UTF8|ConvertFrom-Json
+        $catalog=Read-GeoCatalog $script:taskRoot
         $settings=Read-GeoSettings $script:taskRoot
         Update-GeoRows (New-GeoPendingReport (@($catalog.servers)+@($settings.manualServers)) $runId $(if($Refresh){'Обновляю списки GeoHide'}else{'Начинаю проверку'}))
         $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+(Join-Path $script:taskRoot 'GeoHideWorker.ps1')+'"'),'-ResultPath',('"'+$path+'"'),'-RunId',$runId)
@@ -112,6 +112,7 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
     $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · '+(Get-GeoMonitoringSummary)}
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
+    if($Report.networkNote){$script:taskUi.GeoStatus.Text+=' · '+$Report.networkNote}
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}
     Update-GeoProfileCards
@@ -168,6 +169,22 @@ function Initialize-GeoMonitor {
     $path=Join-Path $script:taskRoot 'geohide-monitor.json'
     if(Test-Path -LiteralPath $path){try{$previous=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json;Stop-GeoReportLoading $previous;Update-GeoRows $previous}catch{}}
     Set-GeoMonitorBusy $false
+    $script:taskUi.GeoGrid.AddHandler([Windows.Controls.Button]::ClickEvent,[Windows.RoutedEventHandler]{
+        param($sender,$eventArgs)
+        if($eventArgs.OriginalSource -isnot [Windows.Controls.Button] -or $eventArgs.OriginalSource.Tag -ne 'GeoConnect'){return}
+        $eventArgs.Handled=$true
+        try{
+            if($script:taskBusy -or $script:geoRun){throw 'Дождитесь завершения текущей операции.'}
+            if($SmokeTest -or $RenderPreview){return}
+            $row=$eventArgs.OriginalSource.DataContext
+            $id=Save-GeoMonitorProfile $script:taskRoot $row.Region $row.Address $script:geoReport
+            Load-TaskProfiles -Force
+            Select-TaskProfile $id
+            Add-TaskLog ('Выбран узел из мониторинга: '+$row.Region+' '+$row.Address+'. Ожидается применение Windows.')
+            Start-TaskAction 'Apply' $id
+            $script:taskUi.GeoStatus.Text='Профиль выбранного узла сохранён. '+$(if($script:taskRun){'Ожидаю подтверждение Windows и результат применения…'}else{'Подключение не подтверждено. Повторите «Подключить» или выберите сохранённый профиль на странице «Серверы».'})
+        }catch{$script:taskUi.GeoStatus.Text=$_.Exception.Message;Add-TaskLog ('Выбор узла: '+$_.Exception.Message)}
+    })
     $script:taskUi.MonitorNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoRefresh.Add_Click({Start-GeoMonitor -Refresh})
