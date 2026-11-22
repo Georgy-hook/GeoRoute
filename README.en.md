@@ -48,3 +48,6 @@ Available since 0.5.0: **Servers → Sites and DNS** routes only selected namesp
 ![GeoRoute DNS provider monitoring](docs/images/dns-monitor.png)
 
 *GeoRoute screen with local checks from 2026-11-08; availability and latency vary by network and time.*
+
+
+For an existing selective VPN handling OpenAI/Telegram, see the [Gemini companion profile and verified fallback route](docs/SMARTDNS-ROUTES.ru.md). The current Zapret DoH preset is corrected; the profile is an explicit external example and is never applied automatically. Three GeoHide nodes answered through the existing VPN path while direct connections failed, so direct-path failure must not be described as a global server shutdown. Authenticated model responses remain unverified.

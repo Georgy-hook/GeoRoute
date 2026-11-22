@@ -34,7 +34,7 @@
 - **Альтернативные DNS:** добавлены `dns.geodema.love` и `w.quic.best` из закреплённого [объявления владельца](https://t.me/Inter_net_Helper/6/28988). Они доступны в «Сайты и DNS» и проверке DNS вместе с прежними провайдерами. Название в списке не означает, что сервер сейчас отвечает или поддерживает каждый сайт.
 - **Частота проверок:** в настройках выберите «Никогда», 30 минут, 1, 2, 6, 12 часов или сутки. По умолчанию — два часа. «Никогда» отключает и проверки при запуске; ручные кнопки остаются доступны.
 
-[![VirusTotal — кандидат MSI 0.6.0: 0 обнаружений, 1 тайм-аут](https://img.shields.io/badge/VirusTotal-0.6.0%20candidate%20%7C%200%20detections-216f87?style=flat-square&logo=virustotal)](https://www.virustotal.com/gui/file/33f62fd9567509c476a195bc48dac63802dcfbe9dcf8b78a04d1b25d2e2852d6/detection)
+[![VirusTotal — кандидат MSI 0.6.0: 0 обнаружений, 1 тайм-аут](https://img.shields.io/badge/VirusTotal-0.6.0%20candidate%20%7C%200%20detections-216f87?style=flat-square&logo=virustotal)](https://www.virustotal.com/gui/file/6476a1c03082361e3db8c6c2b99aa27c8be9a32e420105ddf4d3a1adc39d1133/detection)
 
 Кандидат прошёл установку, обновление и удаление в Windows CI. [VirusTotal 0.6.0: охват, даты и SHA-256](docs/security/v0.6.0.md); у MSI один тайм-аут, он не считается успешной проверкой. Для публикации сохранены точные проверенные файлы.
 
