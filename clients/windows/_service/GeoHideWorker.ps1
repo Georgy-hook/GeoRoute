@@ -6,12 +6,13 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'GeoProbe.ps1')
 $settings=Read-GeoSettings $PSScriptRoot
 $catalogPath=Join-Path $PSScriptRoot 'geohide-servers.json'
-$catalog=Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8|ConvertFrom-Json
+$catalog=Read-GeoCatalog $PSScriptRoot
 $errors=@()
 $initial=New-GeoPendingReport (@($catalog.servers)+@($settings.manualServers)) $RunId $(if($RefreshSources){'Обновляю списки GeoHide'}else{'Проверяю серверы'})
 Write-GeoJson $ResultPath $initial
 if($RefreshSources){
     foreach($source in $catalog.sources){
+        if($source.disabled){continue}
         try{
             $text=(Invoke-WebRequest -UseBasicParsing -Uri $source.url -TimeoutSec 15).Content
             $addresses=@([regex]::Matches($text,'(?m)^([0-9.]+)\s+chatgpt\.com\s*(?:#.*)?$')|ForEach-Object{$_.Groups[1].Value}|Where-Object{Test-GeoAddress $_}|Sort-Object -Unique)
@@ -32,9 +33,10 @@ try{
     if([int]$preflight.GetSocketOption([Net.Sockets.SocketOptionLevel]::IP,[Net.Sockets.SocketOptionName]31) -ne $ifIndex){throw 'Не удалось привязать диагностику к физическому интерфейсу.'}
 }finally{$preflight.Dispose()}
 
-$servers=@(@($catalog.servers)+@($settings.manualServers)|Where-Object {Test-GeoAddress $_.address}|Sort-Object region,address -Unique)
+$servers=@(@($catalog.servers)+@($settings.manualServers)|Where-Object {(Test-GeoAddress $_.address) -and -not (Test-GeoClosedNode $_.region $_.address)}|Sort-Object region,address -Unique)
 $report=New-GeoPendingReport $servers $RunId
 $report.interface=$adapter.InterfaceAlias;$report.sources=$catalog.sources;$report.sourceErrors=$errors
+$report|Add-Member NoteProperty networkNote 'Проверка привязана к IPv4-интерфейсу. Включённый VPN/TUN всё равно может влиять на результат. После смены сети повторите проверку.'
 Write-GeoJson $ResultPath $report
 foreach($row in $report.rows){
     $row.CheckState='Checking';$row.State='Проверяю ChatGPT, вложения и Gemini'
@@ -45,6 +47,8 @@ foreach($row in $report.rows){
     # Probe Gemini independently: a ChatGPT failure must not suppress Gemini diagnostics.
     $gemini=Probe-Geo $row.Address 'gemini.google.com' '/app'
     $api=if($gemini.tls){Probe-Geo $row.Address 'geminiweb-pa.clients6.google.com' '/'}else{[pscustomobject]@{tls=$false;http=$null;error='Gemini HTTPS недоступен'}}
+    $asset=if($gemini.tls){Probe-Geo $row.Address 'gemini.gstatic.com' '/'}else{[pscustomobject]@{tls=$false;http=$null;error='Gemini HTTPS недоступен'}}
+    $assetReady=$asset.tls -and $asset.http -in @(200,204,400,401,404,405)
     $challenge=$gemini.location -match '^https://www\.google\.com/sorry/'
     $verification=if($gemini.tls){Probe-Geo $row.Address 'www.google.com' '/sorry/'}else{$null}
     $filesReady=$files.tls -and $files.http -in @(200,204,301,302,400,401,404,405)
@@ -55,9 +59,10 @@ foreach($row in $report.rows){
     $row.EligibleRU=[bool]($ready -and $filesReady)
     $row.EligibleEU=[bool]($ready -and $filesReady -and $chat.country -in @('AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','GB','CH','NO','IS'))
     $row.GeminiTLS=$gemini.tls;$row.GeminiHTTP=$gemini.http;$row.GeminiAPIHTTP=$api.http
+    $row.GeminiAssetTLS=[bool]$asset.tls;$row.GeminiAssetHTTP=$asset.http
     $row.GeminiVerificationTLS=[bool]($verification -and $verification.tls)
     $row.GeminiVerificationHTTP=if($verification){$verification.http}else{$null}
-    $row.GeminiReady=Test-GeoGeminiProbe $gemini $api $verification
+    $row.GeminiReady=(Test-GeoGeminiProbe $gemini $api $verification) -and $assetReady
     $row.GeminiChallenge=[bool]$challenge
     if(($gemini.tcp -or $chat.tcp) -and ($challenge -or -not $row.GeminiReady -or -not $row.GeminiVerificationTLS)){
         $python=Join-Path $PSScriptRoot 'bridge\python\python.exe'
@@ -69,13 +74,14 @@ foreach($row in $report.rows){
                 $row.GeminiRouteMs=$shared.ms;$row.GeminiCountry=$shared.country
                 if($row.GeminiSharedHTTP2){
                     if(-not $api.tls){$api=Probe-Geo $row.Address 'geminiweb-pa.clients6.google.com' '/';$row.GeminiAPIHTTP=$api.http}
-                    $row.GeminiReady=[bool]($api.tls -and $api.http -in @(200,204,400,401,404,405))
+                    if(-not $asset.tls){$asset=Probe-Geo $row.Address 'gemini.gstatic.com' '/';$assetReady=$asset.tls -and $asset.http -in @(200,204,400,401,404,405);$row.GeminiAssetTLS=[bool]$asset.tls;$row.GeminiAssetHTTP=$asset.http}
+                    $row.GeminiReady=[bool]($api.tls -and $api.http -in @(200,204,400,401,404,405) -and $assetReady)
                     $row.GeminiChallenge=$false;$row.GeminiHTTP=$shared.http
                 }
             }
         }catch{}}
     }
-    $row.GeminiError=if($row.GeminiSharedHTTP2 -and $row.GeminiReady){''}elseif($row.GeminiSharedHTTP2){'Gemini и Google открываются, но API не прошёл проверку'}elseif($challenge -and -not $row.GeminiReady){'Gemini перенаправляет на Google, но общий маршрут проверки не прошёл тест. Выберите другой сервер.'}elseif($challenge){'Google ограничил доступ. Откройте Gemini после подключения; если есть CAPTCHA, пройдите её. Если поля нет, выберите другой сервер.'}elseif($gemini.blocked){'Страница ограничения региона'}elseif($gemini.error){$gemini.error}elseif($api.error){$api.error}elseif(-not $row.GeminiReady){'Страница / API Gemini не прошли HTTPS-проверку'}else{''}
+    $row.GeminiError=if($row.GeminiReady -and (-not $challenge -or $row.GeminiSharedHTTP2)){''}elseif($gemini.tls -and -not $assetReady){'Ресурсы Gemini: gemini.gstatic.com не прошёл HTTPS-проверку'}elseif($row.GeminiSharedHTTP2){'Gemini и Google открываются, но API / ресурсы не прошли проверку'}elseif($challenge -and -not $row.GeminiReady){'Gemini перенаправляет на Google, но общий маршрут проверки не прошёл тест. Выберите другой сервер.'}elseif($challenge){'Google ограничил доступ. Откройте Gemini после подключения; если есть CAPTCHA, пройдите её. Если поля нет, выберите другой сервер.'}elseif($gemini.blocked){'Страница ограничения региона'}elseif($gemini.error){$gemini.error}elseif($api.error){$api.error}elseif(-not $row.GeminiReady){'Страница / API Gemini не прошли HTTPS-проверку'}else{''}
     $row.State=if($ready){'ChatGPT: HTTPS отвечает'}elseif($chat.tcp){'ChatGPT: только TCP'}else{'ChatGPT: нет ответа'}
     $row.CheckedAt=(Get-Date).ToString('o');$row.CheckState='Complete'
     $report.completed++;$report.at=(Get-Date).ToString('o')
@@ -83,7 +89,8 @@ foreach($row in $report.rows){
 }
 if($catalog.PSObject.Properties['retired']){foreach($node in $catalog.retired){
     if(@($servers|Where-Object {$_.region -eq $node.region -and $_.address -eq $node.address}).Count){continue}
-    $report.rows+=@([pscustomobject]@{Region=$node.region;Address=$node.address;SourceActive=$false;CheckState='Retired';State='Удалён из списка GeoHide';TCP=$false;TLS=$false;HTTP=$null;Country='';LatencyMs=0;FilesTLS=$false;FilesHTTP=$null;Error='Адрес больше не публикуется источником';CheckedAt=(Get-Date).ToString('o');EligibleUS=$false;EligibleEU=$false;EligibleRU=$false;GeminiReady=$false})
+    $reason=if($node.reason){$node.reason}else{'Адрес больше не публикуется источником'}
+    $report.rows+=@([pscustomobject]@{Region=$node.region;Address=$node.address;SourceActive=$false;CheckState='Retired';State=$reason;TCP=$false;TLS=$false;HTTP=$null;Country='';LatencyMs=0;FilesTLS=$false;FilesHTTP=$null;Error=$reason;CheckedAt=(Get-Date).ToString('o');EligibleUS=$false;EligibleEU=$false;EligibleRU=$false;GeminiReady=$false})
 }}
 $report.running=$false;$report.phase='Проверка завершена';$report.at=(Get-Date).ToString('o')
 Write-GeoJson $ResultPath $report

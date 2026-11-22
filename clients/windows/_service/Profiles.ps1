@@ -366,7 +366,10 @@ try {
                 # The parsed catalog and concurrency hash come from exactly the same snapshot.
                 $importCatalog=Convert-CatalogText ($taskUtf8.GetString($catalogBefore))
                 $newProfiles=@($importCatalog.Profiles)+@($entry)
-                $newCatalog=[ordered]@{Version=1;Profiles=$newProfiles}
+                # Preserve migration markers and extension metadata when importing a profile.
+                $newCatalog=[ordered]@{}
+                foreach($property in $importCatalog.PSObject.Properties){$newCatalog[$property.Name]=$property.Value}
+                $newCatalog['Profiles']=$newProfiles
                 $catalogBytes=$taskUtf8.GetBytes(($newCatalog | ConvertTo-Json -Depth 16))
                 $profileBytes=$taskUtf8.GetBytes((New-ManagedBlock $records $newId))
                 $backupDir=Join-Path (Join-Path $taskRoot 'backups') ('import-'+(Get-Date -Format 'yyyyMMdd-HHmmss-ffff')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))

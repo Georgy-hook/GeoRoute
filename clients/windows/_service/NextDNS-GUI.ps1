@@ -412,6 +412,7 @@ function Update-TaskStatus([switch]$LogChange) {
 
 function Set-TaskBusy([bool]$Value) {
     $script:taskBusy = $Value
+    $script:taskUi.GeoGrid.IsEnabled = -not $Value
     foreach ($taskName in @('ImportButton','DnsSitesButton','CheckButton','CacheButton','RestoreButton','ApplyProfileButton','ClearLogButton')) { $script:taskUi[$taskName].IsEnabled = -not $Value }
     foreach ($taskControl in $script:taskProfileControls.Values) { $taskControl.Button.IsEnabled = -not $Value }
     Update-GeoProfileCards

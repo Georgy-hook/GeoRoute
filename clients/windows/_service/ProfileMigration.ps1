@@ -12,7 +12,10 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     $catalogPath=Join-Path $Root 'profiles.json'
     if(-not(Test-Path -LiteralPath $catalogPath)){return}
     $catalog=Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8|ConvertFrom-Json
-    if($catalog.PSObject.Properties['UnifiedGeoHideVersion'] -and $catalog.UnifiedGeoHideVersion -ge 1){return}
+    if($catalog.PSObject.Properties['UnifiedGeoHideVersion'] -and $catalog.UnifiedGeoHideVersion -ge 1){
+        if($catalog.UnifiedGeoHideVersion -lt 2){Update-GeoRouteAssetDomain $Root $catalog}
+        return
+    }
     $settingsPath=Join-Path $Root 'geohide-settings.json'
     $settings=if(Test-Path -LiteralPath $settingsPath){Get-Content -LiteralPath $settingsPath -Raw -Encoding UTF8|ConvertFrom-Json}else{[pscustomobject]@{}}
     $fallback=@{US='192.255.159.240';EU='143.20.64.192';RU='159.194.200.33'}
@@ -72,7 +75,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     }
     $removed=@('gemini-us','gemini-eu','25-10-12-00-08-1c6816ce')
     $catalog.Profiles=@($catalog.Profiles|Where-Object {$_.id -notin $removed})
-    $catalog|Add-Member NoteProperty UnifiedGeoHideVersion 1 -Force
+    $catalog|Add-Member NoteProperty UnifiedGeoHideVersion 2 -Force
     $backup=Join-Path $Root ('backups\unified-geohide-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
     [IO.Directory]::CreateDirectory($backup)|Out-Null
     Copy-Item -LiteralPath $catalogPath -Destination (Join-Path $backup 'profiles.json')
@@ -85,4 +88,37 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     }
     # Commit the schema marker last; interrupted migrations can be retried. No hosts/DNS changes.
     Write-GeoMigrationFile $catalogPath ($catalog|ConvertTo-Json -Depth 15)
+}
+
+# Add the exact asset host without regenerating profiles or losing a verified Google route.
+function Update-GeoRouteAssetDomain([string]$Root,$Catalog) {
+    $updates=@()
+    foreach($entry in $Catalog.Profiles){
+        if($entry.id -notin @('primary','alternate','eu-primary','eu-alternate','ru-primary','us-eu') -and $entry.name -notmatch '^(US|США).*(EU|Европ)'){continue}
+        if($entry.hostsFile -notmatch '^profiles[\\/][a-zA-Z0-9_-]+\.hosts$'){throw 'Некорректный путь встроенного профиля.'}
+        $path=Join-Path $Root $entry.hostsFile
+        foreach($candidate in @((Split-Path $path -Parent),$path)){
+            if((Test-Path -LiteralPath $candidate) -and ((Get-Item -LiteralPath $candidate).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Профиль не должен проходить через ссылку файловой системы.'}
+        }
+        $text=[IO.File]::ReadAllText($path)
+        $asset=$null;$gemini=$null
+        foreach($line in ($text -split '\r?\n')){
+            $parts=($line -split '#',2)[0].Trim() -split '\s+'
+            if($parts.Count -lt 2){continue}
+            if('gemini.gstatic.com' -in $parts[1..($parts.Count-1)]){$asset=$parts[0]}
+            if('gemini.google.com' -in $parts[1..($parts.Count-1)]){$gemini=$parts[0]}
+        }
+        if($asset -or -not $gemini){continue}
+        $ip=Convert-GeoProfileAddress $gemini
+        $updates+=@([pscustomobject]@{Path=$path;Text=$text.TrimEnd()+"`r`n"+$ip+" gemini.gstatic.com`r`n"})
+        $entry|Add-Member NoteProperty domainCount (@($text -split '\r?\n'|Where-Object {$_ -match '^\S+\s+[^#\s]'}).Count+1) -Force
+    }
+    $catalogPath=Join-Path $Root 'profiles.json'
+    $backup=Join-Path $Root ('backups\gemini-assets-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
+    [IO.Directory]::CreateDirectory($backup)|Out-Null
+    Copy-Item -LiteralPath $catalogPath -Destination (Join-Path $backup 'profiles.json')
+    foreach($update in $updates){Copy-Item -LiteralPath $update.Path -Destination (Join-Path $backup ([IO.Path]::GetFileName($update.Path)))}
+    foreach($update in $updates){Write-GeoMigrationFile $update.Path $update.Text}
+    $Catalog|Add-Member NoteProperty UnifiedGeoHideVersion 2 -Force
+    Write-GeoMigrationFile $catalogPath ($Catalog|ConvertTo-Json -Depth 15)
 }

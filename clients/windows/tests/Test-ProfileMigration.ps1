@@ -41,6 +41,22 @@ try {
     $hash=(Get-FileHash (Join-Path $temp 'profiles.json')).Hash
     Update-GeoRouteBundledProfiles $temp
     Assert ((Get-FileHash (Join-Path $temp 'profiles.json')).Hash -eq $hash -and @(Get-ChildItem (Join-Path $temp 'backups') -Directory).Count -eq 1) 'Repeated startup does not rewrite data or create more backups'
+    # Real 0.5 -> 0.6 migration preserves a working same-IP Google entry and custom files.
+    $catalog.UnifiedGeoHideVersion=1
+    $entry=@($catalog.Profiles|Where-Object id -eq 'eu-primary')[0]
+    $path=Join-Path $temp $entry.hostsFile
+    $text=[IO.File]::ReadAllText($path)
+    $text=[regex]::Replace($text,'(?m)^\S+\s+gemini\.gstatic\.com\s*\r?\n?','')
+    $text=$text.TrimEnd()+"`r`n"+$entry.address+" www.google.com`r`n"
+    Write-GeoMigrationFile $path $text
+    Write-GeoMigrationFile (Join-Path $temp 'profiles.json') ($catalog|ConvertTo-Json -Depth 15)
+    Update-GeoRouteBundledProfiles $temp
+    $updated=[IO.File]::ReadAllText($path)
+    Assert ($updated.Contains($entry.address+' www.google.com') -and $updated.Contains($entry.address+' gemini.gstatic.com')) 'Asset-only migration retains verified Google route and existing IP'
+    Assert ((Get-FileHash $custom).Hash -eq $customHash) 'Asset migration never edits custom profiles'
+    $hash=(Get-FileHash $path).Hash
+    Update-GeoRouteBundledProfiles $temp
+    Assert ((Get-FileHash $path).Hash -eq $hash) 'Asset migration is idempotent'
     Assert ((Get-FileHash (Join-Path $env:SystemRoot 'System32\drivers\etc\hosts')).Hash -eq $before) 'Migration never applies a network route'
     Write-Output 'Unified migration passed: six shared profiles, exact retirement, backups, stable IDs, custom data, preference remapping, idempotence and untouched hosts.'
 } finally {

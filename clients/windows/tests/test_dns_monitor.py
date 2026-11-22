@@ -10,6 +10,15 @@ import dns_monitor as monitor
 
 
 class DNSMonitor(unittest.TestCase):
+    def test_retired_provider_is_not_contacted_or_selected(self):
+        with patch.object(monitor.dns, 'probe') as probe:
+            row = monitor.check(dict(id='closed', name='Closed', url='https://geohide.ru/dns-query',
+                                     disabled=True, reason='Closed by owner'))
+        probe.assert_not_called()
+        self.assertFalse(row['ready'])
+        self.assertEqual(row['state'], 'retired')
+        self.assertEqual(row['error'], 'Closed by owner')
+
     def test_scan_uses_only_fixed_public_domain_and_keeps_failures_separate(self):
         calls = []
 

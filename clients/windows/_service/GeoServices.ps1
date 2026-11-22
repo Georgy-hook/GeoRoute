@@ -45,13 +45,16 @@ function Test-GeoObservationFresh($Node) {
     return $age.TotalSeconds -ge -60 -and $age -lt $interval.Add([timespan]::FromMinutes(10))
 }
 function Get-GeoGeminiDomains {
-    return @('gemini.google.com','gemini.google','bard.google.com','www.google.com',
+    return @('gemini.google.com','gemini.google','gemini.gstatic.com','bard.google.com','www.google.com',
         'geminiweb-pa.clients.google.com','geminiweb-pa.clients6.google.com',
         'generativelanguage.googleapis.com','geller-pa.googleapis.com',
         'proactivebackend-pa.googleapis.com','robinfrontend-pa.googleapis.com')
 }
 function Test-GeoGeminiDomain([string]$Domain) {
     return $Domain.ToLowerInvariant() -in @(Get-GeoGeminiDomains)
+}
+function Test-GeoClosedNode([string]$Region,[string]$Address) {
+    return $Region -eq 'RU' -and $Address -in @('159.194.200.33','193.233.112.67','193.233.112.68','193.233.112.88','37.230.192.51')
 }
 function Test-GeoGoogleRoute($Node) {
     if(-not $Node){return $false}

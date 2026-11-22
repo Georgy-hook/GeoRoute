@@ -6,7 +6,7 @@ function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[Valid
         $fresh=$true
         if($node.PSObject.Properties['CheckedAt']){$fresh=Test-GeoObservationFresh $node}
         $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
-        $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
+        $fresh -and -not (Test-GeoClosedNode $node.Region $node.Address) -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
     }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},@{Expression={if($_.PSObject.Properties['GeminiRouteMs'] -and $_.GeminiRouteMs -gt 0){$_.GeminiRouteMs}else{999999}}},Address -Unique)
 }
 function Get-GeoProfileRegion($Profile) {
@@ -47,6 +47,7 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
     $issues=@();$warnings=@()
     $shared=@($Needs|Where-Object {$_.Service -ne 'Gemini'}).Count -gt 0
     foreach($need in $Needs){
+        if(Test-GeoClosedNode $need.Role $need.Address){$issues+='GeoHide RU: владелец объявил о закрытии этого узла';continue}
         $rows=@($Report.rows|Where-Object {$_.Region -eq $need.Role -and $_.Address -eq $need.Address}|Select-Object -First 1)
         $prefix=$need.Role+' '+$need.Address+': '
         if(-not $rows.Count){$issues+=$prefix+'нет актуальной проверки или адрес удалён из списка';continue}

@@ -18,6 +18,7 @@ function Show-GeoFilteredRows {
 function Update-GeoHistory($Report) {
     $rows=@()
     foreach($row in $Report.rows){
+        if(Test-GeoClosedNode $row.Region $row.Address){$row.SourceActive=$false;$row.CheckState='Retired';$row.State='RU-узел закрыт владельцем';$row.Error=$row.State}
         $pending=Test-GeoPendingRow $row
         $interrupted=$row.CheckState -eq 'Interrupted'
         $key=$row.Region+'-'+$row.Address
@@ -41,6 +42,9 @@ function Update-GeoHistory($Report) {
         }
         $extra=@{LoadingVisibility=$(if($pending){'Visible'}else{'Collapsed'});GeminiLabel=$(if($pending){if($row.CheckState -eq 'Checking'){'Проверяю…'}else{'В очереди…'}}elseif(-not $fresh){'Нужна проверка'}elseif($row.PSObject.Properties['GeminiSharedHTTP2'] -and $row.GeminiSharedHTTP2){'Gemini + Google'}elseif($row.GeminiChallenge -and -not $row.GeminiReady){'Проверка недоступна'}elseif($row.GeminiChallenge){'Ограничение Google'}elseif($row.GeminiReady){'HTTPS отвечает'}else{'Недоступен'});GeminiColor=$(if($row.GeminiChallenge -and -not $row.GeminiReady -and $fresh){'#FF8E9E'}elseif($row.GeminiChallenge -and $fresh){'#F6C56B'}elseif($row.GeminiReady -and $fresh){'#91F2D2'}else{'#9CAEC4'});AvailableNow=$ok;HistoryVisual=$chart;Flag=$flag;CountryFlag=$countryFlag;StatusColor=$color;StatusLabel=$label;Bars=$bars;HistoryCount=([string]@($samples|Where-Object ok).Count+'/'+$samples.Count+' успешно');LatencyLabel=$(if($ok){[string]$row.LatencyMs+' мс'}else{'—'});FilesLabel=$(if($row.FilesTLS){'TLS · '+$row.FilesHTTP}else{'—'});FilesColor=$(if($row.FilesTLS){'#91F2D2'}else{'#8E9FB4'})}
         foreach($name in $extra.Keys){$row|Add-Member -MemberType NoteProperty -Name $name -Value $extra[$name] -Force}
+        $choice=Test-GeoRequirements @([pscustomobject]@{Role=$row.Region;Address=$row.Address;Files=$true;Service='ChatGPT'},[pscustomobject]@{Role=$row.Region;Address=$row.Address;Files=$false;Service='Gemini'}) $Report
+        $row|Add-Member NoteProperty CanConnect ([bool](-not $Report.running -and -not $script:taskBusy -and $choice.Ready)) -Force
+        $row|Add-Member NoteProperty ConnectHint ($choice.Reason+' · Подключение запросит подтверждение Windows. Используется один узел для ChatGPT, Gemini и вложений. Google Поиск меняет маршрут только при проверенном общем IP.') -Force
         $rows+=@($row)
     }
     $script:geoDisplayRows=$rows

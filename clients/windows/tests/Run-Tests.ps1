@@ -21,12 +21,14 @@ if($LASTEXITCODE -ne 0){throw 'DNS monitor checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')
 & (Join-Path $PSScriptRoot 'Test-Home.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoMonitor.ps1')
+& (Join-Path $PSScriptRoot 'Test-MonitorSelection.ps1')
 & (Join-Path $PSScriptRoot 'Test-MonitoringSchedule.ps1')
 & $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitoringSettings.ps1')
 if($LASTEXITCODE -ne 0){throw 'Monitoring preference checks failed.'}
 & $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitorLayout.ps1')
 if($LASTEXITCODE -ne 0){throw 'Monitor resize checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-Gemini.ps1')
+& (Join-Path $PSScriptRoot 'Test-GeminiAssets.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileMigration.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileCreation.ps1')
 & (Join-Path $PSScriptRoot 'Test-RepairCenter.ps1')
