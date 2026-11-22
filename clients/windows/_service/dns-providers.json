@@ -92,8 +92,9 @@
     {
       "id": "zapret",
       "name": "dns.zapret.moe — другой провайдер",
-      "url": "https://dns.zapret.moe/dns-query",
-      "servers": []
+      "url": "https://doh.zapret.moe/dns-query",
+      "servers": [],
+      "endpointSource": "https://dns.zapret.moe/status.json (server.doh_name; verified 2026-11-22)"
     },
     {
       "id": "wlrus",
