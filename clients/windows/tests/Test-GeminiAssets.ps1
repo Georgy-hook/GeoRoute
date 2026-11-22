@@ -8,6 +8,15 @@ try {
     foreach($name in @('GeoHideWorker.ps1','GeoHide.ps1','GeoAvailability.ps1','GeoServices.ps1','ProfileMigration.ps1','ProfileCreation.ps1','GeoMonitorState.ps1')){Copy-Item (Join-Path $source $name) $temp}
     # Replace only transport in a disposable copy. Exercise the real worker's result logic.
     $probe=@'
+function Get-NetIPConfiguration {
+ # This is an offline worker test. Do not depend on transient runner NIC/CIM state.
+ [pscustomobject]@{
+  InterfaceAlias='Offline-fixture'
+  InterfaceIndex=[Net.NetworkInformation.NetworkInterface]::LoopbackInterfaceIndex
+  IPv4DefaultGateway=[pscustomobject]@{NextHop='127.0.0.1'}
+  IPv4Address=@([pscustomobject]@{IPAddress='127.0.0.1'})
+ }
+}
 function Probe-Geo($Address,$HostName,$Path) {
  $status=if($HostName -eq 'www.google.com'){429}elseif($HostName -in @('files.oaiusercontent.com','gemini.gstatic.com','geminiweb-pa.clients6.google.com')){404}else{200}
  $tls=-not ($HostName -eq 'gemini.gstatic.com' -and -not (Test-Path (Join-Path $PSScriptRoot 'asset-ready')))
