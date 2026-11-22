@@ -1,0 +1,15 @@
+# Zapret DNS; verified 2026-11-22; exit USA.
+# Keep current ChatGPT/Telegram routing in Happ.
+# www.google.com also serves Google Search; open Gemini first.
+# Gemini profile created by GeoRoute
+185.4.64.180 bard.google.com
+185.4.64.180 geller-pa.googleapis.com
+185.4.64.180 gemini.google
+185.4.64.180 gemini.google.com
+185.4.64.180 gemini.gstatic.com
+185.4.64.180 geminiweb-pa.clients.google.com
+185.4.64.180 geminiweb-pa.clients6.google.com
+185.4.64.180 generativelanguage.googleapis.com
+185.4.64.180 proactivebackend-pa.googleapis.com
+185.4.64.180 robinfrontend-pa.googleapis.com
+185.4.64.180 www.google.com
