@@ -60,9 +60,11 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
                 $row=@($records|Where-Object Domain -eq $pair[0]|Select-Object -First 1)
                 if($row.Count){try{Set-Variable -Name $pair[1] -Value (Convert-GeoProfileAddress $row[0].Address) -Scope Local}catch{}}
             }
+            if(@($records|Where-Object {$_.Domain -eq 'www.google.com' -and $_.Address -eq $eu}).Count){$domains+=@('www.google.com')}
             $content=(@('# GeoHide US + EU: ChatGPT, Gemini and OpenAI attachments.')+@($domains|ForEach-Object {$(if((Test-GeoGeminiDomain $_) -or $_ -eq 'oaiusercontent.com' -or $_.EndsWith('.oaiusercontent.com')){$eu}else{$us})+' '+$_})) -join "`r`n"
             $entry.name='US + EU — ChatGPT + Gemini'
         }else{
+            if(@($records|Where-Object {$_.Domain -eq 'www.google.com' -and $_.Address -eq $ip}).Count){$domains+=@('www.google.com')}
             $content=(@('# GeoHide: ChatGPT, Gemini and OpenAI attachments.')+@($domains|ForEach-Object {$ip+' '+$_})) -join "`r`n"
             $entry|Add-Member NoteProperty address $ip -Force
             $entry.name=switch($entry.id){primary{'GeoHide US — основной'}alternate{'GeoHide US — запасной'}eu-primary{'GeoHide — основной'}eu-alternate{'GeoHide — запасной'}ru-primary{'GeoHide RU'}}

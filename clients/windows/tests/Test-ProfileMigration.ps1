@@ -57,6 +57,12 @@ try {
     $hash=(Get-FileHash $path).Hash
     Update-GeoRouteBundledProfiles $temp
     Assert ((Get-FileHash $path).Hash -eq $hash) 'Asset migration is idempotent'
+    # 0.5 imports could erase the catalog marker; a previously selected Google route still survives.
+    $legacy=Get-Content (Join-Path $temp 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    $legacy.PSObject.Properties.Remove('UnifiedGeoHideVersion')
+    Write-GeoMigrationFile (Join-Path $temp 'profiles.json') ($legacy|ConvertTo-Json -Depth 15)
+    Update-GeoRouteBundledProfiles $temp
+    Assert ([IO.File]::ReadAllText($path).Contains($entry.address+' www.google.com')) 'A legacy catalog without migration metadata retains the existing same-IP Google route'
     Assert ((Get-FileHash (Join-Path $env:SystemRoot 'System32\drivers\etc\hosts')).Hash -eq $before) 'Migration never applies a network route'
     Write-Output 'Unified migration passed: six shared profiles, exact retirement, backups, stable IDs, custom data, preference remapping, idempotence and untouched hosts.'
 } finally {
