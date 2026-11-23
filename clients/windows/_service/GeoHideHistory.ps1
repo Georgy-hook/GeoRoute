@@ -30,7 +30,7 @@ function Get-GeoHistoryView($Samples) {
     $samples=@(Get-GeoHistorySamples $Samples)
     $chart=[Windows.Controls.Primitives.UniformGrid]::new();$chart.Rows=1;$chart.Height=8
     if(-not $samples.Count){
-        return [pscustomobject]@{Visual=$chart;Count='Проверок пока нет';Last='Нажмите «Проверить серверы»';Hint='История локальных проверок ChatGPT пуста. Ожидание и прерванные проверки не считаются результатом.';Bars=@()}
+        return [pscustomobject]@{Visual=$chart;Count='Проверок пока нет';Last='Нажмите «Проверить серверы»';Hint='История локальных проверок ChatGPT пуста. Ожидание и прерванные проверки не считаются результатом.';Bars=@();Entries=@();Period='Сохранённых проверок пока нет'}
     }
     $count=[string]@($samples|Where-Object ok).Count+' из '+$samples.Count+' успешно'
     $first=([DateTimeOffset]::Parse($samples[0].at)).ToLocalTime()
@@ -41,7 +41,7 @@ function Get-GeoHistoryView($Samples) {
         $reason=if($sample.ok){'HTTPS отвечает'}elseif($sample.PSObject.Properties['reason'] -and $sample.reason){[string]$sample.reason}elseif($sample.tcp){'Нет HTTPS-ответа'}else{'Нет TCP-ответа'}
         $hint=$date.ToString('dd.MM.yyyy HH:mm:ss')+' · '+$reason
         if($sample.ok){$hint+=' · '+$sample.ms+' мс'}
-        [pscustomobject]@{height=8;color=$(if($sample.ok){'#72D9B7'}elseif($sample.tcp){'#F6C56B'}else{'#FF8E9E'});hint=$hint}
+        [pscustomobject]@{height=8;color=$(if($sample.ok){'#72D9B7'}elseif($sample.tcp){'#F6C56B'}else{'#FF8E9E'});hint=$hint;Time=$date.ToString('dd.MM.yyyy HH:mm:ss');Result=$(if($sample.ok){'Доступен'}elseif($sample.tcp){'Нет HTTPS'}else{'Нет ответа'});Reason=$reason;Latency=('Длительность: '+$sample.ms+' мс')}
     })
     foreach($bar in $bars){
         $segment=[Windows.Controls.Border]::new();$segment.Height=8
@@ -51,7 +51,8 @@ function Get-GeoHistoryView($Samples) {
         [void]$chart.Children.Add($segment)
         $lines+=$bar.hint
     }
-    return [pscustomobject]@{Visual=$chart;Count=$count;Last=('Последняя: '+$last.ToString('dd.MM, HH:mm'));Hint=($lines -join "`n");Bars=$bars}
+    $entries=@($bars);[array]::Reverse($entries)
+    return [pscustomobject]@{Visual=$chart;Count=$count;Last=('Последняя: '+$last.ToString('dd.MM, HH:mm'));Hint=($lines -join "`n");Bars=$bars;Entries=$entries;Period=($first.ToString('dd.MM.yyyy HH:mm')+' — '+$last.ToString('dd.MM.yyyy HH:mm'))}
 }
 function Initialize-GeoHistory {
     $path=Join-Path $script:taskRoot 'geohide-history.json'
@@ -89,6 +90,18 @@ function Update-GeoHistory($Report) {
         $countryFlag=Get-TaskImage ('flag-'+$row.Country+'.png')
         if(-not $countryFlag){$countryFlag=Get-TaskImage 'icon-globe.png'}
         $extra=@{LoadingVisibility=$(if($pending){'Visible'}else{'Collapsed'});GeminiLabel=$(if($pending){if($row.CheckState -eq 'Checking'){'Проверяю…'}else{'В очереди…'}}elseif(-not $fresh){'Нужна проверка'}elseif($row.PSObject.Properties['GeminiSharedHTTP2'] -and $row.GeminiSharedHTTP2){'Gemini + Google'}elseif($row.GeminiChallenge -and -not $row.GeminiReady){'Проверка недоступна'}elseif($row.GeminiChallenge){'Ограничение Google'}elseif($row.GeminiReady){'HTTPS отвечает'}else{'Недоступен'});GeminiColor=$(if($row.GeminiChallenge -and -not $row.GeminiReady -and $fresh){'#FF8E9E'}elseif($row.GeminiChallenge -and $fresh){'#F6C56B'}elseif($row.GeminiReady -and $fresh){'#91F2D2'}else{'#9CAEC4'});AvailableNow=$ok;HistoryVisual=$history.Visual;HistoryLast=$history.Last;HistoryHint=$history.Hint;ReasonLabel=$reason;ReasonHint=($reason+$(if($row.Error){"`nТехническая информация: "+$row.Error}));ChatDetail=$(if($ok){"HTTPS · HTTP 200"}else{$reason});Flag=$flag;CountryFlag=$countryFlag;StatusColor=$color;StatusLabel=$label;Bars=$history.Bars;HistoryCount=$history.Count;LatencyLabel=$(if($ok){[string]$row.LatencyMs+' мс'}else{'—'});FilesLabel=$(if($row.FilesTLS){'TLS · '+$row.FilesHTTP}else{'—'});FilesColor=$(if($row.FilesTLS){'#91F2D2'}else{'#8E9FB4'})}
+        $observed=-not $pending -and -not $interrupted -and $row.SourceActive -ne $false -and [bool]$row.CheckedAt
+        $extra.HistoryPeriod=$history.Period;$extra.HistoryEntries=$history.Entries
+        $extra.TCPLabel=if($pending){'…'}elseif(-not $observed){'—'}elseif($row.TCP){'Да'}else{'Нет'}
+        $extra.TLSLabel=if($pending){'…'}elseif(-not $observed){'—'}elseif($row.TLS){'Да'}else{'Нет'}
+        $extra.HTTPLabel=if($pending){'…'}elseif(-not $observed -or -not $row.HTTP){'—'}else{[string]$row.HTTP}
+        $extra.TCPColor=if(-not $observed){'#9CAEC4'}elseif($row.TCP){'#91F2D2'}else{'#FF8E9E'}
+        $extra.TLSColor=if(-not $observed){'#9CAEC4'}elseif($row.TLS){'#91F2D2'}else{'#FF8E9E'}
+        $extra.TCPDetail='TCP: '+$extra.TCPLabel;$extra.TLSDetail='TLS: '+$extra.TLSLabel;$extra.HTTPDetail='HTTP: '+$extra.HTTPLabel
+        $extra.ServerMeta=$row.Region+' · '+$(if($pending){if($row.CheckState -eq 'Checking'){'Проверяю'}else{'В очереди'}}elseif($interrupted){'Прервано'}elseif($row.SourceActive -eq $false){'Снят'}elseif(-not $fresh){'Устарело'}elseif($ok){'Доступен'}elseif($row.TCP){'Только TCP'}else{'Нет ответа'})
+        $extra.ProbeTimeLabel=if($pending){'Текущая проверка ещё не завершена'}elseif($interrupted){'Проверка прервана; нового результата нет'}elseif($row.SourceActive -eq $false){'Узел снят с публикации; проверка не выполнялась'}elseif($row.CheckedAt){'Проверено: '+([DateTimeOffset]::Parse($row.CheckedAt)).ToLocalTime().ToString('dd.MM.yyyy HH:mm:ss')}else{'Сервер ещё не проверен'}
+        $extra.FilesDetail='Вложения: '+$(if(-not $observed){'нет завершённой проверки'}elseif($row.FilesTLS){'TLS есть · HTTP '+$row.FilesHTTP}else{'нет защищённого соединения'})
+        $extra.ExitDetail='Страна выхода: '+$(if($row.Country){$row.Country}else{'не определена'})
         foreach($name in $extra.Keys){$row|Add-Member -MemberType NoteProperty -Name $name -Value $extra[$name] -Force}
         $choice=Test-GeoRequirements @([pscustomobject]@{Role=$row.Region;Address=$row.Address;Files=$true;Service='ChatGPT'},[pscustomobject]@{Role=$row.Region;Address=$row.Address;Files=$false;Service='Gemini'}) $Report
         # Row eligibility is independent of an import/apply operation. GeoGrid's

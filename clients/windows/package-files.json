@@ -55,6 +55,8 @@
   "GeoHideUI.ps1",
   "geohide-servers.json",
   "GeoHideHistory.ps1",
+  "GeoCheckDetails.ps1",
+  "GeoCheckDetails.xaml",
   "assets/ui/flag-RU.png",
   "assets/ui/flag-DE.png",
   "GeoAvailability.ps1",

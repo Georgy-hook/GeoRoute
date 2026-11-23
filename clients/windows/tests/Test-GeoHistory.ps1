@@ -42,18 +42,48 @@ try {
     $row.TLS=$false;$row.HTTP=$null;$row.Error='TLS failed: '+('full technical details '*20);Update-GeoHistory $report
     foreach($page in @('HomePage','OverviewPage','ServersPage','JournalPage','SettingsPage')){$script:taskUi[$page].Visibility='Collapsed'}
     $script:taskUi.GeoPage.Visibility='Visible';Initialize-GeoMonitorLayout
+    Initialize-GeoHistoryAction
+    function Show-GeoCheckDetails($Row){$script:clickedRow=$Row;$script:detailsWindow=New-GeoCheckDetails $Row $null}
     $historyColumn=@($script:taskUi.GeoGrid.Columns|Where-Object Header -eq 'История ChatGPT')[0]
     function Find-Texts($Root){
         if($Root -is [Windows.Controls.TextBlock]){Write-Output $Root}
         for($i=0;$i -lt [Windows.Media.VisualTreeHelper]::GetChildrenCount($Root);$i++){Find-Texts ([Windows.Media.VisualTreeHelper]::GetChild($Root,$i))}
     }
-    foreach($size in @(@(980,640),@(1920,1040))){
+    function Find-Buttons($Root){
+        if($Root -is [Windows.Controls.Button]){Write-Output $Root}
+        for($i=0;$i -lt [Windows.Media.VisualTreeHelper]::GetChildrenCount($Root);$i++){Find-Buttons ([Windows.Media.VisualTreeHelper]::GetChild($Root,$i))}
+    }
+    foreach($size in @(@(980,640),@(1220,910),@(1920,1040))){
         $width=$size[0];$height=$size[1];$root=$window.Content
         $root.Width=$width;$root.Height=$height
         for($pass=0;$pass -lt 3;$pass++){$root.Measure([Windows.Size]::new($width,$height));$root.Arrange([Windows.Rect]::new(0,0,$width,$height));$root.UpdateLayout();Update-GeoMonitorLayout}
         $container=$script:taskUi.GeoGrid.ItemContainerGenerator.ContainerFromIndex(0)
         $cell=$historyColumn.GetCellContent($container)
         $texts=@(Find-Texts $cell)
+        $button=@(Find-Buttons $cell|Where-Object Tag -eq GeoHistory)[0]
+        Assert ($button -is [Windows.Controls.Button] -and $button.Tag -eq 'GeoHistory' -and $button.ToolTip -is [string] -and $button.ToolTip.Contains('Нажмите')) 'One full-cell button owns the hit area and has a tooltip independent of detached DataContext'
+        Assert ([Windows.Controls.ToolTipService]::GetShowOnDisabled($button)) 'History hint remains available while the grid is temporarily disabled'
+        $button.RaiseEvent([Windows.RoutedEventArgs]::new([Windows.Controls.Button]::ClickEvent,$button))
+        Assert ($script:clickedRow.Address -eq $item.Address -and $script:detailsWindow.DataContext.HistoryEntries.Count -eq 24) 'A real routed click opens details for the selected server without network/apply actions'
+        $dialogRoot=$script:detailsWindow.Content
+        $dialogRoot.Measure([Windows.Size]::new(700,620));$dialogRoot.Arrange([Windows.Rect]::new(0,0,700,620));$dialogRoot.UpdateLayout()
+        $script:detailsWindow.Dispatcher.Invoke([Action]{},[Windows.Threading.DispatcherPriority]::DataBind)
+        Assert ($script:detailsWindow.FindName('TechnicalDetails').Text.Contains($row.Error) -and $script:detailsWindow.DataContext.TCPDetail -eq 'TCP: Да' -and $script:detailsWindow.DataContext.TLSDetail -eq 'TLS: Нет') 'Dialog exposes complete diagnostics and full protocol labels'
+        Assert ($script:detailsWindow.FindName('HistoryEntries').Items.Count -eq 24) 'All retained checks have inspectable rows'
+        if($ScreenshotDirectory -and $width -eq 980){
+            [IO.Directory]::CreateDirectory($ScreenshotDirectory)|Out-Null
+            $bitmap=[Windows.Media.Imaging.RenderTargetBitmap]::new(700,620,96,96,[Windows.Media.PixelFormats]::Pbgra32);$bitmap.Render($dialogRoot)
+            $encoder=[Windows.Media.Imaging.PngBitmapEncoder]::new();$encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($bitmap))
+            $stream=[IO.File]::Create((Join-Path $ScreenshotDirectory 'details.png'));try{$encoder.Save($stream)}finally{$stream.Dispose()}
+        }
+        $script:detailsWindow.FindName('CloseDetails').RaiseEvent([Windows.RoutedEventArgs]::new([Windows.Controls.Button]::ClickEvent))
+        foreach($protocol in @('TCP','TLS','HTTP')){
+            $column=@($script:taskUi.GeoGrid.Columns|Where-Object Header -eq $protocol)[0]
+            $value=@(Find-Texts ($column.GetCellContent($container)))[0]
+            $bounds=$value.TransformToAncestor($script:taskUi.GeoGrid).TransformBounds([Windows.Rect]::new(0,0,$value.ActualWidth,$value.ActualHeight))
+            Assert ($column.Visibility -eq 'Visible' -and $column.MinWidth -ge 60 -and -not $column.CanUserResize -and $bounds.Right -le $script:taskUi.GeoGrid.ActualWidth+1) ('Protocol must remain visible at '+$width+': '+$protocol)
+            Assert ($value.Text -notmatch 'True|False|\.\.\.' -and $value.TextTrimming -eq 'None' -and $value.ActualWidth -ge $value.DesiredSize.Width-1) ('Protocol label cannot become F...: '+$protocol)
+        }
         foreach($value in @($script:geoDisplayRows[0].HistoryCount,$script:geoDisplayRows[0].HistoryLast)){
             $text=@($texts|Where-Object Text -eq $value)[0]
             Assert ($text -and $text.ActualWidth -ge $text.DesiredSize.Width-$text.Margin.Left-$text.Margin.Right-1 -and $text.ActualHeight -ge $text.DesiredSize.Height-$text.Margin.Top-$text.Margin.Bottom-1) ('History text must fit at '+$width+': '+$value+'; actual='+$text.ActualWidth+'x'+$text.ActualHeight+'; desired='+$text.DesiredSize)
