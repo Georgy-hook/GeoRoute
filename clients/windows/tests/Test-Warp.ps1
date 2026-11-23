@@ -11,6 +11,18 @@ try{
  $tokens=$null;$errors=$null;$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $root 'WarpNetwork.ps1'),[ref]$tokens,[ref]$errors)
  Assert (-not $errors.Count) 'Network worker parses in Windows PowerShell'
  foreach($function in $ast.FindAll({param($n) $n -is [Management.Automation.Language.FunctionDefinitionAst]},$false)){. ([scriptblock]::Create($function.Extent.Text))}
+ # Process ownership is culture-independent, including JSON parsers that return dates.
+ $program=$temp;$born=[datetime]::UtcNow.AddMinutes(-1)
+ $script:fakeCore=[pscustomobject]@{ProcessId=991;ExecutablePath=(Join-Path $program 'mihomo.exe');CommandLine=(Join-Path $private 'core.json');CreationDate=$born}
+ function Get-CimInstance {return $script:fakeCore}
+ $coreState=[pscustomobject]@{corePid=991;coreCreated=$born.ToString('o')}
+ Assert ($null -ne (Own-Core $coreState)) 'Own core matches a serialized UTC timestamp'
+ $coreState.coreCreated=$born
+ Assert ($null -ne (Own-Core $coreState)) 'Own core also matches a deserialized DateTime'
+ $coreState.coreCreated=$born.AddSeconds(-1)
+ Assert ($null -eq (Own-Core $coreState)) 'A reused PID with another creation time cannot be stopped'
+ $coreState.coreCreated=$born;$script:fakeCore.ExecutablePath=Join-Path $program 'another.exe'
+ Assert ($null -eq (Own-Core $coreState)) 'Another executable cannot be stopped'
  # Real hosts/state code, disposable files. No system networking commands execute.
  function Clear-DnsClientCache {}
  function Own-Adapter($State){return $null}
@@ -52,6 +64,9 @@ try{
  $state.Requested=$true;$state.State='retrying'
  Assert ((Get-WarpHomeState $temp '' $state).On) 'Retrying remains switchable off'
  Assert ($null -eq (Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`nnormal profile" $state)) 'An independently applied normal profile retains its own controls'
+ [IO.File]::WriteAllText((Join-Path $temp 'GUI-settings.json'),'{"WarpPreferred":false}')
+ $state.Connected=$true;$state.State='connected'
+ Assert ((Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`n# Transport: GeoRouteWARP" $state).State -eq 'ready') 'A fresh portable folder still displays the globally active owned WARP connection'
  function Get-WarpState {return $script:fakeWarpState}
  $script:fakeWarpState=[pscustomobject]@{Connected=$true;RouteAddresses=@('37.221.93.141')}
  $node=[pscustomobject]@{Address='37.221.93.141';Transport='Warp'}

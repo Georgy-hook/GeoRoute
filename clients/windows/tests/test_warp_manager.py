@@ -2,8 +2,11 @@ import base64
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
+import sys
 import tempfile
+import time
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1] / '_service'
@@ -197,6 +200,40 @@ class Lifecycle(unittest.TestCase):
             with self.subTest(value=value[:1]), self.assertRaises(ValueError):
                 w.validate_routes(value)
         self.assertEqual(w.validate_routes(['37.221.93.141', '37.221.93.141']), ['37.221.93.141'])
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows process-handle regression')
+    def test_network_worker_does_not_wait_for_core_inherited_output(self):
+        # Real PowerShell starts a longer-lived child that inherits its output.
+        # The worker result must return before that child closes the handle.
+        child = self.data / 'fixture_child.py'
+        child.write_text('import time; time.sleep(5)', encoding='utf-8')
+        shell = """param($Action,$DataRoot)
+$start=[Diagnostics.ProcessStartInfo]::new()
+$start.FileName='PYTHON_EXE'
+$start.Arguments='"CHILD_FILE"'
+$start.UseShellExecute=$false;$start.CreateNoWindow=$true
+$child=[Diagnostics.Process]::Start($start)
+Write-Output ('GEOROUTE_WARP_RESULT='+(@{ok=$true;childId=$child.Id}|ConvertTo-Json -Compress))
+""".replace('PYTHON_EXE', sys.executable.replace("'", "''")).replace('CHILD_FILE', str(child).replace("'", "''"))
+        (self.data / 'WarpNetwork.ps1').write_text(shell, encoding='utf-8-sig')
+        started = time.monotonic()
+        response = self.manager.run_network('Start')
+        elapsed = time.monotonic() - started
+        # Wait for only this test child before deleting its inherited log files.
+        import ctypes
+        from ctypes import wintypes as t
+        kernel = ctypes.WinDLL('kernel32', use_last_error=True)
+        kernel.OpenProcess.argtypes = [t.DWORD, t.BOOL, t.DWORD]
+        kernel.OpenProcess.restype = t.HANDLE
+        kernel.WaitForSingleObject.argtypes = [t.HANDLE, t.DWORD]
+        kernel.CloseHandle.argtypes = [t.HANDLE]
+        handle = kernel.OpenProcess(0x00100000, False, response['childId'])
+        if handle:
+            try:
+                self.assertEqual(kernel.WaitForSingleObject(handle, 6500), 0)
+            finally:
+                kernel.CloseHandle(handle)
+        self.assertLess(elapsed, 4.5, 'Inherited core output must not hold up the completed worker')
 
 
 class Bootstrap(unittest.TestCase):

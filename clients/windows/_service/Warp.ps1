@@ -12,9 +12,9 @@ function Get-WarpState {
   $service=Get-Service -Name GeoRouteWARP -ErrorAction SilentlyContinue
   if(-not $service){return [pscustomobject]$state}
   $state.Installed=$true
-  $owner=Get-Content -Raw -LiteralPath (Join-Path $paths.Public 'owner.json') -Encoding UTF8|ConvertFrom-Json
+  $owner=Get-Content -Raw -LiteralPath (Join-Path $paths.Public 'owner.json') -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
   $state.CanControl=([string]$owner.ownerSid -ceq [Security.Principal.WindowsIdentity]::GetCurrent().User.Value)
-  $value=Get-Content -Raw -LiteralPath (Join-Path $paths.Public 'status.json') -Encoding UTF8|ConvertFrom-Json
+  $value=Get-Content -Raw -LiteralPath (Join-Path $paths.Public 'status.json') -Encoding UTF8 -ErrorAction Stop|ConvertFrom-Json
   foreach($key in @('Connected','Requested','AutoStart','State','Error','ProfileName','ProfileId','Addresses','RouteAddresses','RoutesCommandId','Country','InterfaceIndex','LocalAddress','CommandId')){if($value.PSObject.Properties[$key]){$state[$key]=$value.$key}}
   if($service.Status -ne 'Running'){$state.Connected=$false;$state.State='controller-stopped'}
  }catch{$state.Connected=$false;$state.State='unknown';$state.Error='status_unavailable'}

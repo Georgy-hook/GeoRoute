@@ -542,7 +542,7 @@ function Complete-TaskAction {
 function Start-TaskAction([string]$Mode, [string]$ProfileId = '', [hashtable]$ImportData = $null) {
     if ($script:taskBusy -or $SmokeTest -or $RenderPreview) { return }
     if($Mode -eq 'Restore' -and (Get-WarpState).Requested){Start-TaskWarpAction Disconnect;return}
-    if($Mode -eq 'Apply' -and (Test-WarpPreferred $script:taskRoot) -and (Get-WarpState).Installed){Start-TaskWarpAction Connect $ProfileId;return}
+    if($Mode -eq 'Apply'){$warpState=Get-WarpState;if($warpState.Installed -and ((Test-WarpPreferred $script:taskRoot) -or $warpState.Requested)){Start-TaskWarpAction Connect $ProfileId;return}}
     if (-not $ProfileId) { $ProfileId = if ($script:taskActiveProfileId) { $script:taskActiveProfileId } else { $script:taskProfiles[0].Id } }
     if($Mode -eq 'Apply'){$availability=Get-GeoProfileAvailability $script:taskRoot $ProfileId $script:geoReport;if(-not $availability.Ready){$script:taskUi.GeoEditorStatus.Text=$availability.Reason;Add-TaskLog ('Подключение заблокировано: '+$availability.Reason);return}}
     $taskProfile = @($script:taskProfiles | Where-Object { $_.Id -eq $ProfileId } | Select-Object -First 1)

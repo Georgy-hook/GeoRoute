@@ -74,7 +74,8 @@ function Initialize-TaskWarp {
  $script:taskUi.WarpLogsButton.Add_Click({$paths=Get-WarpPaths;if(Test-Path -LiteralPath $paths.Public){Start-Process -FilePath (Join-Path $env:SystemRoot 'explorer.exe') -ArgumentList ('"'+$paths.Public+'"')|Out-Null}})
 }
 function Get-WarpHomeState([string]$Root,[string]$HostsText,$State=$null){
- if(-not(Test-WarpPreferred $Root)){return $null}
+ $preferred=Test-WarpPreferred $Root
+ if(-not $preferred -and -not $HostsText.Contains('# Transport: GeoRouteWARP')){return $null}
  if(-not $State){$State=Get-WarpState}
  if(-not $State.Installed -or -not $State.CanControl){return $null}
  if($HostsText -match '(?m)^# BEGIN CHATGPT-US-WINDOWS' -and -not $HostsText.Contains('# Transport: GeoRouteWARP')){return $null}

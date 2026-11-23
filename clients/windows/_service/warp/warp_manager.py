@@ -232,15 +232,28 @@ class Manager:
         shell = Path(os.environ.get('SystemRoot', r'C:\Windows')) / 'System32/WindowsPowerShell/v1.0/powershell.exe'
         args = [str(shell), '-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass',
                 '-File', str(self.program / 'WarpNetwork.ps1'), '-Action', action, '-DataRoot', str(self.data)]
-        value = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                               timeout=45, creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+        # The long-lived core inherits standard handles. Files avoid waiting for
+        # an inherited pipe to close after PowerShell has already finished.
+        output_path = self.private / ('worker-' + action.lower() + '.log')
+        error_path = self.private / ('worker-' + action.lower() + '-error.log')
+        with output_path.open('wb') as output, error_path.open('wb') as error:
+            process = subprocess.Popen(args, stdin=subprocess.DEVNULL, stdout=output, stderr=error,
+                                       creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0))
+            try:
+                return_code = process.wait(timeout=45)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
+                raise RuntimeError('network_worker_timeout') from None
         # Never echo stderr or command lines: the only response accepted is bounded JSON.
-        text = value.stdout.decode('utf-8-sig', errors='replace').strip()
+        with output_path.open('rb') as stream:
+            stream.seek(max(0, output_path.stat().st_size - 131072))
+            text = stream.read(131072).decode('utf-8-sig', errors='replace').strip()
         lines = [line for line in text.splitlines() if line.startswith('GEOROUTE_WARP_RESULT=')]
         if not lines:
             raise RuntimeError('Network worker did not return a structured result')
         response = json.loads(lines[-1].split('=', 1)[1])
-        if value.returncode or not response.get('ok'):
+        if return_code or not response.get('ok'):
             raise RuntimeError(response.get('errorCode', 'network_worker_failed'))
         return response
 

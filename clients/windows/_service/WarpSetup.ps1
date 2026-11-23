@@ -67,8 +67,17 @@ function Wait-WarpExit {
 }
 function Run-WarpTool([string]$Exe,[string[]]$Arguments,[int]$Timeout=90){
  $out=Join-Path $private 'bootstrap-output.log';$err=Join-Path $private 'bootstrap-error.log'
- $process=Start-Process -FilePath $Exe -ArgumentList $Arguments -WorkingDirectory $program -WindowStyle Hidden -PassThru -RedirectStandardOutput $out -RedirectStandardError $err
- try{if(-not $process.WaitForExit($Timeout*1000)){$process.Kill();throw 'WARP bootstrap timed out.'};if($process.ExitCode -ne 0){throw 'WARP bootstrap failed. Protected diagnostic logs were retained.'}}finally{$process.Dispose()}
+ $start=[Diagnostics.ProcessStartInfo]::new();$start.FileName=$Exe;$start.Arguments=$Arguments -join ' ';$start.WorkingDirectory=$program
+ $start.UseShellExecute=$false;$start.CreateNoWindow=$true;$start.RedirectStandardOutput=$true;$start.RedirectStandardError=$true
+ $process=[Diagnostics.Process]::new();$process.StartInfo=$start
+ try{
+  [void]$process.Start()
+  $stdout=$process.StandardOutput.ReadToEndAsync();$stderr=$process.StandardError.ReadToEndAsync()
+  if(-not $process.WaitForExit($Timeout*1000)){$process.Kill();[void]$process.WaitForExit(3000);throw 'WARP bootstrap timed out.'}
+  [IO.File]::WriteAllText($out,$stdout.GetAwaiter().GetResult(),[Text.UTF8Encoding]::new($false))
+  [IO.File]::WriteAllText($err,$stderr.GetAwaiter().GetResult(),[Text.UTF8Encoding]::new($false))
+  if($process.ExitCode -ne 0){throw 'WARP bootstrap failed. Protected diagnostic logs were retained.'}
+ }finally{$process.Dispose()}
 }
 function Save-WarpJson([string]$Path,$Value){[IO.File]::WriteAllText($Path,($Value|ConvertTo-Json -Depth 20),[Text.UTF8Encoding]::new($false))}
 try{

@@ -56,7 +56,7 @@ function Own-Adapter($State){
 function Own-Core($State){
  if(-not $State -or -not $State.corePid){return $null}
  $process=Get-CimInstance Win32_Process -Filter ('ProcessId='+[int]$State.corePid)
- if($process -and $process.ExecutablePath -ieq (Join-Path $program 'mihomo.exe') -and $process.CommandLine.Contains((Join-Path $private 'core.json')) -and ([datetime]$process.CreationDate).ToUniversalTime().ToString('o') -ceq [string]$State.coreCreated){return $process};return $null
+ if($process -and $process.ExecutablePath -ieq (Join-Path $program 'mihomo.exe') -and $process.CommandLine.Contains((Join-Path $private 'core.json')) -and ([datetime]$process.CreationDate).ToUniversalTime().Ticks -eq ([datetime]$State.coreCreated).ToUniversalTime().Ticks){return $process};return $null
 }
 function Stop-Network {
  $state=Read-State
@@ -86,7 +86,7 @@ function Stop-Network {
   }
  }
  $core=Own-Core $state
- if($core){try{Stop-Process -Id $core.ProcessId -ErrorAction Stop}catch{$errors.Add('core_cleanup_failed')}}
+ if($core){try{Stop-Process -Id $core.ProcessId -Force -ErrorAction Stop}catch{$errors.Add('core_cleanup_failed')}}
  if($errors.Count){throw ($errors -join '_')}
  if(-not $retainState -and (Test-Path -LiteralPath $statePath)){Remove-Item -LiteralPath $statePath -Force}
  return @{ok=$true}
@@ -127,7 +127,12 @@ function Start-Network {
  Save-Json (Join-Path $private 'core.json') $coreConfig
  $defaults=Defaults
  $dns=@(Get-DnsClientServerAddress|Sort-Object InterfaceIndex,AddressFamily|Select-Object InterfaceIndex,AddressFamily,ServerAddresses)
- $core=Start-Process -FilePath (Join-Path $program 'mihomo.exe') -ArgumentList @('-d',('"'+$program+'"'),'-f',('"'+(Join-Path $private 'core.json')+'"')) -WorkingDirectory $program -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $DataRoot 'public\core.log') -RedirectStandardError (Join-Path $DataRoot 'public\core-error.log')
+ $start=[Diagnostics.ProcessStartInfo]::new();$start.FileName=Join-Path $program 'mihomo.exe'
+ $start.Arguments='-d "'+$program+'" -f "'+(Join-Path $private 'core.json')+'"'
+ $start.WorkingDirectory=$program;$start.UseShellExecute=$false;$start.CreateNoWindow=$true
+ # Inherit the controller's protected file handles, without PowerShell's async
+ # redirection callbacks keeping this short-lived worker alive with the core.
+ $core=[Diagnostics.Process]::new();$core.StartInfo=$start;[void]$core.Start()
  $coreInfo=Get-CimInstance Win32_Process -Filter ('ProcessId='+$core.Id)
  $state=[ordered]@{corePid=$core.Id;coreCreated=([datetime]$coreInfo.CreationDate).ToUniversalTime().ToString('o');adapterGuid='';addresses=$addresses;blockHash='';baseBytes=''}
  Save-Json $statePath $state
