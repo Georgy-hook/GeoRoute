@@ -23,6 +23,9 @@ if($LASTEXITCODE -ne 0){throw 'DNS monitor checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')
 & (Join-Path $PSScriptRoot 'Test-Home.ps1')
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_warp_manager.py')
+if($LASTEXITCODE -ne 0){throw 'WARP controller checks failed.'}
+& (Join-Path $PSScriptRoot 'Test-Warp.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoMonitor.ps1')
 & (Join-Path $PSScriptRoot 'Test-MonitorSelection.ps1')
 & $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitorImportRace.ps1')

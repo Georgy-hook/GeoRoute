@@ -1,5 +1,6 @@
 ﻿function Get-GeoHomeState([string]$Root,$Report,[string]$HostsPath=(Join-Path $env:SystemRoot 'System32\drivers\etc\hosts')) {
     $text=Get-Content -LiteralPath $HostsPath -Raw -ErrorAction Stop
+    if(Get-Command Get-WarpHomeState -ErrorAction SilentlyContinue){$warpHome=Get-WarpHomeState $Root $text;if($warpHome){return $warpHome}}
     $block=[regex]::Match($text,'(?ms)^# BEGIN CHATGPT-US-WINDOWS\r?\n(.*?)^# END CHATGPT-US-WINDOWS')
     if(-not $block.Success){
         if($text -match '# (BEGIN|END) CHATGPT-US-WINDOWS'){return [pscustomobject]@{On=$true;State='error';Title='Настройка повреждена';Detail='Откройте помощь для восстановления hosts.'}}
@@ -45,12 +46,14 @@ function Update-GeoHome([switch]$Force) {
         if(-not $id){$id=Get-GeoCombinedId $script:taskRoot}
         $profile=@($script:taskProfiles|Where-Object Id -eq $id|Select-Object -First 1)
         $availability=Get-GeoProfileAvailability $script:taskRoot $id $script:geoReport
+        $warpHome=$script:homeState.PSObject.Properties['Transport'] -and $script:homeState.Transport -eq 'Warp'
         $script:taskUi.HomeRoute.Text=if($profile.Count){'Выбранный маршрут: '+$profile[0].Name}else{'Выберите маршрут в разделе «Серверы»'}
+        if($warpHome){$script:taskUi.HomeRoute.Text='Маршрут WARP: '+$script:homeState.ProfileName}
         $displayTitle=if($script:dnsCurrentState -and $script:dnsCurrentState.Active -and -not $script:homeState.On){'Основной профиль выключен'}else{$script:homeState.Title}
         $script:taskUi.HomeTitle.Text=$displayTitle
         $script:taskUi.HomeDetail.Text=$script:homeState.Detail
-        if(-not $script:homeState.On -and -not $availability.Ready){$script:taskUi.HomeDetail.Text='Для выбранного маршрута пока нет проверенных серверов. Выберите доступный маршрут в разделе «Серверы».'}
-        $script:taskUi.HomeToggle.IsEnabled=(-not $script:taskBusy -and ($script:homeState.On -or $availability.Ready))
+        if(-not $warpHome -and -not $script:homeState.On -and -not $availability.Ready){$script:taskUi.HomeDetail.Text='Для выбранного маршрута пока нет проверенных серверов. Выберите доступный маршрут в разделе «Серверы».'}
+        $script:taskUi.HomeToggle.IsEnabled=(-not $script:taskBusy -and ($warpHome -or $script:homeState.On -or $availability.Ready))
         $script:taskUi.HomeToggleCaption.Text=if($script:taskBusy){'Подождите…'}elseif($script:homeState.On){'Выключить'}else{'Включить'}
         $color=switch($script:homeState.State){ready{'#91F2D2'}checking{'#A4D5F2'}off{'#9CAEC4'}default{'#F6C56B'}}
         $script:taskUi.HomeTitle.Foreground=Get-TaskBrush $color
@@ -61,6 +64,7 @@ function Update-GeoHome([switch]$Force) {
 function Invoke-GeoHomeToggle {
     if($script:taskBusy){return}
     $state=Get-GeoHomeState $script:taskRoot $script:geoReport
+    if($state.PSObject.Properties['Transport'] -and $state.Transport -eq 'Warp'){Start-TaskWarpAction $(if($state.On){'Disconnect'}else{'Connect'});return}
     if($state.On){Start-TaskAction 'Restore'}else{
         $id=$script:taskSelectedProfileId
         if(-not $id){$id=Get-GeoCombinedId $script:taskRoot}

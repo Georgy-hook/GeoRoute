@@ -61,6 +61,7 @@ $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'DnsMonitorUI.ps1')
 . (Join-Path $PSScriptRoot 'Tray.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
+. (Join-Path $PSScriptRoot 'WarpUI.ps1')
 
 function Get-TaskBrush([string]$Color) {
     return [Windows.Media.BrushConverter]::new().ConvertFromString($Color)
@@ -420,6 +421,7 @@ function Set-TaskBusy([bool]$Value) {
     $taskAnyBusy = $Value -or $script:taskHealthRun -or $script:taskCleanupRun
     $script:taskUi.ActivityBar.IsIndeterminate = ($taskAnyBusy -and -not $script:taskReducedMotion)
     $script:taskUi.ActivityBar.Value = if ($taskAnyBusy) { 40 } else { 0 }
+    if(Get-Command Update-TaskWarp -ErrorAction SilentlyContinue){Update-TaskWarp -Force}
 }
 
 function Start-TaskHeroMotion {
@@ -538,6 +540,8 @@ function Complete-TaskAction {
 
 function Start-TaskAction([string]$Mode, [string]$ProfileId = '', [hashtable]$ImportData = $null) {
     if ($script:taskBusy -or $SmokeTest -or $RenderPreview) { return }
+    if($Mode -eq 'Restore' -and (Get-WarpState).Requested){Start-TaskWarpAction Disconnect;return}
+    if($Mode -eq 'Apply' -and (Test-WarpPreferred $script:taskRoot) -and (Get-WarpState).Installed){Start-TaskWarpAction Connect $ProfileId;return}
     if (-not $ProfileId) { $ProfileId = if ($script:taskActiveProfileId) { $script:taskActiveProfileId } else { $script:taskProfiles[0].Id } }
     if($Mode -eq 'Apply'){$availability=Get-GeoProfileAvailability $script:taskRoot $ProfileId $script:geoReport;if(-not $availability.Ready){$script:taskUi.GeoEditorStatus.Text=$availability.Reason;Add-TaskLog ('Подключение заблокировано: '+$availability.Reason);return}}
     $taskProfile = @($script:taskProfiles | Where-Object { $_.Id -eq $ProfileId } | Select-Object -First 1)
@@ -930,6 +934,7 @@ public static class NextDnsWindowChrome {
     Load-TaskProfiles -Force
     Initialize-GeoMonitor
     Initialize-DnsMonitor
+    Initialize-TaskWarp
     Load-TaskHistory
     $initialGeoSettings=Read-GeoSettings $script:taskRoot
     if($initialGeoSettings.PSObject.Properties['preferredProfileId'] -and @($script:taskProfiles|Where-Object Id -eq $initialGeoSettings.preferredProfileId).Count){$script:taskSelectedProfileId=$initialGeoSettings.preferredProfileId}
@@ -1078,6 +1083,7 @@ public static class NextDnsWindowChrome {
         Poll-DnsMonitor
         Poll-TaskHealth
         Poll-TaskConnection
+        Poll-TaskWarp
         Update-GeoHome
         $taskCurrentMotion = (($script:taskUi.ReducedMotion.IsChecked -eq $true) -or -not [Windows.SystemParameters]::ClientAreaAnimation)
         if ($taskCurrentMotion -ne $script:taskReducedMotion) { Set-TaskMotion }

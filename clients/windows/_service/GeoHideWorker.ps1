@@ -4,6 +4,7 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'GeoHide.ps1')
 . (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
 . (Join-Path $PSScriptRoot 'GeoProbe.ps1')
+if(Test-Path (Join-Path $PSScriptRoot 'Warp.ps1')){. (Join-Path $PSScriptRoot 'Warp.ps1')}
 $settings=Read-GeoSettings $PSScriptRoot
 $catalogPath=Join-Path $PSScriptRoot 'geohide-servers.json'
 $catalog=Read-GeoCatalog $PSScriptRoot
@@ -27,6 +28,7 @@ $adapter=Get-NetIPConfiguration|Where-Object{$_.IPv4DefaultGateway -and $_.Inter
 if(-not $adapter){throw 'Не найден физический интерфейс с IPv4-шлюзом.'}
 $ifIndex=[int]$adapter.InterfaceIndex
 $localAddress=[string]$adapter.IPv4Address[0].IPAddress
+$physicalIndex=$ifIndex;$physicalAddress=$localAddress
 $preflight=[Net.Sockets.Socket]::new([Net.Sockets.AddressFamily]::InterNetwork,[Net.Sockets.SocketType]::Stream,[Net.Sockets.ProtocolType]::Tcp)
 try{
     $preflight.SetSocketOption([Net.Sockets.SocketOptionLevel]::IP,[Net.Sockets.SocketOptionName]31,[int][Net.IPAddress]::HostToNetworkOrder([int]$ifIndex))
@@ -34,11 +36,17 @@ try{
 }finally{$preflight.Dispose()}
 
 $servers=@(@($catalog.servers)+@($settings.manualServers)|Where-Object {(Test-GeoAddress $_.address) -and -not (Test-GeoClosedNode $_.region $_.address)}|Sort-Object region,address -Unique)
+$warp=$null
+if(Get-Command Sync-WarpCatalogue -ErrorAction SilentlyContinue){try{$warp=Sync-WarpCatalogue @($servers|ForEach-Object address)}catch{$errors+='WARP: '+$_.Exception.Message}}
+$nativeAsset=Probe-GeoAsset
 $report=New-GeoPendingReport $servers $RunId
 $report.interface=$adapter.InterfaceAlias;$report.sources=$catalog.sources;$report.sourceErrors=$errors
 $report|Add-Member NoteProperty networkNote 'Проверка привязана к IPv4-интерфейсу. Включённый VPN/TUN всё равно может влиять на результат. После смены сети повторите проверку.'
 Write-GeoJson $ResultPath $report
 foreach($row in $report.rows){
+    $ifIndex=$physicalIndex;$localAddress=$physicalAddress
+    if($warp -and $warp.Connected -and $row.Address -in @($warp.RouteAddresses)){$ifIndex=[int]$warp.InterfaceIndex;$localAddress=[string]$warp.LocalAddress}
+    $row|Add-Member NoteProperty Transport $(if($ifIndex -eq $physicalIndex){'Physical'}else{'Warp'}) -Force
     $row.CheckState='Checking';$row.State='Проверяю ChatGPT, вложения и Gemini'
     $report.phase=$row.Region+' '+$row.Address
     Write-GeoJson $ResultPath $report
@@ -47,7 +55,7 @@ foreach($row in $report.rows){
     # Probe Gemini independently: a ChatGPT failure must not suppress Gemini diagnostics.
     $gemini=Probe-Geo $row.Address 'gemini.google.com' '/app'
     $api=if($gemini.tls){Probe-Geo $row.Address 'geminiweb-pa.clients6.google.com' '/'}else{[pscustomobject]@{tls=$false;http=$null;error='Gemini HTTPS недоступен'}}
-    $asset=if($gemini.tls){Probe-Geo $row.Address 'gemini.gstatic.com' '/'}else{[pscustomobject]@{tls=$false;http=$null;error='Gemini HTTPS недоступен'}}
+    $asset=$nativeAsset
     $assetReady=$asset.tls -and $asset.http -in @(200,204,400,401,404,405)
     $challenge=$gemini.location -match '^https://www\.google\.com/sorry/'
     $verification=if($gemini.tls){Probe-Geo $row.Address 'www.google.com' '/sorry/'}else{$null}
@@ -74,7 +82,6 @@ foreach($row in $report.rows){
                 $row.GeminiRouteMs=$shared.ms;$row.GeminiCountry=$shared.country
                 if($row.GeminiSharedHTTP2){
                     if(-not $api.tls){$api=Probe-Geo $row.Address 'geminiweb-pa.clients6.google.com' '/';$row.GeminiAPIHTTP=$api.http}
-                    if(-not $asset.tls){$asset=Probe-Geo $row.Address 'gemini.gstatic.com' '/';$assetReady=$asset.tls -and $asset.http -in @(200,204,400,401,404,405);$row.GeminiAssetTLS=[bool]$asset.tls;$row.GeminiAssetHTTP=$asset.http}
                     $row.GeminiReady=[bool]($api.tls -and $api.http -in @(200,204,400,401,404,405) -and $assetReady)
                     $row.GeminiChallenge=$false;$row.GeminiHTTP=$shared.http
                 }

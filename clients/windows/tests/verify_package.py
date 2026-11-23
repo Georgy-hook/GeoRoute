@@ -20,6 +20,10 @@ def check(path):
                     'GeoRoute/_service/GeoProbe.ps1',
                     'GeoRoute/_service/ProfileMigration.ps1']
         required += ['GeoRoute/_service/gemini_probe.py', 'GeoRoute/_service/vendor/hashes.json']
+        required += ['GeoRoute/_service/' + name for name in (
+            'Warp.ps1', 'WarpUI.ps1', 'WarpCommand.ps1', 'WarpSetup.ps1', 'WarpNetwork.ps1',
+            'warp-runtime.json', 'warp/warp_manager.py', 'warp/warp_provision.py', 'warp/warp_windows_service.py',
+            'warp/licenses/LICENSE-Mihomo', 'warp/licenses/LICENSE-Wintun', 'warp/licenses/LICENSE-WARPSCOUT')]
         required += ['GeoRoute/_service/bridge/selective_dns.py', 'GeoRoute/_service/DnsSites.xaml',
                      'GeoRoute/_service/bridge/dns_monitor.py', 'GeoRoute/_service/DnsMonitorUI.ps1',
                      'GeoRoute/_service/DnsSitesUI.ps1', 'GeoRoute/_service/SelectiveDnsSetup.ps1',
@@ -39,6 +43,7 @@ def check(path):
         assert not any(name.endswith(('/profiles/gemini-eu.hosts', '/profiles/gemini-us.hosts')) for name in names)
         assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
         assert 'GeoRoute/GeoRoute.exe' not in names
+        assert not any(name.lower().endswith(('/mihomo.exe', '/warpscout.exe', '/wintun.dll')) for name in names)
         for name in names:
             parts = PurePosixPath(name).parts
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name

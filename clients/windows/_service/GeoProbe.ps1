@@ -25,3 +25,12 @@
     finally{if($stream){$stream.Dispose()};if($socket){$socket.Dispose()};$result.ms=$watch.ElapsedMilliseconds}
     return [pscustomobject]$result
 }
+
+# Assets remain on Google's normal route; never use a GeoHide IP for this SNI.
+function Probe-GeoAsset {
+ try{
+  $address=@([Net.Dns]::GetHostAddresses('gemini.gstatic.com')|Where-Object AddressFamily -eq 'InterNetwork'|Select-Object -First 1)
+  if(-not $address.Count){throw 'Google asset DNS unavailable'}
+  return (Probe-Geo $address[0].IPAddressToString 'gemini.gstatic.com' '/')
+ }catch{return [pscustomobject]@{tls=$false;http=$null;error='Google asset HTTPS unavailable'}}
+}

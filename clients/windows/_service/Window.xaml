@@ -756,6 +756,18 @@
           </Border>
           <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
             <StackPanel>
+              <TextBlock Text="WARP для GeoHide" FontSize="18" FontWeight="SemiBold"/>
+              <TextBlock Text="Помогает открыть GeoHide через туннель Cloudflare. Через него идут только адреса выбранных узлов GeoHide; общий маршрут интернета не меняется." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,9,0,14"/>
+              <TextBlock x:Name="WarpStatus" FontSize="16" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite"/>
+              <TextBlock x:Name="WarpDetail" TextWrapping="Wrap" Foreground="#9CAEC4" Margin="0,8,0,14"/>
+              <CheckBox x:Name="WarpAutoConnect" Style="{StaticResource SettingsToggle}" Content="Подключать автоматически при запуске Windows"/>
+              <CheckBox x:Name="WarpPreferred" Style="{StaticResource SettingsToggle}" Content="Использовать WARP для кнопки подключения GeoHide"/>
+              <TextBlock Text="Служба работает без открытого окна. Автоподключение выключено по умолчанию. Мониторинг проверяет HTTPS; полный ответ Gemini зависит также от ограничений Google." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="0,10,0,12"/>
+              <WrapPanel><Button x:Name="WarpInstallButton" Content="Установить компонент…" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/><Button x:Name="WarpPowerButton" Content="Подключить WARP" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/><Button x:Name="WarpLogsButton" Content="Журнал ↗" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/><Button x:Name="WarpRemoveButton" Content="Удалить компонент…" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/></WrapPanel>
+            </StackPanel>
+          </Border>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <StackPanel>
               <TextBlock Text="Автопроверка серверов" FontSize="18" FontWeight="SemiBold"/>
               <TextBlock Text="Как часто проверять подключение" Foreground="#A4B7CE" Margin="0,10,0,8"/>
               <ComboBox x:Name="AutoCheckInterval" DisplayMemberPath="Label" SelectedValuePath="Minutes" MinHeight="44" MinWidth="250" MaxWidth="340" HorizontalAlignment="Left" FontSize="14" Foreground="#EEF4FC" Background="#18283B" BorderBrush="#3D536C" AutomationProperties.Name="Интервал автоматической проверки серверов">

@@ -16,7 +16,7 @@ try {
     Assert ($id -eq 'monitor-selected' -and (Get-GeoProfileAvailability $temp $id $report).Ready) 'Fresh successful row creates a usable managed profile'
     $path=Join-Path $temp 'profiles/monitor-selected.hosts'
     $text=[IO.File]::ReadAllText($path)
-    foreach($domain in @('chatgpt.com','files.oaiusercontent.com','gemini.google.com','gemini.gstatic.com','www.google.com')){Assert ($text.Contains($node.Address+' '+$domain)) ('Same IP for '+$domain)}
+    foreach($domain in @('chatgpt.com','files.oaiusercontent.com','gemini.google.com','www.google.com')){Assert ($text.Contains($node.Address+' '+$domain)) ('Same IP for '+$domain)}
     $node.Address='31.25.239.132';$node.GeminiVerificationTLS=$false
     Save-GeoMonitorProfile $temp EU $node.Address $report|Out-Null
     Assert (-not [IO.File]::ReadAllText($path).Contains('www.google.com')) 'Unverified Google route is excluded'

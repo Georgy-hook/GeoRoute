@@ -86,5 +86,17 @@
   "geohide-domains.txt",
   "bridge/selective_dns.py",
   "DnsMonitorUI.ps1",
-  "bridge/dns_monitor.py"
+  "bridge/dns_monitor.py",
+  "Warp.ps1",
+  "WarpUI.ps1",
+  "WarpCommand.ps1",
+  "WarpSetup.ps1",
+  "WarpNetwork.ps1",
+  "warp-runtime.json",
+  "warp/warp_manager.py",
+  "warp/warp_provision.py",
+  "warp/warp_windows_service.py",
+  "warp/licenses/LICENSE-Mihomo",
+  "warp/licenses/LICENSE-WARPSCOUT",
+  "warp/licenses/LICENSE-Wintun"
 ]

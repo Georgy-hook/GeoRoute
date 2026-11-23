@@ -9,7 +9,7 @@
       "hostsFile": "profiles/us-eu.hosts",
       "address": null,
       "verifiedAt": null,
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     },
@@ -21,7 +21,7 @@
       "hostsFile": "profiles\\primary.hosts",
       "verifiedAt": null,
       "address": "192.255.159.240",
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     },
@@ -33,7 +33,7 @@
       "hostsFile": "profiles\\alternate.hosts",
       "verifiedAt": null,
       "address": "192.3.233.253",
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     },
@@ -45,7 +45,7 @@
       "hostsFile": "profiles\\eu-primary.hosts",
       "verifiedAt": null,
       "address": "143.20.64.192",
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     },
@@ -57,7 +57,7 @@
       "hostsFile": "profiles\\eu-alternate.hosts",
       "verifiedAt": null,
       "address": "37.221.93.141",
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     },
@@ -70,10 +70,10 @@
       "verifiedAt": null,
       "managedRegion": "RU",
       "address": "159.194.200.33",
-      "domainCount": 47,
+      "domainCount": 46,
       "description": "ChatGPT, Gemini и вложения OpenAI в одном профиле. Маршрут проверки Google добавляется после успешной сетевой проверки.",
       "service": "GeoHide"
     }
   ],
-  "UnifiedGeoHideVersion": 2
+  "UnifiedGeoHideVersion": 3
 }
