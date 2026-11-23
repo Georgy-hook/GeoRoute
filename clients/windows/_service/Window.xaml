@@ -734,7 +734,12 @@
         <StackPanel Margin="0,0,12,20">
           <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="95"/></Grid.ColumnDefinitions>
-              <StackPanel VerticalAlignment="Center"><TextBlock Text="GeoRoute под вас" FontSize="24" FontWeight="SemiBold"/><TextBlock Text="Запуск, движение интерфейса и дополнительные возможности." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="13" Margin="0,9,16,0"/></StackPanel>
+              <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="GeoRoute под вас" FontSize="24" FontWeight="SemiBold"/>
+                <TextBlock Text="Запуск, движение интерфейса и дополнительные возможности." TextWrapping="Wrap" Foreground="#A4B7CE" FontSize="13" Margin="0,9,16,0"/>
+                <TextBlock x:Name="AppVersionText" Text="Версия не указана" Foreground="#91F2D2" FontSize="15" FontWeight="SemiBold" Margin="0,16,0,0"/>
+                <TextBlock x:Name="AppBuildText" Text="Данные сборки недоступны" Foreground="#A4B7CE" FontSize="12" TextWrapping="Wrap" Margin="0,5,16,0"/>
+              </StackPanel>
               <Image x:Name="SettingsHeaderArt" Grid.Column="1" Width="82" Height="82" IsHitTestVisible="False"/>
             </Grid>
           </Border>

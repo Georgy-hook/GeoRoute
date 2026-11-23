@@ -23,6 +23,17 @@ try {
   [IO.Directory]::CreateDirectory((Split-Path $target -Parent))|Out-Null
   Copy-Item -LiteralPath $path -Destination $target
  }
+ $revision=$null
+ $modified=$false
+ if(Get-Command git -ErrorAction SilentlyContinue){
+  $head=@(& git -C $clientRoot rev-parse HEAD 2>$null)
+  if($LASTEXITCODE -eq 0 -and $head.Count -eq 1 -and $head[0] -match '^[a-f0-9]{40}$'){
+   $revision=$head[0]
+   $modified=[bool]@(& git -C $clientRoot status --porcelain --untracked-files=no -- .)
+  }
+ }
+ $versionInfo=[ordered]@{version=$Version;revision=$revision;builtAtUtc=[DateTimeOffset]::UtcNow.ToString('o');modified=$modified}
+ [IO.File]::WriteAllText((Join-Path $service 'app-version.json'),($versionInfo|ConvertTo-Json),[Text.UTF8Encoding]::new($false))
  foreach($name in @('Начать здесь.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
  Copy-Item -LiteralPath (Join-Path $clientRoot 'GeoRoute.cmd') -Destination $package
  & $PythonExe -I (Join-Path $clientRoot 'tools\prepare_runtime.py') --destination (Join-Path $service 'bridge\python')

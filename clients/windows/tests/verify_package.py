@@ -25,6 +25,12 @@ def check(path):
                      'GeoRoute/_service/DnsSitesUI.ps1', 'GeoRoute/_service/SelectiveDnsSetup.ps1',
                      'GeoRoute/_service/dns-providers.json', 'GeoRoute/_service/geohide-domains.txt']
         assert all(name in names for name in required)
+        assert 'GeoRoute/_service/AppVersion.ps1' in names
+        version = json.loads(archive.read('GeoRoute/_service/app-version.json'))
+        assert re.fullmatch(r'\d+\.\d+\.\d+', version['version'])
+        assert version['revision'] is None or re.fullmatch(r'[a-f0-9]{40}', version['revision'])
+        assert isinstance(version['modified'], bool)
+        assert version['builtAtUtc']
         dependencies = json.loads(archive.read('GeoRoute/_service/vendor/hashes.json'))
         for name, digest in dependencies.items():
             assert hashlib.sha256(archive.read('GeoRoute/_service/vendor/' + name)).hexdigest() == digest

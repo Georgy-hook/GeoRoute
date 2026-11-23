@@ -20,6 +20,7 @@ if(-not('GeoRouteDpi' -as [type])){
 $script:taskRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 . (Join-Path $script:taskRoot 'ProfileDefaults.ps1')
 . (Join-Path $script:taskRoot 'AppInstance.ps1')
+. (Join-Path $script:taskRoot 'AppVersion.ps1')
 $script:taskInstance=$null
 $script:taskActivationEvent=$null
 if(-not $SmokeTest -and -not $RenderPreview){
@@ -924,6 +925,7 @@ public static class NextDnsWindowChrome {
     }
     $script:taskUi.ReducedMotion.IsChecked = $script:taskReducedMotion
     $script:taskReducedMotion = ($script:taskReducedMotion -or -not [Windows.SystemParameters]::ClientAreaAnimation)
+    Initialize-GeoRouteVersion $script:taskRoot $script:taskUi
     Initialize-GeoMonitoringSettings
     Load-TaskProfiles -Force
     Initialize-GeoMonitor
@@ -991,7 +993,7 @@ public static class NextDnsWindowChrome {
             Write-Output ('Import preview saved: ' + $taskImportPreviewPath)
         }
         if($RenderPreview -and $DnsSnapshotPath){$script:dnsMonitorReport=Get-Content -LiteralPath $DnsSnapshotPath -Raw -Encoding UTF8|ConvertFrom-Json;Update-DnsMonitorRows}
-        foreach($checkPage in @('Journal','Settings','Dns')){Set-TaskPage $checkPage;$script:taskWindow.Content.UpdateLayout();if($RenderPreview -and $checkPage -eq 'Dns'){Export-TaskPreview ($taskServerPreviewPath.Replace('-servers.png','-dns-monitor.png'))}}
+        foreach($checkPage in @('Journal','Settings','Dns')){Set-TaskPage $checkPage;$script:taskWindow.Content.UpdateLayout();if($RenderPreview -and $checkPage -eq 'Dns'){Export-TaskPreview ($taskServerPreviewPath.Replace('-servers.png','-dns-monitor.png'))};if($RenderPreview -and $checkPage -eq 'Settings'){Export-TaskPreview ($taskServerPreviewPath.Replace('-servers.png','-settings.png'))}}
         $help=New-TaskProfileHelp $script:taskWindow
         $help.Content.Measure([Windows.Size]::new(630,690))
         $help.Content.Arrange([Windows.Rect]::new(0,0,630,690))

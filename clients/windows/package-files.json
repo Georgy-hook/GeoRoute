@@ -1,5 +1,7 @@
 [
   "AppInstance.ps1",
+  "AppVersion.ps1",
+  "app-version.json",
   "InstallerActions.ps1",
   "ProfileDefaults.ps1",
   "ProfileMigration.ps1",

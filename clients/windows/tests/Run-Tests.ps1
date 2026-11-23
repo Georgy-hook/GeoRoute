@@ -4,6 +4,7 @@ param([string]$PythonExe='python.exe')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+& (Join-Path $PSScriptRoot 'Test-AppVersion.ps1')
 & (Join-Path $PSScriptRoot 'Test-AppInstance.ps1')
 & (Join-Path $PSScriptRoot 'Test-StartupMigration.ps1')
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_bridge_protocol.py')
