@@ -54,6 +54,7 @@ function Update-GeoHome([switch]$Force) {
         $script:taskUi.HomeDetail.Text=$script:homeState.Detail
         if(-not $warpHome -and -not $script:homeState.On -and -not $availability.Ready){$script:taskUi.HomeDetail.Text='Для выбранного маршрута пока нет проверенных серверов. Выберите доступный маршрут в разделе «Серверы».'}
         $script:taskUi.HomeToggle.IsEnabled=(-not $script:taskBusy -and ($warpHome -or $script:homeState.On -or $availability.Ready))
+        if($script:taskUi.HomePermissionText){$script:taskUi.HomePermissionText.Text=if($warpHome){'WARP управляется службой. Повторное подтверждение Windows не требуется.'}else{'Для изменения адресов Windows запросит администратора.'}}
         $script:taskUi.HomeToggleCaption.Text=if($script:taskBusy){'Подождите…'}elseif($script:homeState.On){'Выключить'}else{'Включить'}
         $color=switch($script:homeState.State){ready{'#91F2D2'}checking{'#A4D5F2'}off{'#9CAEC4'}default{'#F6C56B'}}
         $script:taskUi.HomeTitle.Foreground=Get-TaskBrush $color

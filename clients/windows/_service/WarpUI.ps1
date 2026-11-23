@@ -17,6 +17,7 @@ function Update-TaskWarp([switch]$Force){
   $script:taskUi.WarpPreferred.IsChecked=Test-WarpPreferred $script:taskRoot
   $idle=-not $script:taskBusy -and -not $script:warpRun
   $script:taskUi.WarpInstallButton.Visibility=if($state.Installed){'Collapsed'}else{'Visible'}
+  foreach($name in @('WarpAutoConnect','WarpPreferred','WarpPowerButton','WarpLogsButton','WarpRemoveButton')){$script:taskUi[$name].Visibility=if($state.Installed){'Visible'}else{'Collapsed'}}
   $script:taskUi.WarpInstallButton.IsEnabled=$idle
   $script:taskUi.WarpPowerButton.IsEnabled=($idle -and $state.Installed -and $state.CanControl)
   $script:taskUi.WarpPowerButton.Content=if($state.Requested -or $state.Connected){'Отключить WARP'}else{'Подключить WARP'}

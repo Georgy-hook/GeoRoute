@@ -32,6 +32,8 @@ def check(path):
         assert 'GeoRoute/_service/AppVersion.ps1' in names
         assert 'GeoRoute/_service/GeoCheckDetails.ps1' in names
         assert 'GeoRoute/_service/GeoCheckDetails.xaml' in names
+        assert 'GeoRoute/_service/QuickStart.ps1' in names
+        assert 'GeoRoute/_service/QuickStart.xaml' in names
         version = json.loads(archive.read('GeoRoute/_service/app-version.json'))
         assert re.fullmatch(r'\d+\.\d+\.\d+', version['version'])
         assert version['revision'] is None or re.fullmatch(r'[a-f0-9]{40}', version['revision'])

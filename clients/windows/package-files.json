@@ -98,5 +98,7 @@
   "warp/warp_windows_service.py",
   "warp/licenses/LICENSE-Mihomo",
   "warp/licenses/LICENSE-WARPSCOUT",
-  "warp/licenses/LICENSE-Wintun"
+  "warp/licenses/LICENSE-Wintun",
+  "QuickStart.ps1",
+  "QuickStart.xaml"
 ]

@@ -62,6 +62,7 @@ $script:taskCleanupRun = $null
 . (Join-Path $PSScriptRoot 'Tray.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideUI.ps1')
 . (Join-Path $PSScriptRoot 'WarpUI.ps1')
+. (Join-Path $PSScriptRoot 'QuickStart.ps1')
 
 function Get-TaskBrush([string]$Color) {
     return [Windows.Media.BrushConverter]::new().ConvertFromString($Color)
@@ -289,7 +290,7 @@ function Set-TaskPage([string]$Page) {
     $pages=@{Home='HomePage';Overview='OverviewPage';Servers='ServersPage';Geo='GeoPage';Dns='DnsMonitorPage';Journal='JournalPage';Settings='SettingsPage'}
     foreach($key in $pages.Keys){$script:taskUi[$pages[$key]].Visibility=if($Page -eq $key){'Visible'}else{'Collapsed'}}
     $titles=@{Home='Подключение';Overview='Помощь';Servers='Серверы';Geo='Мониторинг';Dns='Мониторинг';Journal='Журнал';Settings='Настройки'}
-    $subtitles=@{Home='GeoRoute';Overview='Понятные действия при проблемах с подключением';Servers='Выберите доступный маршрут';Geo='Доступность узлов RU, US и EU';Journal='История действий и результаты проверок';Settings='Запуск, внешний вид и дополнительные возможности'}
+    $subtitles=@{Home='ChatGPT · Gemini · выбранные сайты';Overview='Понятные действия при проблемах с подключением';Servers='Выберите доступный маршрут';Geo='Доступность узлов RU, US и EU';Journal='История действий и результаты проверок';Settings='Запуск, внешний вид и дополнительные возможности'}
     $script:taskUi.PageTitle.Text=$titles[$Page];$script:taskUi.PageSubtitle.Text=$subtitles[$Page]
     if($Page -eq 'Dns'){$script:taskUi.PageSubtitle.Text='Доступность DoH и выбор DNS'}
     $script:taskUi.MonitorTabs.Visibility=if($Page -in @('Geo','Dns')){'Visible'}else{'Collapsed'}
@@ -1014,6 +1015,9 @@ public static class NextDnsWindowChrome {
             Write-Output ('Profile help preview saved: '+$helpPath)
         }
         $help.Close()
+        $quickStart=New-GeoQuickStart $script:taskRoot
+        for($step=0;$step -lt $quickStart.Tag.Steps.Count;$step++){$quickStart.Tag.Index=$step;Update-GeoQuickStart $quickStart;$quickStart.Content.Measure([Windows.Size]::new(660,680));$quickStart.Content.Arrange([Windows.Rect]::new(0,0,660,680));$quickStart.Content.UpdateLayout()}
+        $quickStart.Close()
         $dnsPreview=New-DnsSitesDialog $script:taskWindow
         $dnsPreview.Ui.DnsCurrentStatus.Text='DNS для выбранных сайтов выключен'
         $dnsPreview.Ui.DnsUrl.Text='https://eu.geohide.ru/dns-query'
@@ -1048,6 +1052,9 @@ public static class NextDnsWindowChrome {
     $script:taskUi.ApplyProfileButton.Add_Click({ Start-TaskAction 'Apply' $script:taskSelectedProfileId })
     $script:taskUi.HomeNavButton.Add_Click({Set-TaskPage 'Home'})
     $script:taskUi.HomeToggle.Add_Click({Invoke-GeoHomeToggle})
+    $script:taskUi.HomeServersButton.Add_Click({Set-TaskPage 'Servers'})
+    $script:taskUi.HomeGuideButton.Add_Click({Show-TaskQuickStart})
+    $script:taskUi.OverviewGuideButton.Add_Click({Show-TaskQuickStart})
     $script:taskUi.JournalNavButton.Add_Click({Set-TaskPage 'Journal'})
     $script:taskUi.SettingsNavButton.Add_Click({Set-TaskPage 'Settings'})
     $script:taskUi.OverviewNavButton.Add_Click({ Set-TaskPage 'Overview' })

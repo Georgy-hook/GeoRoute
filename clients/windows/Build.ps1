@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.6.0')
+param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.6.0',[string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -46,7 +46,7 @@ try {
  }
  # Only this clean staging copy was tested; diagnostics are not distribution files.
  foreach($log in @('launcher.log','launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Remove-Item -LiteralPath (Join-Path $service $log) -Force}}
- $output=Join-Path $clientRoot 'dist'
+ $output=if($OutputDirectory){[IO.Path]::GetFullPath($OutputDirectory)}else{Join-Path $clientRoot 'dist'}
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
  [IO.Compression.ZipFile]::CreateFromDirectory($stage,$temporary,[IO.Compression.CompressionLevel]::Optimal,$false)

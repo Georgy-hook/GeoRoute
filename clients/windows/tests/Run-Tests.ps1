@@ -5,6 +5,8 @@ $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
 & (Join-Path $PSScriptRoot 'Test-AppVersion.ps1')
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-QuickStart.ps1')
+if($LASTEXITCODE -ne 0){throw 'Quick start checks failed.'}
 & $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-GeoHistory.ps1')
 if($LASTEXITCODE -ne 0){throw 'Monitor history checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-AppInstance.ps1')
