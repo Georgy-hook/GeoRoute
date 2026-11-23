@@ -45,7 +45,12 @@ def check(path):
         assert not any(name.endswith(('/profiles/gemini-eu.hosts', '/profiles/gemini-us.hosts')) for name in names)
         assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
         assert 'GeoRoute/GeoRoute.exe' not in names
-        assert not any(name.lower().endswith(('/mihomo.exe', '/warpscout.exe', '/wintun.dll')) for name in names)
+        assert not any(name.lower().endswith(('/mihomo.exe', '/warpscout.exe')) for name in names)
+        driver_name = 'GeoRoute/_service/warp/driver/wintun.dll'
+        assert driver_name in names
+        assert [name for name in names if name.lower().endswith('/wintun.dll')] == [driver_name]
+        warp_manifest = json.loads(archive.read('GeoRoute/_service/warp-runtime.json'))
+        assert hashlib.sha256(archive.read(driver_name)).hexdigest() == warp_manifest['wintun']['sha256']
         for name in names:
             parts = PurePosixPath(name).parts
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name

@@ -121,20 +121,22 @@ function Sync-WarpCatalogue([string[]]$Addresses){
  do{$state=Get-WarpState;if($state.RoutesCommandId -ceq $id){return $state};Start-Sleep -Milliseconds 250}while((Get-Date) -lt $until)
  throw 'Обновление маршрутов WARP не завершилось вовремя.'
 }
-function Initialize-WarpRuntime([string]$SourceRoot,[switch]$SkipBootstrap){
+function Get-WarpRuntimeCache {Join-Path $env:LOCALAPPDATA 'GeoRoute\warp-runtime-1.19.34'}
+function Initialize-WarpRuntime([string]$SourceRoot,[switch]$SkipBootstrap,[switch]$DriverOnly){
  Add-Type -AssemblyName System.IO.Compression.FileSystem
  $manifest=Get-Content -Raw -LiteralPath (Join-Path $SourceRoot 'warp-runtime.json') -Encoding UTF8|ConvertFrom-Json
- $cache=Join-Path $env:LOCALAPPDATA 'GeoRoute\warp-runtime-1.19.34'
+ $cache=Get-WarpRuntimeCache
  [IO.Directory]::CreateDirectory($cache)|Out-Null
  if((Get-Item -LiteralPath $cache -Force).Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'Папка загрузок не должна быть ссылкой.'}
  foreach($name in @('mihomo','wintun','warpscout')){
+  if($DriverOnly -and $name -ne 'wintun'){continue}
   if($SkipBootstrap -and $name -eq 'warpscout'){continue}
   $item=$manifest.$name;$target=Join-Path $cache $item.file
   if((Test-Path -LiteralPath $target) -and (Get-FileHash -LiteralPath $target).Hash -ieq $item.sha256){continue}
   # Reuse only an exact-hash, vendor-signed Wintun already present on this computer.
   if($name -eq 'wintun'){
    $found=$false
-   foreach($candidate in @((Join-Path $env:ProgramFiles 'WireGuard\wintun.dll'),(Join-Path $env:ProgramFiles 'Cloudflare\Cloudflare WARP\wintun.dll'),(Join-Path $env:ProgramFiles 'FlyFrogLLC\Happ\core\wintun.dll'))){
+   foreach($candidate in @((Join-Path $SourceRoot 'warp\driver\wintun.dll'),(Join-Path $env:ProgramFiles 'WireGuard\wintun.dll'),(Join-Path $env:ProgramFiles 'Cloudflare\Cloudflare WARP\wintun.dll'),(Join-Path $env:ProgramFiles 'FlyFrogLLC\Happ\core\wintun.dll'))){
     if((Test-Path -LiteralPath $candidate) -and (Get-FileHash -LiteralPath $candidate).Hash -ieq $item.sha256 -and (Get-AuthenticodeSignature -LiteralPath $candidate).Status -eq 'Valid'){Copy-Item -LiteralPath $candidate -Destination $target -Force;$found=$true;break}
    }
    if($found){continue}

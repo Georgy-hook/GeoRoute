@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.6.0',[string]$OutputDirectory)
+param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.6.0',[string]$OutputDirectory,[string]$WarpDriverPath)
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -23,6 +23,17 @@ try {
   [IO.Directory]::CreateDirectory((Split-Path $target -Parent))|Out-Null
   Copy-Item -LiteralPath $path -Destination $target
  }
+ # Include only the unchanged, signed vendor driver, never account data or engines.
+ . (Join-Path $source 'Warp.ps1')
+ if(-not $WarpDriverPath){$runtimeCache=Initialize-WarpRuntime $source -DriverOnly -SkipBootstrap;$WarpDriverPath=Join-Path $runtimeCache 'wintun.dll'}
+ $warpManifest=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $source 'warp-runtime.json')|ConvertFrom-Json
+ if((Get-FileHash -LiteralPath $WarpDriverPath).Hash -ine $warpManifest.wintun.sha256){throw 'Bundled Wintun hash mismatch.'}
+ $driverSignature=Get-AuthenticodeSignature -LiteralPath $WarpDriverPath
+ if($driverSignature.Status -ne 'Valid' -or $driverSignature.SignerCertificate.Subject -notmatch 'CN=WireGuard LLC(?:,|$)'){throw 'Bundled Wintun publisher signature is invalid.'}
+ $driverDirectory=Join-Path $service 'warp\driver';[IO.Directory]::CreateDirectory($driverDirectory)|Out-Null
+ Copy-Item -LiteralPath $WarpDriverPath -Destination (Join-Path $driverDirectory 'wintun.dll')
+ & $shell -NoProfile -NonInteractive -File (Join-Path $clientRoot 'tests\Test-WarpDriver.ps1') -DriverPath (Join-Path $driverDirectory 'wintun.dll')
+ if($LASTEXITCODE -ne 0){throw 'Bundled driver preparation failed.'}
  $revision=$null
  $modified=$false
  if(Get-Command git -ErrorAction SilentlyContinue){
