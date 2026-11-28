@@ -47,12 +47,12 @@ try {
     $path=Join-Path $temp $entry.hostsFile
     $text=[IO.File]::ReadAllText($path)
     $text=[regex]::Replace($text,'(?m)^\S+\s+gemini\.gstatic\.com\s*\r?\n?','')
-    $text=$text.TrimEnd()+"`r`n"+$entry.address+" www.google.com`r`n"
+    $text=$text.TrimEnd()+"`r`n"+$entry.address+" www.google.com`r`n"+$entry.address+" gemini.gstatic.com`r`n"
     Write-GeoMigrationFile $path $text
     Write-GeoMigrationFile (Join-Path $temp 'profiles.json') ($catalog|ConvertTo-Json -Depth 15)
     Update-GeoRouteBundledProfiles $temp
     $updated=[IO.File]::ReadAllText($path)
-    Assert ($updated.Contains($entry.address+' www.google.com') -and $updated.Contains($entry.address+' gemini.gstatic.com')) 'Asset-only migration retains verified Google route and existing IP'
+    Assert ($updated.Contains($entry.address+' www.google.com') -and -not $updated.Contains('gemini.gstatic.com')) 'Asset-only migration retains verified Google route and existing IP'
     Assert ((Get-FileHash $custom).Hash -eq $customHash) 'Asset migration never edits custom profiles'
     $hash=(Get-FileHash $path).Hash
     Update-GeoRouteBundledProfiles $temp

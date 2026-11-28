@@ -42,7 +42,7 @@ function Layout([int]$Width,[int]$Height,[bool]$Expanded=$false,[bool]$Loading=$
   Assert ($body.ActualHeight -le $body.MaxHeight+1) 'Expanded settings must stay inside their scroll viewport'
   Assert ($script:taskUi.GeoDetails.TransformToAncestor($page).Transform([Windows.Point]::new(0,$script:taskUi.GeoDetails.ActualHeight)).Y -le $page.ActualHeight+1) 'Expanded settings clip the page footer'
  }
- $columns=($table.Columns|Measure-Object ActualWidth -Sum).Sum
+ $columns=($table.Columns|Where-Object Visibility -eq Visible|Measure-Object ActualWidth -Sum).Sum
  if($Width -ge 1920){Assert ($columns -le $table.ActualWidth+1 -and $columns -ge $table.ActualWidth-40) ('Wide-screen columns must fit and fill the table: columns='+$columns+'; table='+$table.ActualWidth+'; widths='+(@($table.Columns|ForEach-Object {$_.Header+':'+$_.ActualWidth}) -join ', '))}
  if($ScreenshotDirectory){
   [IO.Directory]::CreateDirectory($ScreenshotDirectory)|Out-Null
@@ -58,7 +58,8 @@ try{
  $table=$script:taskUi.GeoGrid
  $scroll=Find-Visual $table ([Windows.Controls.ScrollViewer])
  $bar=$scroll.Template.FindName('PART_HorizontalScrollBar',$scroll)
- Assert ($bar -and $bar.ActualWidth -gt $table.ActualWidth/2 -and $bar.ActualHeight -le 20) ('Horizontal scrollbar must span the movable columns: bar='+$bar.ActualWidth+'x'+$bar.ActualHeight+'; table='+$table.ActualWidth)
+ Assert ($scroll.ScrollableWidth -le 1) 'Mini view must fit all essential columns without horizontal scrolling'
+ Assert ($table.FrozenColumnCount -eq 2) 'Connection and server columns retain their frozen identity'
  $custom=[Windows.Controls.Primitives.ScrollBar]::new();$custom.Orientation='Horizontal'
  $custom.Style=$window.FindResource([Windows.Controls.Primitives.ScrollBar]);$custom.Maximum=100;$custom.ViewportSize=25
  $custom.Measure([Windows.Size]::new(500,20));$custom.Arrange([Windows.Rect]::new(0,0,500,12));$custom.UpdateLayout()
@@ -70,7 +71,7 @@ try{
  $before=$cell.TransformToAncestor($table).Transform([Windows.Point]::new(0,0)).X
  $scroll.ScrollToHorizontalOffset(9999)
  $table.Dispatcher.Invoke([Action]{},[Windows.Threading.DispatcherPriority]::ApplicationIdle);$table.UpdateLayout()
- Assert ($scroll.HorizontalOffset -gt 0) 'Narrow table must allow access to right-hand columns'
+ Assert ($scroll.HorizontalOffset -eq 0) 'Mini view cannot scroll essential protocol columns off screen'
  $after=$cell.TransformToAncestor($table).Transform([Windows.Point]::new(0,0)).X
  Assert ([Math]::Abs($before-$after) -le 1) 'Server IP must remain fixed while scrolling horizontally'
  $scroll.ScrollToHorizontalOffset(0)
@@ -101,5 +102,5 @@ try{
   [pscustomobject]@{Height=$dns.ActualHeight;Width=$dns.ActualWidth}
  })
  Assert ($sizes[1].Height -gt $sizes[0].Height+500 -and $sizes[1].Width -gt $sizes[0].Width+1000) 'DNS table must grow with the window'
- Write-Output 'Monitor layout passed: small/restored/maximized viewports, star columns, scrollable settings and loading state.'
+ Write-Output 'Monitor layout passed: mini essentials fit without scrolling, full columns restore, maximized viewports grow, settings scroll and loading fits.'
 }finally{$window.Close()}

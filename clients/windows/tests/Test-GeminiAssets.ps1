@@ -17,7 +17,9 @@ function Get-NetIPConfiguration {
   IPv4Address=@([pscustomobject]@{IPAddress='127.0.0.1'})
  }
 }
+function Probe-GeoAsset { Probe-Geo '142.250.0.1' 'gemini.gstatic.com' '/' }
 function Probe-Geo($Address,$HostName,$Path) {
+ if($HostName -eq 'gemini.gstatic.com' -and $Address -ne '142.250.0.1'){throw 'Assets must use the native Google route'}
  $status=if($HostName -eq 'www.google.com'){429}elseif($HostName -in @('files.oaiusercontent.com','gemini.gstatic.com','geminiweb-pa.clients6.google.com')){404}else{200}
  $tls=-not ($HostName -eq 'gemini.gstatic.com' -and -not (Test-Path (Join-Path $PSScriptRoot 'asset-ready')))
  return [pscustomobject]@{tcp=$true;tls=$tls;http=$status;country='NL';ms=12;error='';blocked=$false;location=''}

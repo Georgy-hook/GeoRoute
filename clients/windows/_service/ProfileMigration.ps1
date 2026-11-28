@@ -13,7 +13,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     if(-not(Test-Path -LiteralPath $catalogPath)){return}
     $catalog=Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8|ConvertFrom-Json
     if($catalog.PSObject.Properties['UnifiedGeoHideVersion'] -and $catalog.UnifiedGeoHideVersion -ge 1){
-        if($catalog.UnifiedGeoHideVersion -lt 2){Update-GeoRouteAssetDomain $Root $catalog}
+        if($catalog.UnifiedGeoHideVersion -lt 3){Update-GeoRouteAssetDomain $Root $catalog}
         return
     }
     $settingsPath=Join-Path $Root 'geohide-settings.json'
@@ -53,7 +53,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
         }
         $base=New-GeoServiceHosts $ip GeoHide
         # The monitor adds Google's shared frontend only after a successful probe.
-        $domains=@((($base -split '\r?\n')|Where-Object {$_ -notmatch '^#' -and $_.Trim()}|ForEach-Object {($_ -split '\s+')[1]})+@($records|ForEach-Object Domain)|Where-Object {$_ -ne 'www.google.com'}|Sort-Object -Unique)
+        $domains=@((($base -split '\r?\n')|Where-Object {$_ -notmatch '^#' -and $_.Trim()}|ForEach-Object {($_ -split '\s+')[1]})+@($records|ForEach-Object Domain)|Where-Object {$_ -notin @('www.google.com','gemini.gstatic.com')}|Sort-Object -Unique)
         if($combined){
             $us=$fallback.US;$eu=$fallback.EU
             foreach($pair in @(@('chatgpt.com','us'),@('files.oaiusercontent.com','eu'))){
@@ -77,7 +77,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     }
     $removed=@('gemini-us','gemini-eu','25-10-12-00-08-1c6816ce')
     $catalog.Profiles=@($catalog.Profiles|Where-Object {$_.id -notin $removed})
-    $catalog|Add-Member NoteProperty UnifiedGeoHideVersion 2 -Force
+    $catalog|Add-Member NoteProperty UnifiedGeoHideVersion 3 -Force
     $backup=Join-Path $Root ('backups\unified-geohide-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
     [IO.Directory]::CreateDirectory($backup)|Out-Null
     Copy-Item -LiteralPath $catalogPath -Destination (Join-Path $backup 'profiles.json')
@@ -92,7 +92,7 @@ function Update-GeoRouteBundledProfiles([string]$Root) {
     Write-GeoMigrationFile $catalogPath ($catalog|ConvertTo-Json -Depth 15)
 }
 
-# Add the exact asset host without regenerating profiles or losing a verified Google route.
+# Preserve profile addresses and verified Google routes; remove obsolete asset pinning.
 function Update-GeoRouteAssetDomain([string]$Root,$Catalog) {
     $updates=@()
     foreach($entry in $Catalog.Profiles){
@@ -103,17 +103,15 @@ function Update-GeoRouteAssetDomain([string]$Root,$Catalog) {
             if((Test-Path -LiteralPath $candidate) -and ((Get-Item -LiteralPath $candidate).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Профиль не должен проходить через ссылку файловой системы.'}
         }
         $text=[IO.File]::ReadAllText($path)
-        $asset=$null;$gemini=$null
-        foreach($line in ($text -split '\r?\n')){
-            $parts=($line -split '#',2)[0].Trim() -split '\s+'
-            if($parts.Count -lt 2){continue}
-            if('gemini.gstatic.com' -in $parts[1..($parts.Count-1)]){$asset=$parts[0]}
-            if('gemini.google.com' -in $parts[1..($parts.Count-1)]){$gemini=$parts[0]}
-        }
-        if($asset -or -not $gemini){continue}
-        $ip=Convert-GeoProfileAddress $gemini
-        $updates+=@([pscustomobject]@{Path=$path;Text=$text.TrimEnd()+"`r`n"+$ip+" gemini.gstatic.com`r`n"})
-        $entry|Add-Member NoteProperty domainCount (@($text -split '\r?\n'|Where-Object {$_ -match '^\S+\s+[^#\s]'}).Count+1) -Force
+        $new=@(foreach($line in ($text -split '\r?\n')){
+            $parts=@(($line -split '#',2)[0].Trim() -split '\s+')
+            if($parts.Count -gt 1 -and 'gemini.gstatic.com' -in $parts){
+                $remaining=@($parts|Select-Object -Skip 1|Where-Object {$_ -ne 'gemini.gstatic.com'})
+                if($remaining.Count){$parts[0]+' '+($remaining -join ' ')}
+            }else{$line}
+        }) -join "`r`n"
+        if($new -cne $text){$updates+=@([pscustomobject]@{Path=$path;Text=$new})}
+        $entry|Add-Member NoteProperty domainCount (@($new -split '\r?\n'|Where-Object {$_ -match '^\S+\s+[^#\s]'}).Count) -Force
     }
     $catalogPath=Join-Path $Root 'profiles.json'
     $backup=Join-Path $Root ('backups\gemini-assets-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
@@ -121,6 +119,6 @@ function Update-GeoRouteAssetDomain([string]$Root,$Catalog) {
     Copy-Item -LiteralPath $catalogPath -Destination (Join-Path $backup 'profiles.json')
     foreach($update in $updates){Copy-Item -LiteralPath $update.Path -Destination (Join-Path $backup ([IO.Path]::GetFileName($update.Path)))}
     foreach($update in $updates){Write-GeoMigrationFile $update.Path $update.Text}
-    $Catalog|Add-Member NoteProperty UnifiedGeoHideVersion 2 -Force
+    $Catalog|Add-Member NoteProperty UnifiedGeoHideVersion 3 -Force
     Write-GeoMigrationFile $catalogPath ($Catalog|ConvertTo-Json -Depth 15)
 }

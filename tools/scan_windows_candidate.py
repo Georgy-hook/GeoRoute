@@ -23,6 +23,15 @@ with zipfile.ZipFile(io.BytesIO(content)) as archive:
     selected = [(path.name, content)]
     for name in ['GeoRoute.cmd', '_service/NextDNS-GUI.ps1', '_service/AppInstance.ps1', '_service/InstallerActions.ps1', '_service/GeoHide.ps1', '_service/GeoHideHistory.ps1', '_service/GeoAvailability.ps1', '_service/GeoHideWorker.ps1', '_service/GeoServices.ps1', '_service/ProfileMigration.ps1', '_service/ProfileDefaults.ps1', '_service/gemini_probe.py', '_service/bridge/bridge.py', '_service/bridge/python/python.exe', '_service/DnsMonitorUI.ps1', '_service/SelectiveDnsSetup.ps1', '_service/SelectiveDns.ps1', '_service/DnsSitesUI.ps1', '_service/bridge/selective_dns.py', '_service/bridge/dns_monitor.py']:
         selected.append((name, archive.read(members['GeoRoute/' + name])))
+    # Audit the guided flow, optional service and signed driver as individual files too.
+    # Downloaded optional engines and user-generated registration data are not release members.
+    for name in (
+        'Home.ps1', 'HomeCheck.ps1', 'HomeFlow.ps1', 'Warp.ps1', 'WarpUI.ps1',
+        'WarpCommand.ps1', 'WarpSetup.ps1', 'WarpNetwork.ps1',
+        'warp/warp_manager.py', 'warp/warp_windows_service.py', 'warp/warp_provision.py',
+        'warp/driver/wintun.dll',
+    ):
+        selected.append(('_service/' + name, archive.read(members['GeoRoute/_service/' + name])))
 
 setups = list(root.glob('GeoRoute-Setup-*-x64.msi'))
 if len(setups) != 1:

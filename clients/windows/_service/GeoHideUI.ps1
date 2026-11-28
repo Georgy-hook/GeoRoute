@@ -1,5 +1,6 @@
 ﻿. (Join-Path $PSScriptRoot 'GeoHide.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideHistory.ps1')
+. (Join-Path $PSScriptRoot 'GeoCheckDetails.ps1')
 . (Join-Path $PSScriptRoot 'GeoProfileUI.ps1')
 . (Join-Path $PSScriptRoot 'Home.ps1')
 . (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
@@ -48,6 +49,26 @@ function Update-GeoMonitorLayout {
     if(-not $script:taskUi.ContainsKey('GeoMonitorHeader')){return}
     $page=$script:taskUi.GeoPage
     if($page.ActualHeight -le 0){return}
+    $table=$script:taskUi.GeoGrid
+    if($table.ActualWidth -gt 0){
+        $mode=if($table.ActualWidth -lt 940){'Mini'}elseif($table.ActualWidth -lt 1320){'Compact'}else{'Full'}
+        if(-not $script:geoColumnLayout){
+            $script:geoColumnLayout=@(foreach($column in $table.Columns){[pscustomobject]@{Column=$column;Width=$column.Width;MinWidth=$column.MinWidth}})
+        }
+        if($script:geoLayoutMode -ne $mode){
+            $script:geoLayoutMode=$mode
+            foreach($saved in $script:geoColumnLayout){
+                $column=$saved.Column;$header=[string]$column.Header
+                $hidden=($mode -ne 'Full' -and $header -in @('Выход','Отклик','Вложения','Причина')) -or ($mode -eq 'Mini' -and $header -in @('ChatGPT','Gemini'))
+                $column.Visibility=if($hidden){'Collapsed'}else{'Visible'}
+                $column.MinWidth=$saved.MinWidth;$column.Width=$saved.Width
+                if($mode -ne 'Full'){
+                    if($header -eq 'Подключение'){$column.MinWidth=112;$column.Width=[Windows.Controls.DataGridLength]::new(112)}
+                    if($header -eq 'Сервер'){$column.MinWidth=164;$column.Width=[Windows.Controls.DataGridLength]::new(1.2,[Windows.Controls.DataGridLengthUnitType]::Star)}
+                }
+            }
+        }
+    }
     $compact=$page.ActualHeight -lt 640
     $description=if($compact){'Collapsed'}else{'Visible'}
     $art=if($compact -or $page.ActualWidth -lt 1100){'Collapsed'}else{'Visible'}
@@ -61,9 +82,11 @@ function Update-GeoMonitorLayout {
     if([Math]::Abs($script:taskUi.GeoDetailsScroll.MaxHeight-$limit) -gt 1){$script:taskUi.GeoDetailsScroll.MaxHeight=$limit}
 }
 function Initialize-GeoMonitorLayout {
+    $script:geoColumnLayout=$null;$script:geoLayoutMode=''
     $script:taskUi.GeoPage.Add_SizeChanged({Update-GeoMonitorLayout})
     $script:taskUi.GeoMonitorHeader.Add_SizeChanged({Update-GeoMonitorLayout})
     $script:taskUi.GeoLegend.Add_SizeChanged({Update-GeoMonitorLayout})
+    $script:taskUi.GeoGrid.Add_SizeChanged({Update-GeoMonitorLayout})
     Update-GeoMonitorLayout
 }
 $script:geoRun=$null;$script:geoAt=[datetime]::MinValue;$script:geoSourceAt=[datetime]::MinValue;$script:geoReport=$null;$script:geoStamp=''
@@ -155,6 +178,7 @@ function Poll-GeoMonitor {
 function Initialize-GeoMonitor {
     Initialize-GeoMonitorLayout
     Initialize-GeoHistory
+    Initialize-GeoHistoryAction
     foreach($code in @('US','EU','RU')){$script:taskUi[('GeoFlag'+$code)].Source=Get-TaskImage ('flag-'+$code+'.png')}
     $script:taskUi.GeoSearch.Add_TextChanged({Show-GeoFilteredRows})
     foreach($region in @('ALL','US','EU','RU')) {

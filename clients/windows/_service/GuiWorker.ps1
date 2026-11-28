@@ -12,6 +12,9 @@ try {
         if ($taskRequest.Mode -eq 'ClearLogs') { $taskParameters.Scope = 'Historical'; $taskParameters.PreservePaths = [string[]]@($taskRequest.PreservePaths) }
     }
     else { $taskParameters.ProfileId=[string]$taskRequest.ProfileId; $taskParameters.ExpectedUserSid=[string]$taskRequest.ExpectedUserSid }
+    if ($taskRequest.Mode -eq 'Apply' -and $taskRequest.ExpectedMapKey) {
+        $taskParameters.ExpectedMapKey = [string]$taskRequest.ExpectedMapKey
+    }
     if ($taskRequest.Engine -ne 'Health' -and $taskRequest.Mode -eq 'Import') {
         foreach($key in @('InputKind','Address','Service')){if($taskRequest.PSObject.Properties[$key]){$taskParameters[$key]=[string]$taskRequest.$key}}
         $taskParameters.SourcePath = [string]$taskRequest.SourcePath

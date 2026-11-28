@@ -6,8 +6,8 @@
         $controls.Status.Text=if($state.Ready){'● '+$state.Reason}else{'● Нельзя подключить: '+$state.Reason}
         $controls.Status.Foreground=Get-TaskBrush $(if(-not $state.Managed){'#9CAEC4'}elseif($state.State -eq 'attention'){'#F6C56B'}elseif($state.Ready){'#91F2D2'}else{'#FFAC9A'})
         $controls.Card.ToolTip=$state.Reason
-        $controls.Button.IsEnabled=(-not $script:taskBusy -and $state.Ready)
-        if(-not $state.Ready){$controls.Button.Content='Недоступен';$controls.Button.Background=Get-TaskBrush '#192638';$controls.Button.Foreground=Get-TaskBrush '#9CAEC4'}
+        $controls.Button.IsEnabled = -not $script:taskBusy
+        $controls.Button.Content = if ($script:taskSelectedProfileId -eq $profile.Id) { 'Выбран' } else { 'Выбрать' }
     }
     $script:taskUi.ApplyProfileButton.IsEnabled=$false
     if($script:taskSelectedProfileId){
@@ -18,6 +18,7 @@
 }
 function Sync-GeoRegions($Report) {
     if($script:taskBusy -or $Report.running -or $SmokeTest -or $RenderPreview){return}
+    if ($script:homePhase -in @('Offer','Consent','Apply','ConnectWarp','Installing','ReturnDirect','CheckWarp','CheckDirect')) { return }
     $settings=Read-GeoSettings $script:taskRoot
     $selected=Get-GeoSelection $settings $Report
     if($settings.autoSelect){$settings.us=$selected.us;$settings.eu=$selected.eu}
