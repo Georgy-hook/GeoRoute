@@ -36,6 +36,7 @@ function Test-GeoMonitoringDue([datetime]$LastCheck) {
 }
 function Test-GeoObservationFresh($Node) {
     if(-not $Node -or -not $Node.PSObject.Properties['CheckedAt']){return $false}
+    if((Get-Command Test-WarpObservationContext -ErrorAction SilentlyContinue) -and -not (Test-WarpObservationContext $Node)){return $false}
     $at=[datetime]::MinValue
     if(-not [datetime]::TryParse([string]$Node.CheckedAt,[ref]$at)){return $false}
     $age=(Get-Date)-$at
@@ -45,7 +46,7 @@ function Test-GeoObservationFresh($Node) {
     return $age.TotalSeconds -ge -60 -and $age -lt $interval.Add([timespan]::FromMinutes(10))
 }
 function Get-GeoGeminiDomains {
-    return @('gemini.google.com','gemini.google','gemini.gstatic.com','bard.google.com','www.google.com',
+    return @('gemini.google.com','gemini.google','bard.google.com','www.google.com',
         'geminiweb-pa.clients.google.com','geminiweb-pa.clients6.google.com',
         'generativelanguage.googleapis.com','geller-pa.googleapis.com',
         'proactivebackend-pa.googleapis.com','robinfrontend-pa.googleapis.com')

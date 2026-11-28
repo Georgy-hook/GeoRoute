@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "mihomo": {
+    "version": "1.19.34",
+    "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.34/mihomo-windows-amd64-compatible-v1.19.34.zip",
+    "archiveSha256": "cd6738d4648cc1a5f48049a1343b697ab510889d648f045c5c780fc1ab443a79",
+    "entry": "mihomo-windows-amd64-compatible.exe",
+    "file": "mihomo.exe",
+    "sha256": "5a0231811a80b27477ebdee15684b41946d01afbd2114534e9a4b256125ca147",
+    "source": "https://github.com/MetaCubeX/mihomo/tree/v1.19.34"
+  },
+  "wintun": {
+    "version": "0.14.1",
+    "url": "https://www.wintun.net/builds/wintun-0.14.1.zip",
+    "archiveSha256": "07c256185d6ee3652e09fa55c0b673e2624b565e02c4b9091c79ca7d2f24ef51",
+    "entry": "wintun/bin/amd64/wintun.dll",
+    "file": "wintun.dll",
+    "sha256": "e5da8447dc2c320edc0fc52fa01885c103de8c118481f683643cacc3220dafce",
+    "source": "https://www.wintun.net/"
+  },
+  "warpscout": {
+    "version": "0.16.1",
+    "url": "https://github.com/vernette/warpscout/releases/download/v0.16.1/warpscout_0.16.1_windows_amd64.zip",
+    "archiveSha256": "48e30076631ac0106b20decd97f905184caa3fb30237caaf89c7c9c2478615e3",
+    "entry": "warpscout.exe",
+    "file": "warpscout.exe",
+    "sha256": "01f11965da6415b08a23c334ea055edbda7298d46f717c2065ca94c538fb730c",
+    "source": "https://github.com/vernette/warpscout/tree/v0.16.1"
+  }
+}
