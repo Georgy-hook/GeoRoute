@@ -1,6 +1,6 @@
 # GeoRoute для Windows
 
-Скачайте **GeoRoute-Setup-0.5.0-x64.msi** из [последнего релиза](https://github.com/Georgy-hook/GeoRoute/releases/latest), нажмите **Далее → Установить** и откройте ярлык **GeoRoute**. Выберите доступный маршрут и нажмите **Включить**.
+Скачайте **GeoRoute-Setup-0.6.0-x64.msi** со [страницы версии 0.6.0](https://github.com/Georgy-hook/GeoRoute/releases/tag/v0.6.0), нажмите **Далее → Установить** и откройте ярлык **GeoRoute**. Нажмите **Подключиться**: сначала приложение проверит выбранный сервер напрямую. WARP устанавливается только с отдельного согласия.
 
 [Установка и удаление](../../docs/INSTALL.ru.md) · [Проверки CI](../../docs/VERIFICATION.md) · [VirusTotal](../../docs/security/README.md) · [Сборка](../../docs/DEVELOPMENT.md).
 
