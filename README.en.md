@@ -15,7 +15,7 @@ Windows desktop manager for ChatGPT and Gemini GeoHide routes and endpoint avail
 
 Connect any freshly verified GeoHide node from its monitoring row; Windows confirmation is still required. The selected IP is saved in one reusable card and regional auto selection does not overwrite it. The update adds the exact `gemini.gstatic.com` route and resource transport check, preserves existing profile IPs and the shared Google route, retires the owner's closed RU pool, and includes `dns.geodema.love` and `w.quic.best` as DNS candidates. The default automatic interval becomes two hours, with a Never option in Settings.
 
-VPN/TUN can affect monitoring results even with physical-interface binding. A successful HTTPS probe does not verify a signed-in model response. The new home screen changes the release bytes: the November 22 candidate's audit does not cover this MSI or ZIP. [Exact-file audit status](docs/security/v0.6.0.md) · [0.6.0 status and limitations](docs/releases/v0.6.0.md). Download and VirusTotal links above still refer to the published 0.5.0 release.
+VPN/TUN can affect monitoring results even with physical-interface binding. A successful HTTPS probe does not verify a signed-in model response. The [exact candidate files](https://github.com/Georgy-hook/GeoRoute/actions/runs/46158670020/artifacts/15269076543) passed Windows installation and upgrade. VirusTotal reported zero malicious or suspicious detections for both packages and 32 selected components, with timeouts and unsupported formats. [Audit and SHA-256](docs/security/v0.6.0.md) · [0.6.0 status and limitations](docs/releases/v0.6.0.md). The stable download above is still 0.5.0.
 
 ![GeoRoute main screen](docs/images/home.png)
 
