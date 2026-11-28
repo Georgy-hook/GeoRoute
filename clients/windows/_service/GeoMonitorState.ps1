@@ -3,6 +3,7 @@ function New-GeoPendingReport($Servers,[string]$RunId,[string]$Phase='Прове
     $rows=@(foreach($server in @($Servers|Sort-Object region,address -Unique)){
         [pscustomobject]@{Region=$server.region;Address=$server.address;SourceActive=$true;CheckState='Queued';State='В очереди';TCP=$false;TLS=$false;HTTP=$null;Country='';LatencyMs=0;FilesTLS=$false;FilesHTTP=$null;Error='';CheckedAt=$null;EligibleUS=$false;EligibleEU=$false;EligibleRU=$false;GeminiTLS=$false;GeminiHTTP=$null;GeminiAPIHTTP=$null;GeminiReady=$false;GeminiChallenge=$false;GeminiVerificationTLS=$false;GeminiVerificationHTTP=$null;GeminiSharedHTTP2=$false;GeminiRouteMs=0;GeminiCountry='';GeminiError=''}
     })
+    foreach($row in $rows){$row|Add-Member NoteProperty GeminiAssetTLS $false;$row|Add-Member NoteProperty GeminiAssetHTTP $null}
     return [pscustomobject]@{runId=$RunId;running=$true;at=(Get-Date).ToString('o');phase=$Phase;completed=0;total=$rows.Count;interface='';rows=$rows;sourceErrors=@();sources=@()}
 }
 function Test-GeoPendingRow($Row) {

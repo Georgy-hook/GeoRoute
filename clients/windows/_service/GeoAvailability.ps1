@@ -4,9 +4,9 @@ function Get-GeoPool($Report,[ValidateSet('US','EU','RU')][string]$Region,[Valid
     return @($Report.rows|Where-Object {
         $node=$_
         $fresh=$true
-        if($node.PSObject.Properties['CheckedAt']){$checked=[datetime]::MinValue;$fresh=[datetime]::TryParse([string]$node.CheckedAt,[ref]$checked) -and ((Get-Date)-$checked).TotalMinutes -lt 5}
+        if($node.PSObject.Properties['CheckedAt']){$fresh=Test-GeoObservationFresh $node}
         $capable=if($Service -eq 'Gemini'){$node.GeminiReady}elseif($Service -eq 'Combined'){$node.EligibleEU -and $node.GeminiReady}else{$(switch($Region){US{$node.EligibleUS}EU{$node.EligibleEU}RU{$node.EligibleRU}})}
-        $fresh -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
+        $fresh -and -not (Test-GeoClosedNode $node.Region $node.Address) -and -not ($node.CheckState -in @('Queued','Checking','Interrupted')) -and $node.Region -eq $Region -and $node.SourceActive -ne $false -and $capable
     }|Sort-Object @{Expression={if($_.GeminiReady -and -not $_.GeminiChallenge){0}elseif($_.GeminiReady){1}else{2}}},@{Expression={if($_.PSObject.Properties['GeminiRouteMs'] -and $_.GeminiRouteMs -gt 0){$_.GeminiRouteMs}else{999999}}},Address -Unique)
 }
 function Get-GeoProfileRegion($Profile) {
@@ -16,13 +16,9 @@ function Get-GeoProfileRegion($Profile) {
     switch([string]$Profile.id){primary{return 'US'}alternate{return 'US'}eu-primary{return 'EU'}eu-alternate{return 'EU'}ru-primary{return 'RU'}}
     return ''
 }
-function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
-    $catalog=Get-Content -LiteralPath (Join-Path $Root 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
-    $profile=@($catalog.Profiles|Where-Object id -eq $Id|Select-Object -First 1)
-    if(-not $profile.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль отсутствует';State='missing'}}
-    $region=Get-GeoProfileRegion $profile[0]
-    if(-not $region){return [pscustomobject]@{Ready=$true;Managed=$false;Reason='Пользовательский профиль · проверяется отдельно';State='custom'}}
-    $path=[IO.Path]::GetFullPath((Join-Path $Root $profile[0].hostsFile))
+function Get-GeoProfileNeeds([string]$Root,$Profile) {
+    $region=Get-GeoProfileRegion $Profile
+    $path=[IO.Path]::GetFullPath((Join-Path $Root $Profile.hostsFile))
     if(-not $path.StartsWith(([IO.Path]::GetFullPath($Root).TrimEnd('\')+'\'),[StringComparison]::OrdinalIgnoreCase)){throw 'Profile path outside application.'}
     $requirements=@{}
     foreach($line in (Get-Content -LiteralPath $path -Encoding UTF8)){
@@ -37,8 +33,16 @@ function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
             if($files){$requirements[$key].Files=$true}
         }
     }
-    if(-not $requirements.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль пуст';State='empty'}}
-    return (Test-GeoRequirements @($requirements.Values) $Report)
+    return @($requirements.Values)
+}
+function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
+    $catalog=Get-Content -LiteralPath (Join-Path $Root 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    $profile=@($catalog.Profiles|Where-Object id -eq $Id|Select-Object -First 1)
+    if(-not $profile.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль отсутствует';State='missing'}}
+    if(-not (Get-GeoProfileRegion $profile[0])){return [pscustomobject]@{Ready=$true;Managed=$false;Reason='Пользовательский профиль · проверяется отдельно';State='custom'}}
+    $needs=@(Get-GeoProfileNeeds $Root $profile[0])
+    if(-not $needs.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль пуст';State='empty'}}
+    return (Test-GeoRequirements $needs $Report)
 }
 function Get-GeoPairAvailability([string]$US,[string]$EU,$Report) {
     return (Test-GeoRequirements @([pscustomobject]@{Role='US';Address=$US;Files=$false},[pscustomobject]@{Role='EU';Address=$EU;Files=$true},[pscustomobject]@{Role='EU';Address=$EU;Files=$false;Service='Gemini'}) $Report)
@@ -47,11 +51,12 @@ function Test-GeoRequirements([object[]]$Needs,$Report) {
     $issues=@();$warnings=@()
     $shared=@($Needs|Where-Object {$_.Service -ne 'Gemini'}).Count -gt 0
     foreach($need in $Needs){
+        if(Test-GeoClosedNode $need.Role $need.Address){$issues+='GeoHide RU: владелец объявил о закрытии этого узла';continue}
         $rows=@($Report.rows|Where-Object {$_.Region -eq $need.Role -and $_.Address -eq $need.Address}|Select-Object -First 1)
         $prefix=$need.Role+' '+$need.Address+': '
         if(-not $rows.Count){$issues+=$prefix+'нет актуальной проверки или адрес удалён из списка';continue}
-        $row=$rows[0];$checked=[datetime]::MinValue
-        if(-not [datetime]::TryParse([string]$row.CheckedAt,[ref]$checked) -or ((Get-Date)-$checked).TotalMinutes -gt 5){$issues+=$prefix+'проверка устарела';continue}
+        $row=$rows[0]
+        if(-not (Test-GeoObservationFresh $row)){$issues+=$prefix+'проверка устарела';continue}
         if($row.SourceActive -eq $false){$issues+=$prefix+'удалён из списка GeoHide';continue}
         if($row.CheckState -in @('Queued','Checking','Interrupted')){$issues+=$prefix+'проверка ещё не завершена';continue}
         if($need.Service -eq 'Gemini'){

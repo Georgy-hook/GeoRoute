@@ -11,7 +11,7 @@ $script:taskUi=@{}
 foreach($node in $xml.SelectNodes('//*[@*[local-name()="Name"]]')){$name=$node.GetAttribute('Name','http://schemas.microsoft.com/winfx/2006/xaml');if($name){$script:taskUi[$name]=$window.FindName($name)}}
 foreach($page in @('HomePage','OverviewPage','ServersPage','JournalPage','SettingsPage')){$window.FindName($page).Visibility='Collapsed'}
 $script:taskUi.GeoPage.Visibility='Visible'
-$script:taskUi.GeoGrid.ItemsSource=@(1..30|ForEach-Object {[pscustomobject]@{Address=('143.20.64.'+$_);Region='EU';StatusLabel='HTTPS отвечает';State='Проверено';StatusColor='#91F2D2';LoadingVisibility='Collapsed';GeminiLabel='HTTPS отвечает';GeminiColor='#91F2D2';Country='EU';LatencyLabel='1 200 мс';FilesLabel='TLS · 404';FilesColor='#91F2D2';HistoryCount='24 проверки';TCP=$true;TLS=$true;HTTP=200;Error='Длинное пояснение сетевой проверки должно оставаться в своей колонке и быть доступным во всплывающей подсказке.'}})
+$script:taskUi.GeoGrid.ItemsSource=@(1..30|ForEach-Object {[pscustomobject]@{Address=('143.20.64.'+$_);Region='EU';CanConnect=$true;ConnectHint='Подключение после подтверждения Windows';StatusLabel='HTTPS отвечает';State='Проверено';StatusColor='#91F2D2';LoadingVisibility='Collapsed';GeminiLabel='HTTPS отвечает';GeminiColor='#91F2D2';Country='EU';LatencyLabel='1 200 мс';FilesLabel='TLS · 404';FilesColor='#91F2D2';HistoryCount='24 проверки';TCP=$true;TLS=$true;HTTP=200;Error='Длинное пояснение сетевой проверки должно оставаться в своей колонке и быть доступным во всплывающей подсказке.'}})
 Initialize-GeoMonitorLayout
 function Assert($Value,$Message){if(-not $Value){throw $Message}}
 function Find-Visual($Root,[type]$Type) {
@@ -42,7 +42,7 @@ function Layout([int]$Width,[int]$Height,[bool]$Expanded=$false,[bool]$Loading=$
   Assert ($body.ActualHeight -le $body.MaxHeight+1) 'Expanded settings must stay inside their scroll viewport'
   Assert ($script:taskUi.GeoDetails.TransformToAncestor($page).Transform([Windows.Point]::new(0,$script:taskUi.GeoDetails.ActualHeight)).Y -le $page.ActualHeight+1) 'Expanded settings clip the page footer'
  }
- $columns=($table.Columns|Measure-Object ActualWidth -Sum).Sum
+ $columns=($table.Columns|Where-Object Visibility -eq Visible|Measure-Object ActualWidth -Sum).Sum
  if($Width -ge 1920){Assert ($columns -le $table.ActualWidth+1 -and $columns -ge $table.ActualWidth-40) ('Wide-screen columns must fit and fill the table: columns='+$columns+'; table='+$table.ActualWidth+'; widths='+(@($table.Columns|ForEach-Object {$_.Header+':'+$_.ActualWidth}) -join ', '))}
  if($ScreenshotDirectory){
   [IO.Directory]::CreateDirectory($ScreenshotDirectory)|Out-Null
@@ -58,7 +58,8 @@ try{
  $table=$script:taskUi.GeoGrid
  $scroll=Find-Visual $table ([Windows.Controls.ScrollViewer])
  $bar=$scroll.Template.FindName('PART_HorizontalScrollBar',$scroll)
- Assert ($bar -and $bar.ActualWidth -gt $table.ActualWidth/2 -and $bar.ActualHeight -le 20) ('Horizontal scrollbar must span the movable columns: bar='+$bar.ActualWidth+'x'+$bar.ActualHeight+'; table='+$table.ActualWidth)
+ Assert ($scroll.ScrollableWidth -le 1) 'Mini view must fit all essential columns without horizontal scrolling'
+ Assert ($table.FrozenColumnCount -eq 2) 'Connection and server columns retain their frozen identity'
  $custom=[Windows.Controls.Primitives.ScrollBar]::new();$custom.Orientation='Horizontal'
  $custom.Style=$window.FindResource([Windows.Controls.Primitives.ScrollBar]);$custom.Maximum=100;$custom.ViewportSize=25
  $custom.Measure([Windows.Size]::new(500,20));$custom.Arrange([Windows.Rect]::new(0,0,500,12));$custom.UpdateLayout()
@@ -66,11 +67,11 @@ try{
  Assert ($custom.ActualWidth -eq 500 -and $track.Orientation -eq 'Horizontal' -and -not $track.IsDirectionReversed) 'Custom horizontal scrollbar must use its full width and correct direction'
  $row=$table.ItemContainerGenerator.ContainerFromIndex(0)
  $cells=Find-Visual $row ([Windows.Controls.Primitives.DataGridCellsPresenter])
- $cell=$cells.ItemContainerGenerator.ContainerFromIndex(0)
+ $cell=$cells.ItemContainerGenerator.ContainerFromIndex(1)
  $before=$cell.TransformToAncestor($table).Transform([Windows.Point]::new(0,0)).X
  $scroll.ScrollToHorizontalOffset(9999)
  $table.Dispatcher.Invoke([Action]{},[Windows.Threading.DispatcherPriority]::ApplicationIdle);$table.UpdateLayout()
- Assert ($scroll.HorizontalOffset -gt 0) 'Narrow table must allow access to right-hand columns'
+ Assert ($scroll.HorizontalOffset -eq 0) 'Mini view cannot scroll essential protocol columns off screen'
  $after=$cell.TransformToAncestor($table).Transform([Windows.Point]::new(0,0)).X
  Assert ([Math]::Abs($before-$after) -le 1) 'Server IP must remain fixed while scrolling horizontally'
  $scroll.ScrollToHorizontalOffset(0)
@@ -101,5 +102,5 @@ try{
   [pscustomobject]@{Height=$dns.ActualHeight;Width=$dns.ActualWidth}
  })
  Assert ($sizes[1].Height -gt $sizes[0].Height+500 -and $sizes[1].Width -gt $sizes[0].Width+1000) 'DNS table must grow with the window'
- Write-Output 'Monitor layout passed: small/restored/maximized viewports, star columns, scrollable settings and loading state.'
+ Write-Output 'Monitor layout passed: mini essentials fit without scrolling, full columns restore, maximized viewports grow, settings scroll and loading fits.'
 }finally{$window.Close()}

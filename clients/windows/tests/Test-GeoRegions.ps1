@@ -4,7 +4,7 @@ $root=Join-Path (Split-Path $PSScriptRoot -Parent) '_service'
 function Assert($Value,$Message){if(-not $Value){throw $Message}}
 function Node($Region,$Address){return [pscustomobject]@{Region=$Region;Address=$Address;SourceActive=$true;CheckedAt=(Get-Date).ToString('o');EligibleUS=($Region -eq 'US');EligibleEU=($Region -eq 'EU');EligibleRU=($Region -eq 'RU');GeminiReady=$true;FilesTLS=$true;FilesHTTP=404}}
 $settings=[pscustomobject]@{us='192.255.159.240';eu='45.13.237.213';ru='159.194.200.33';autoSelect=$true;manualServers=@()}
-$us=Node US '192.255.159.240';$eu=Node EU '37.221.93.128';$ru=Node RU '193.233.112.67'
+$us=Node US '192.255.159.240';$eu=Node EU '37.221.93.128';$ru=Node RU '9.9.9.9'
 $report=[pscustomobject]@{rows=@($us,$eu,$ru)}
 $selection=Get-GeoSelection $settings $report
 Assert ($selection.us -eq $settings.us -and $selection.eu -eq $eu.Address) 'A failed EU is replaced without changing healthy US'
@@ -35,7 +35,7 @@ try{
     Assert (-not $state.Ready -and $state.Reason -like '*EU*') 'Dead EU blocks mixed profile despite healthy US'
     $eu.EligibleEU=$true;$eu.FilesHTTP=503
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Attachment HTTP 503 is not healthy TLS'
-    $eu.FilesHTTP=404;$eu.CheckedAt=(Get-Date).AddMinutes(-10).ToString('o')
+    $eu.FilesHTTP=404;$eu.CheckedAt=(Get-Date).AddMinutes(-131).ToString('o')
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Stale measurements do not unlock a card'
     $eu.CheckedAt=(Get-Date).ToString('o');$eu.SourceActive=$false
     Assert (-not (Get-GeoProfileAvailability $temp 'us-eu' $report).Ready) 'Provider-retired endpoint cannot be selected'

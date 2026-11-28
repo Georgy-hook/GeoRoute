@@ -1,13 +1,74 @@
 ﻿. (Join-Path $PSScriptRoot 'GeoHide.ps1')
 . (Join-Path $PSScriptRoot 'GeoHideHistory.ps1')
+. (Join-Path $PSScriptRoot 'GeoCheckDetails.ps1')
 . (Join-Path $PSScriptRoot 'GeoProfileUI.ps1')
 . (Join-Path $PSScriptRoot 'Home.ps1')
 . (Join-Path $PSScriptRoot 'GeoMonitorState.ps1')
 $script:geoRegionFilter='ALL';$script:geoDisplayRows=@()
+function Save-GeoGuiPreference([string]$Path,[hashtable]$Values) {
+    $settings=[ordered]@{}
+    if(Test-Path -LiteralPath $Path){
+        $previous=Get-Content -LiteralPath $Path -Raw -Encoding UTF8|ConvertFrom-Json
+        if($null -eq $previous -or $previous -isnot [pscustomobject]){throw 'Файл настроек повреждён; изменения не сохранены.'}
+        foreach($p in $previous.PSObject.Properties){$settings[$p.Name]=$p.Value}
+    }
+    foreach($key in $Values.Keys){$settings[$key]=$Values[$key]}
+    Write-GeoJson $Path ([pscustomobject]$settings)
+}
+function Update-GeoMonitoringSettingView {
+    $off=(Get-GeoMonitoringMinutes) -eq 0
+    $script:taskUi.AutoCheckHelp.Text=if($off){'Автопроверки отключены, в том числе при запуске. Проверяйте серверы вручную в «Мониторинге». Настроенное подключение сохраняется.'}else{'Серверы GeoHide, их списки и диагностика подключения проверяются с выбранным интервалом. Ручная проверка доступна в любой момент.'}
+    $script:taskUi.AutoCheckHelp.Text+=' Выбор сохраняется автоматически. Уже начатая проверка завершится.'
+    if($script:geoReport -and -not $script:geoReport.running){$script:taskUi.GeoStatus.Text='Проверено '+([datetime]$script:geoReport.at).ToString('HH:mm:ss')+' · '+$script:geoReport.interface+' · '+(Get-GeoMonitoringSummary)}
+}
+function Initialize-GeoMonitoringSettings {
+    Set-GeoMonitoringMinutes (Read-GeoMonitoringPreference $script:taskSettingsPath)
+    $script:taskUi.AutoCheckInterval.ItemsSource=@(Get-GeoMonitoringChoices)
+    $script:taskUi.AutoCheckInterval.SelectedValue=Get-GeoMonitoringMinutes
+    Update-GeoMonitoringSettingView
+    $script:taskUi.AutoCheckInterval.Add_SelectionChanged({
+        param($sender,$eventArgs)
+        if($script:monitoringSettingReverting -or $eventArgs.AddedItems.Count -ne 1){return}
+        $old=Get-GeoMonitoringMinutes;$value=[int]$eventArgs.AddedItems[0].Minutes
+        if($old -eq $value){return}
+        try {
+            if(-not $SmokeTest -and -not $RenderPreview){Save-GeoGuiPreference $script:taskSettingsPath @{AutoCheckMinutes=$value}}
+            Set-GeoMonitoringMinutes $value
+            $script:geoAt=Get-Date;$script:geoSourceAt=Get-Date;$script:taskConnectionAttempt=Get-Date
+            Update-GeoMonitoringSettingView;Update-GeoHome -Force
+        }catch{
+            $script:monitoringSettingReverting=$true
+            [void]$sender.Dispatcher.BeginInvoke([Action]{
+                try{$script:taskUi.AutoCheckInterval.SelectedValue=Get-GeoMonitoringMinutes}finally{$script:monitoringSettingReverting=$false}
+            },[Windows.Threading.DispatcherPriority]::Background)
+            $script:taskUi.AutoCheckHelp.Text='Не удалось сохранить интервал: '+$_.Exception.Message
+        }
+    })
+}
 function Update-GeoMonitorLayout {
     if(-not $script:taskUi.ContainsKey('GeoMonitorHeader')){return}
     $page=$script:taskUi.GeoPage
     if($page.ActualHeight -le 0){return}
+    $table=$script:taskUi.GeoGrid
+    if($table.ActualWidth -gt 0){
+        $mode=if($table.ActualWidth -lt 940){'Mini'}elseif($table.ActualWidth -lt 1320){'Compact'}else{'Full'}
+        if(-not $script:geoColumnLayout){
+            $script:geoColumnLayout=@(foreach($column in $table.Columns){[pscustomobject]@{Column=$column;Width=$column.Width;MinWidth=$column.MinWidth}})
+        }
+        if($script:geoLayoutMode -ne $mode){
+            $script:geoLayoutMode=$mode
+            foreach($saved in $script:geoColumnLayout){
+                $column=$saved.Column;$header=[string]$column.Header
+                $hidden=($mode -ne 'Full' -and $header -in @('Выход','Отклик','Вложения','Причина')) -or ($mode -eq 'Mini' -and $header -in @('ChatGPT','Gemini'))
+                $column.Visibility=if($hidden){'Collapsed'}else{'Visible'}
+                $column.MinWidth=$saved.MinWidth;$column.Width=$saved.Width
+                if($mode -ne 'Full'){
+                    if($header -eq 'Подключение'){$column.MinWidth=112;$column.Width=[Windows.Controls.DataGridLength]::new(112)}
+                    if($header -eq 'Сервер'){$column.MinWidth=164;$column.Width=[Windows.Controls.DataGridLength]::new(1.2,[Windows.Controls.DataGridLengthUnitType]::Star)}
+                }
+            }
+        }
+    }
     $compact=$page.ActualHeight -lt 640
     $description=if($compact){'Collapsed'}else{'Visible'}
     $art=if($compact -or $page.ActualWidth -lt 1100){'Collapsed'}else{'Visible'}
@@ -21,9 +82,11 @@ function Update-GeoMonitorLayout {
     if([Math]::Abs($script:taskUi.GeoDetailsScroll.MaxHeight-$limit) -gt 1){$script:taskUi.GeoDetailsScroll.MaxHeight=$limit}
 }
 function Initialize-GeoMonitorLayout {
+    $script:geoColumnLayout=$null;$script:geoLayoutMode=''
     $script:taskUi.GeoPage.Add_SizeChanged({Update-GeoMonitorLayout})
     $script:taskUi.GeoMonitorHeader.Add_SizeChanged({Update-GeoMonitorLayout})
     $script:taskUi.GeoLegend.Add_SizeChanged({Update-GeoMonitorLayout})
+    $script:taskUi.GeoGrid.Add_SizeChanged({Update-GeoMonitorLayout})
     Update-GeoMonitorLayout
 }
 $script:geoRun=$null;$script:geoAt=[datetime]::MinValue;$script:geoSourceAt=[datetime]::MinValue;$script:geoReport=$null;$script:geoStamp=''
@@ -38,7 +101,7 @@ function Start-GeoMonitor([switch]$Refresh) {
     $runId=[guid]::NewGuid().ToString('N')
     try{
         Set-GeoMonitorBusy $true
-        $catalog=Get-Content -LiteralPath (Join-Path $script:taskRoot 'geohide-servers.json') -Raw -Encoding UTF8|ConvertFrom-Json
+        $catalog=Read-GeoCatalog $script:taskRoot
         $settings=Read-GeoSettings $script:taskRoot
         Update-GeoRows (New-GeoPendingReport (@($catalog.servers)+@($settings.manualServers)) $runId $(if($Refresh){'Обновляю списки GeoHide'}else{'Начинаю проверку'}))
         $args=@('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+(Join-Path $script:taskRoot 'GeoHideWorker.ps1')+'"'),'-ResultPath',('"'+$path+'"'),'-RunId',$runId)
@@ -70,8 +133,9 @@ function Update-GeoRows($Report) {
     $script:taskUi.GeoEU.ItemsSource=@($Report.rows|Where-Object Region -eq 'EU'|ForEach-Object Address)
     $settings=Read-GeoSettings $script:taskRoot
     $script:taskUi.GeoUS.Text=$(if($draftUS){$draftUS}else{$settings.us});$script:taskUi.GeoEU.Text=$(if($draftEU){$draftEU}else{$settings.eu})
-    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · автоматическая проверка через 2 мин'}
+    $script:taskUi.GeoStatus.Text=if($Report.running){'Результаты обновляются по мере готовности · '+$Report.interface}else{'Проверено '+([datetime]$Report.at).ToString('HH:mm:ss')+' · '+$Report.interface+' · '+(Get-GeoMonitoringSummary)}
     $script:taskUi.GeoSourceStatus.Text=(@($Report.sources|ForEach-Object{$_.region+': '+$_.checkedAt}) -join ' · ')
+    if($Report.networkNote){$script:taskUi.GeoStatus.Text+=' · '+$Report.networkNote}
     if(@($Report.sourceErrors).Count){$script:taskUi.GeoSourceStatus.Text+=' · Ошибка обновления; сохранён прежний список: '+($Report.sourceErrors -join '; ')}
     if(-not $Report.running -and ((Get-Date)-[datetime]$Report.at).TotalMinutes -lt 5){Sync-GeoRegions $Report}
     Update-GeoProfileCards
@@ -109,11 +173,12 @@ function Poll-GeoMonitor {
             try{$script:geoRun.Process.Kill()}finally{Complete-GeoMonitor}
             $script:taskUi.GeoStatus.Text='Общий тайм-аут проверки. Незавершённые строки отмечены отдельно; можно повторить.'
         }
-    }elseif(((Get-Date)-$script:geoAt).TotalSeconds -ge 120){Start-GeoMonitor -Refresh:(((Get-Date)-$script:geoSourceAt).TotalMinutes -ge 60)}
+    }elseif(Test-GeoMonitoringDue $script:geoAt){Start-GeoMonitor -Refresh:(Test-GeoMonitoringDue $script:geoSourceAt)}
 }
 function Initialize-GeoMonitor {
     Initialize-GeoMonitorLayout
     Initialize-GeoHistory
+    Initialize-GeoHistoryAction
     foreach($code in @('US','EU','RU')){$script:taskUi[('GeoFlag'+$code)].Source=Get-TaskImage ('flag-'+$code+'.png')}
     $script:taskUi.GeoSearch.Add_TextChanged({Show-GeoFilteredRows})
     foreach($region in @('ALL','US','EU','RU')) {
@@ -128,6 +193,22 @@ function Initialize-GeoMonitor {
     $path=Join-Path $script:taskRoot 'geohide-monitor.json'
     if(Test-Path -LiteralPath $path){try{$previous=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json;Stop-GeoReportLoading $previous;Update-GeoRows $previous}catch{}}
     Set-GeoMonitorBusy $false
+    $script:taskUi.GeoGrid.AddHandler([Windows.Controls.Button]::ClickEvent,[Windows.RoutedEventHandler]{
+        param($sender,$eventArgs)
+        if($eventArgs.OriginalSource -isnot [Windows.Controls.Button] -or $eventArgs.OriginalSource.Tag -ne 'GeoConnect'){return}
+        $eventArgs.Handled=$true
+        try{
+            if($script:taskBusy -or $script:geoRun){throw 'Дождитесь завершения текущей операции.'}
+            if($SmokeTest -or $RenderPreview){return}
+            $row=$eventArgs.OriginalSource.DataContext
+            $id=Save-GeoMonitorProfile $script:taskRoot $row.Region $row.Address $script:geoReport
+            Load-TaskProfiles -Force
+            Select-TaskProfile $id
+            Add-TaskLog ('Выбран узел из мониторинга: '+$row.Region+' '+$row.Address+'. Ожидается применение Windows.')
+            Start-TaskAction 'Apply' $id
+            $script:taskUi.GeoStatus.Text='Профиль выбранного узла сохранён. '+$(if($script:taskRun){'Ожидаю подтверждение Windows и результат применения…'}else{'Подключение не подтверждено. Повторите «Подключить» или выберите сохранённый профиль на странице «Серверы».'})
+        }catch{$script:taskUi.GeoStatus.Text=$_.Exception.Message;Add-TaskLog ('Выбор узла: '+$_.Exception.Message)}
+    })
     $script:taskUi.MonitorNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoNavButton.Add_Click({Set-TaskPage 'Geo'})
     $script:taskUi.GeoRefresh.Add_Click({Start-GeoMonitor -Refresh})

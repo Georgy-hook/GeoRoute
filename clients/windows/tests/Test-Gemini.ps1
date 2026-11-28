@@ -69,7 +69,7 @@ try{
     $eu.GeminiChallenge=$false;$eu.GeminiReady=$false
     $partial=Get-GeoProfileAvailability $temp 'eu-primary' $report
     Assert ($partial.Ready -and $partial.State -eq 'attention' -and $partial.Reason -match 'Gemini') 'A Gemini outage is explicit without disconnecting a working ChatGPT route'
-    $eu.GeminiReady=$true;$eu.CheckedAt=(Get-Date).AddMinutes(-10).ToString('o')
+    $eu.GeminiReady=$true;$eu.CheckedAt=(Get-Date).AddMinutes(-131).ToString('o')
     Assert (-not (Get-GeoProfileAvailability $temp 'eu-primary' $report).Ready) 'Stale probe does not unlock a shared profile'
     $stale=Get-GeoProfileAvailability $temp 'eu-primary' $report
     Assert ([regex]::Matches($stale.Reason,'проверка устарела').Count -eq 1) 'Shared services do not duplicate the same stale-node warning'

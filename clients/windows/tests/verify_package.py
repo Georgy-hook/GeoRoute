@@ -20,17 +20,39 @@ def check(path):
                     'GeoRoute/_service/GeoProbe.ps1',
                     'GeoRoute/_service/ProfileMigration.ps1']
         required += ['GeoRoute/_service/gemini_probe.py', 'GeoRoute/_service/vendor/hashes.json']
+        required += ['GeoRoute/_service/' + name for name in (
+            'Warp.ps1', 'WarpUI.ps1', 'WarpCommand.ps1', 'WarpSetup.ps1', 'WarpNetwork.ps1',
+            'warp-runtime.json', 'warp/warp_manager.py', 'warp/warp_provision.py', 'warp/warp_windows_service.py',
+            'warp/licenses/LICENSE-Mihomo', 'warp/licenses/LICENSE-Wintun', 'warp/licenses/LICENSE-WARPSCOUT')]
         required += ['GeoRoute/_service/bridge/selective_dns.py', 'GeoRoute/_service/DnsSites.xaml',
                      'GeoRoute/_service/bridge/dns_monitor.py', 'GeoRoute/_service/DnsMonitorUI.ps1',
                      'GeoRoute/_service/DnsSitesUI.ps1', 'GeoRoute/_service/SelectiveDnsSetup.ps1',
                      'GeoRoute/_service/dns-providers.json', 'GeoRoute/_service/geohide-domains.txt']
         assert all(name in names for name in required)
+        assert 'GeoRoute/_service/AppVersion.ps1' in names
+        assert 'GeoRoute/_service/HomeCheck.ps1' in names
+        assert 'GeoRoute/_service/HomeFlow.ps1' in names
+        assert 'GeoRoute/_service/GeoCheckDetails.ps1' in names
+        assert 'GeoRoute/_service/GeoCheckDetails.xaml' in names
+        assert 'GeoRoute/_service/QuickStart.ps1' in names
+        assert 'GeoRoute/_service/QuickStart.xaml' in names
+        version = json.loads(archive.read('GeoRoute/_service/app-version.json'))
+        assert re.fullmatch(r'\d+\.\d+\.\d+', version['version'])
+        assert version['revision'] is None or re.fullmatch(r'[a-f0-9]{40}', version['revision'])
+        assert isinstance(version['modified'], bool)
+        assert version['builtAtUtc']
         dependencies = json.loads(archive.read('GeoRoute/_service/vendor/hashes.json'))
         for name, digest in dependencies.items():
             assert hashlib.sha256(archive.read('GeoRoute/_service/vendor/' + name)).hexdigest() == digest
         assert not any(name.endswith(('/profiles/gemini-eu.hosts', '/profiles/gemini-us.hosts')) for name in names)
         assert not any(name.endswith('/NextDNSBridge.exe') for name in names)
         assert 'GeoRoute/GeoRoute.exe' not in names
+        assert not any(name.lower().endswith(('/mihomo.exe', '/warpscout.exe')) for name in names)
+        driver_name = 'GeoRoute/_service/warp/driver/wintun.dll'
+        assert driver_name in names
+        assert [name for name in names if name.lower().endswith('/wintun.dll')] == [driver_name]
+        warp_manifest = json.loads(archive.read('GeoRoute/_service/warp-runtime.json'))
+        assert hashlib.sha256(archive.read(driver_name)).hexdigest() == warp_manifest['wintun']['sha256']
         for name in names:
             parts = PurePosixPath(name).parts
             assert parts and parts[0] == 'GeoRoute' and '..' not in parts and '\\' not in name, name

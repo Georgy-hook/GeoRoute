@@ -13,6 +13,52 @@ function Test-GeoAddress([string]$Address) {
     $b=$ip.GetAddressBytes()
     return -not ($b[0] -in @(0,10,127) -or $b[0] -ge 224 -or ($b[0]-eq 169 -and $b[1]-eq 254) -or ($b[0]-eq 172 -and $b[1]-ge 16 -and $b[1]-le 31) -or ($b[0]-eq 192 -and $b[1]-eq 168) -or ($b[0]-eq 100 -and $b[1]-ge 64 -and $b[1]-le 127))
 }
+function Read-GeoCatalog([string]$Root) {
+    $catalog=Get-Content -LiteralPath (Join-Path $Root 'geohide-servers.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    # Upstream's old hosts file still contains these closed RU endpoints.
+    # Keep custom RU nodes usable; never silently reintroduce the owner's closed pool.
+    $closed=@('159.194.200.33','193.233.112.67','193.233.112.68','193.233.112.88','37.230.192.51')
+    if(-not $catalog.PSObject.Properties['retired']){$catalog|Add-Member NoteProperty retired @()}
+    foreach($node in @($catalog.servers|Where-Object {$_.region -eq 'RU' -and $_.address -in $closed})){
+        if(-not @($catalog.retired|Where-Object {$_.region -eq 'RU' -and $_.address -eq $node.address}).Count){
+            $catalog.retired+=@([pscustomobject]@{region='RU';address=$node.address;removedAt='2026-11-22';reason='Владелец объявил о закрытии RU-серверов'})
+        }
+    }
+    $catalog.servers=@($catalog.servers|Where-Object {-not ($_.region -eq 'RU' -and $_.address -in $closed)})
+    foreach($source in $catalog.sources|Where-Object region -eq 'RU'){$source|Add-Member NoteProperty disabled $true -Force}
+    return $catalog
+}
+function Save-GeoMonitorProfile([string]$Root,[string]$Region,[string]$Address,$Report) {
+    if($Report.running){throw 'Дождитесь завершения проверки серверов.'}
+    if($Region -notin @('US','EU','RU') -or -not (Test-GeoAddress $Address)){throw 'Некорректный сервер.'}
+    $state=Test-GeoRequirements @([pscustomobject]@{Role=$Region;Address=$Address;Files=$true;Service='ChatGPT'},[pscustomobject]@{Role=$Region;Address=$Address;Files=$false;Service='Gemini'}) $Report
+    if(-not $state.Ready){throw $state.Reason}
+    $catalogPath=Join-Path $Root 'profiles.json'
+    $catalog=Get-Content -LiteralPath $catalogPath -Raw -Encoding UTF8|ConvertFrom-Json
+    $existing=@($catalog.Profiles|Where-Object id -eq 'monitor-selected')
+    if($existing.Count -and -not $existing[0].monitorSelection){throw 'Имя monitor-selected уже занято пользовательским профилем.'}
+    $directory=Join-Path $Root 'profiles';$path=Join-Path $directory 'monitor-selected.hosts'
+    foreach($candidate in @($directory,$path,$catalogPath)){
+        if((Test-Path -LiteralPath $candidate) -and ((Get-Item -LiteralPath $candidate).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'Профиль не должен проходить через ссылку файловой системы.'}
+    }
+    if(-not $existing.Count -and (Test-Path -LiteralPath $path)){throw 'Файл monitor-selected.hosts уже существует вне каталога.'}
+    $node=@($Report.rows|Where-Object {$_.Region -eq $Region -and $_.Address -eq $Address}|Select-Object -First 1)[0]
+    $text=New-GeoServiceHosts $Address GeoHide
+    if(-not (Test-GeoGoogleRoute $node)){$text=[regex]::Replace($text,'(?m)^\S+\s+www\.google\.com\s*\r?\n?','')}
+    $entry=[pscustomobject]@{id='monitor-selected';name=('GeoHide '+$Region+' — выбранный узел');region=$Region;countryCode=$Region;managedRegion=$Region;monitorSelection=$true;service='GeoHide';hostsFile='profiles/monitor-selected.hosts';address=$Address;verifiedAt=$null;domainCount=@($text -split '\r?\n'|Where-Object {$_ -match '^\S+\s+[^#\s]'}).Count;description=('Выбран вручную в мониторинге. Автовыбор не заменяет этот адрес. '+$state.Reason+$(if(Test-GeoGoogleRoute $node){' Gemini и Google Поиск через один узел.'}))}
+    $catalog.Profiles=@($catalog.Profiles|Where-Object id -ne 'monitor-selected')+@($entry)
+    $old=if(Test-Path -LiteralPath $path){[IO.File]::ReadAllText($path)}else{$null}
+    $backup=Join-Path $Root ('backups\monitor-selection-'+(Get-Date -Format 'yyyyMMdd-HHmmss')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
+    [IO.Directory]::CreateDirectory($backup)|Out-Null
+    Copy-Item -LiteralPath $catalogPath -Destination (Join-Path $backup 'profiles.json')
+    if($null -ne $old){Copy-Item -LiteralPath $path -Destination (Join-Path $backup 'monitor-selected.hosts')}
+    Write-GeoMigrationFile $path $text
+    try{Write-GeoJson $catalogPath $catalog}catch{
+        if($null -ne $old){Write-GeoMigrationFile $path $old}else{Remove-Item -LiteralPath $path -Force}
+        throw
+    }
+    return 'monitor-selected'
+}
 function Read-GeoSettings([string]$Root) {
     $path=Join-Path $Root 'geohide-settings.json'
     if(Test-Path -LiteralPath $path){$v=Get-Content -LiteralPath $path -Raw -Encoding UTF8|ConvertFrom-Json;if(-not $v.PSObject.Properties['ru']){$v|Add-Member -MemberType NoteProperty -Name ru -Value '159.194.200.33'};return $v}

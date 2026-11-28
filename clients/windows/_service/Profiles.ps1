@@ -17,7 +17,8 @@ param(
     [string]$Region,
     [string]$ExpectedUserSid,
     [string]$ResultPath,
-    [string]$ExpectedHostsHash
+    [string]$ExpectedHostsHash,
+    [string]$ExpectedMapKey
 )
 Set-StrictMode -Version 2
 $ErrorActionPreference='Stop'
@@ -366,7 +367,10 @@ try {
                 # The parsed catalog and concurrency hash come from exactly the same snapshot.
                 $importCatalog=Convert-CatalogText ($taskUtf8.GetString($catalogBefore))
                 $newProfiles=@($importCatalog.Profiles)+@($entry)
-                $newCatalog=[ordered]@{Version=1;Profiles=$newProfiles}
+                # Preserve migration markers and extension metadata when importing a profile.
+                $newCatalog=[ordered]@{}
+                foreach($property in $importCatalog.PSObject.Properties){$newCatalog[$property.Name]=$property.Value}
+                $newCatalog['Profiles']=$newProfiles
                 $catalogBytes=$taskUtf8.GetBytes(($newCatalog | ConvertTo-Json -Depth 16))
                 $profileBytes=$taskUtf8.GetBytes((New-ManagedBlock $records $newId))
                 $backupDir=Join-Path (Join-Path $taskRoot 'backups') ('import-'+(Get-Date -Format 'yyyyMMdd-HHmmss-ffff')+'-'+[guid]::NewGuid().ToString('N').Substring(0,6))
@@ -420,7 +424,17 @@ try {
                 $taskResult.Checks.RequestedProfileIsActive=$active.MatchedIds -contains $requested
             } else { $source=Read-Profile $catalog $ProfileId }
             if ($Mode -eq 'Apply') {
+                $actualMap = @($source.Records | ForEach-Object { $_.Address + ' ' + $_.Name } | Sort-Object) -join "`n"
+                if ($ExpectedMapKey -and $actualMap -cne $ExpectedMapKey) { throw 'Профиль изменился после проверки. Подключение не выполнено.' }
                 $before=Read-HostsText; $managed=Get-ManagedMatch $before
+                if ($ExpectedMapKey) {
+                    . (Join-Path $taskRoot 'Warp.ps1')
+                    $warp = Get-WarpState
+                    if ($warp.Requested -or $warp.Connected -or $warp.State -in @('unknown','cleanup-required','controller-stopped') -or
+                        $before -match '(?m)^# Transport: GeoRouteWARP\s*$') {
+                        throw 'Во время прямой проверки изменилось состояние WARP. Адреса не применены.'
+                    }
+                }
                 if($ExpectedHostsHash -and (Get-Hash (Read-Bytes $taskHostsPath)) -cne $ExpectedHostsHash) { throw 'Hosts изменился после просмотра изменений. Повторите проверку в окне помощи.' }
                 Assert-NoOutsideConflicts $before $managed $source.Names
                 $after=if ($null -ne $managed) {$before.Substring(0,$managed.Index)+$source.Block+$before.Substring($managed.Index+$managed.Length)} else {$before+$(if($before.EndsWith("`n")){''}else{"`r`n"})+$source.Block}

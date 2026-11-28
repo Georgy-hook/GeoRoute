@@ -4,6 +4,11 @@ param([string]$PythonExe='python.exe')
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 $shell=Join-Path $env:SystemRoot 'System32\WindowsPowerShell\v1.0\powershell.exe'
+& (Join-Path $PSScriptRoot 'Test-AppVersion.ps1')
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-QuickStart.ps1')
+if($LASTEXITCODE -ne 0){throw 'Quick start checks failed.'}
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-GeoHistory.ps1')
+if($LASTEXITCODE -ne 0){throw 'Monitor history checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-AppInstance.ps1')
 & (Join-Path $PSScriptRoot 'Test-StartupMigration.ps1')
 & $PythonExe -I (Join-Path $PSScriptRoot 'test_bridge_protocol.py')
@@ -20,10 +25,21 @@ if($LASTEXITCODE -ne 0){throw 'DNS monitor checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-GeoHideEditor.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoRegions.ps1')
 & (Join-Path $PSScriptRoot 'Test-Home.ps1')
+& $PythonExe -I (Join-Path $PSScriptRoot 'test_warp_manager.py')
+if($LASTEXITCODE -ne 0){throw 'WARP controller checks failed.'}
+& (Join-Path $PSScriptRoot 'Test-Warp.ps1')
+& (Join-Path $PSScriptRoot 'Test-WarpSetupProcess.ps1')
 & (Join-Path $PSScriptRoot 'Test-GeoMonitor.ps1')
+& (Join-Path $PSScriptRoot 'Test-MonitorSelection.ps1')
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitorImportRace.ps1')
+if($LASTEXITCODE -ne 0){throw 'Monitor/import UI race checks failed.'}
+& (Join-Path $PSScriptRoot 'Test-MonitoringSchedule.ps1')
+& $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitoringSettings.ps1')
+if($LASTEXITCODE -ne 0){throw 'Monitoring preference checks failed.'}
 & $shell -NoProfile -STA -File (Join-Path $PSScriptRoot 'Test-MonitorLayout.ps1')
 if($LASTEXITCODE -ne 0){throw 'Monitor resize checks failed.'}
 & (Join-Path $PSScriptRoot 'Test-Gemini.ps1')
+& (Join-Path $PSScriptRoot 'Test-GeminiAssets.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileMigration.ps1')
 & (Join-Path $PSScriptRoot 'Test-ProfileCreation.ps1')
 & (Join-Path $PSScriptRoot 'Test-RepairCenter.ps1')

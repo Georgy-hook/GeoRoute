@@ -15,6 +15,8 @@ try{
     $report=[pscustomobject]@{running=$false;rows=@($row)}
     $state=Get-GeoHomeState $temp $report $path
     Assert ($state.On -and $state.State -eq 'ready') 'Healthy applied hosts can be green without NextDNS Bridge'
+    $row.CheckedAt=(Get-Date).AddMinutes(-90).ToString('o')
+    Assert ((Get-GeoHomeState $temp $report $path).State -eq 'ready') 'Successful result remains usable between two-hour scans'
     [IO.File]::WriteAllText((Join-Path $temp 'profiles.json'),'{"Profiles":[{"id":"eu-primary","service":"GeoHide","hostsFile":"prepared.hosts"}]}')
     $oldHosts=[IO.File]::ReadAllText($path)
     [IO.File]::WriteAllText((Join-Path $temp 'prepared.hosts'),$oldHosts+"37.221.93.128 gemini.google.com`r`n")
@@ -24,9 +26,12 @@ try{
     [IO.File]::WriteAllText($path,$oldHosts)
     $row.EligibleEU=$false
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'unavailable') 'A failed applied node is reported honestly'
-    $row.EligibleEU=$true;$row.CheckedAt=(Get-Date).AddMinutes(-15).ToString('o')
+    $row.EligibleEU=$true;$row.CheckedAt=(Get-Date).AddMinutes(-131).ToString('o')
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'checking') 'Stale result is checking, not green or a permanent warning'
     Assert ((Get-GeoHomeState $temp $null $path).State -eq 'checking') 'Missing probe is not green'
+    Set-GeoMonitoringMinutes 0
+    Assert ((Get-GeoHomeState $temp $report $path).Title -like '*ручная проверка*') 'Never asks for manual checking rather than pretending a scan is running'
+    Set-GeoMonitoringMinutes 120
     [IO.File]::WriteAllText($path,'# BEGIN CHATGPT-US-WINDOWS')
     Assert ((Get-GeoHomeState $temp $report $path).State -eq 'error') 'Broken managed block is a real configuration error'
     Write-Output 'Home states passed: off, checking, ready without Bridge, real failure, stale result and broken configuration.'

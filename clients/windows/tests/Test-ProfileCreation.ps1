@@ -45,6 +45,7 @@ try{
     $gemini=Save-ThroughWorker 'geohide' ' 37.221.93.128 ' 'GeoHide'
     Assert ($gemini.Status -eq 'ok') 'Address creation works through the actual GUI worker/backend boundary'
     $catalog=Get-Content -LiteralPath (Join-Path $temp 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    Assert ($catalog.UnifiedGeoHideVersion -eq 3) 'Import preserves migration marker so startup cannot regenerate working Google routes'
     $entry=@($catalog.Profiles|Where-Object id -eq $gemini.ProfileId)[0]
     Assert ($entry.name -eq 'GeoHide — Германия' -and $entry.countryCode -eq 'DE' -and $entry.service -eq 'GeoHide') 'Name, flag and combined service are saved'
     $text=Get-Content -LiteralPath (Join-Path $temp $entry.hostsFile) -Raw -Encoding UTF8

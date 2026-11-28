@@ -1,6 +1,6 @@
 ﻿#Requires -Version 5.1
 [CmdletBinding()]
-param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.5.0')
+param([string]$PythonExe='python.exe',[ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version='0.6.0',[string]$OutputDirectory,[string]$WarpDriverPath)
 $ErrorActionPreference='Stop'
 if($PSVersionTable.PSVersion.Major -ne 5){throw 'Build with Windows PowerShell 5.1.'}
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -23,6 +23,28 @@ try {
   [IO.Directory]::CreateDirectory((Split-Path $target -Parent))|Out-Null
   Copy-Item -LiteralPath $path -Destination $target
  }
+ # Include only the unchanged, signed vendor driver, never account data or engines.
+ . (Join-Path $source 'Warp.ps1')
+ if(-not $WarpDriverPath){$runtimeCache=Initialize-WarpRuntime $source -DriverOnly -SkipBootstrap;$WarpDriverPath=Join-Path $runtimeCache 'wintun.dll'}
+ $warpManifest=Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $source 'warp-runtime.json')|ConvertFrom-Json
+ if((Get-FileHash -LiteralPath $WarpDriverPath).Hash -ine $warpManifest.wintun.sha256){throw 'Bundled Wintun hash mismatch.'}
+ $driverSignature=Get-AuthenticodeSignature -LiteralPath $WarpDriverPath
+ if($driverSignature.Status -ne 'Valid' -or $driverSignature.SignerCertificate.Subject -notmatch 'CN=WireGuard LLC(?:,|$)'){throw 'Bundled Wintun publisher signature is invalid.'}
+ $driverDirectory=Join-Path $service 'warp\driver';[IO.Directory]::CreateDirectory($driverDirectory)|Out-Null
+ Copy-Item -LiteralPath $WarpDriverPath -Destination (Join-Path $driverDirectory 'wintun.dll')
+ & $shell -NoProfile -NonInteractive -File (Join-Path $clientRoot 'tests\Test-WarpDriver.ps1') -DriverPath (Join-Path $driverDirectory 'wintun.dll')
+ if($LASTEXITCODE -ne 0){throw 'Bundled driver preparation failed.'}
+ $revision=$null
+ $modified=$false
+ if(Get-Command git -ErrorAction SilentlyContinue){
+  $head=@(& git -C $clientRoot rev-parse HEAD 2>$null)
+  if($LASTEXITCODE -eq 0 -and $head.Count -eq 1 -and $head[0] -match '^[a-f0-9]{40}$'){
+   $revision=$head[0]
+   $modified=[bool]@(& git -C $clientRoot status --porcelain --untracked-files=no -- .)
+  }
+ }
+ $versionInfo=[ordered]@{version=$Version;revision=$revision;builtAtUtc=[DateTimeOffset]::UtcNow.ToString('o');modified=$modified}
+ [IO.File]::WriteAllText((Join-Path $service 'app-version.json'),($versionInfo|ConvertTo-Json),[Text.UTF8Encoding]::new($false))
  foreach($name in @('Начать здесь.txt')){Copy-Item -LiteralPath (Join-Path $clientRoot $name) -Destination (Join-Path $package $name)}
  Copy-Item -LiteralPath (Join-Path $clientRoot 'GeoRoute.cmd') -Destination $package
  & $PythonExe -I (Join-Path $clientRoot 'tools\prepare_runtime.py') --destination (Join-Path $service 'bridge\python')
@@ -35,7 +57,7 @@ try {
  }
  # Only this clean staging copy was tested; diagnostics are not distribution files.
  foreach($log in @('launcher.log','launcher-error.log','GUI-error.log')){if(Test-Path -LiteralPath (Join-Path $service $log)){Remove-Item -LiteralPath (Join-Path $service $log) -Force}}
- $output=Join-Path $clientRoot 'dist'
+ $output=if($OutputDirectory){[IO.Path]::GetFullPath($OutputDirectory)}else{Join-Path $clientRoot 'dist'}
  [IO.Directory]::CreateDirectory($output)|Out-Null
  $archive=Join-Path $output ('GeoRoute-Windows-x64-'+$Version+'.zip')
  [IO.Compression.ZipFile]::CreateFromDirectory($stage,$temporary,[IO.Compression.CompressionLevel]::Optimal,$false)

@@ -13,6 +13,7 @@ try{
     function Start-Process {
         param($FilePath,$ArgumentList,$WindowStyle,[switch]$PassThru)
         $script:launches++
+        $script:lastLaunchArguments=$ArgumentList
         if($script:failLaunch){throw 'Simulated start failure'}
         $p=[pscustomobject]@{HasExited=$false;ExitCode=0;Killed=$false;Disposed=$false}
         $p|Add-Member ScriptMethod Kill {$this.Killed=$true}
@@ -39,6 +40,16 @@ try{
     Poll-GeoMonitor
     Assert (-not $script:geoRun -and $script:taskUi.GeoCheck.IsEnabled -and $script:taskUi.GeoProgressPanel.Visibility -eq 'Collapsed') 'Completion unlocks controls and hides global loading'
     Assert ($script:geoReport.completed -eq 1) 'Final result is consumed on process exit'
+    $before=$script:launches
+    $script:geoAt=(Get-Date).AddMinutes(-119);$script:geoSourceAt=(Get-Date).AddMinutes(-119)
+    Poll-GeoMonitor
+    Assert ($script:launches -eq $before) 'No automatic probe before two hours'
+    $script:geoAt=(Get-Date).AddMinutes(-121);$script:geoSourceAt=(Get-Date).AddMinutes(-121)
+    Poll-GeoMonitor
+    Assert ($script:launches -eq $before+1 -and '-RefreshSources' -in $script:lastLaunchArguments) 'Two-hour scan also refreshes the provider lists'
+    Complete-GeoMonitor
+    Poll-GeoMonitor
+    Assert ($script:launches -eq $before+1) 'Completion starts a new two-hour cooldown'
     $script:failLaunch=$true
     Start-GeoMonitor
     Assert ($script:taskUi.GeoCheck.IsEnabled -and -not $script:geoRun) 'Start failure restores controls'
