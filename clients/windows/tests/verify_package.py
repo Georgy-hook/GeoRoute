@@ -30,6 +30,8 @@ def check(path):
                      'GeoRoute/_service/dns-providers.json', 'GeoRoute/_service/geohide-domains.txt']
         assert all(name in names for name in required)
         assert 'GeoRoute/_service/AppVersion.ps1' in names
+        assert 'GeoRoute/_service/HomeCheck.ps1' in names
+        assert 'GeoRoute/_service/HomeFlow.ps1' in names
         assert 'GeoRoute/_service/GeoCheckDetails.ps1' in names
         assert 'GeoRoute/_service/GeoCheckDetails.xaml' in names
         assert 'GeoRoute/_service/QuickStart.ps1' in names

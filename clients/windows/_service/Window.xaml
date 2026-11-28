@@ -238,16 +238,7 @@
               <TextBlock Text="Серверы" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button x:Name="MonitorNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Мониторинг">
-            <StackPanel Orientation="Horizontal">
-              <Grid Width="26" Height="26" Margin="-4,0,8,0">
-                <TextBlock x:Name="MonitorNavFallback" Text="▥" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Image x:Name="MonitorNavIcon" Width="26" Height="26"/>
-              </Grid>
-              <TextBlock Text="Мониторинг" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          <Button x:Name="OverviewNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Обзор подключения">
+          <Button x:Name="OverviewNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Помощь">
             <StackPanel Orientation="Horizontal">
               <Grid Width="26" Height="26" Margin="-4,0,8,0">
                 <TextBlock x:Name="OverviewNavFallback" Text="" FontFamily="Segoe MDL2 Assets" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" />
@@ -256,22 +247,13 @@
               <TextBlock Text="Помощь" VerticalAlignment="Center" />
             </StackPanel>
           </Button>
-          <Button x:Name="JournalNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Журнал">
-            <StackPanel Orientation="Horizontal">
-              <Grid Width="26" Height="26" Margin="-4,0,8,0">
-                <TextBlock x:Name="JournalNavFallback" Text="≡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                <Image x:Name="JournalNavIcon" Width="26" Height="26"/>
-              </Grid>
-              <TextBlock Text="Журнал" VerticalAlignment="Center"/>
-            </StackPanel>
-          </Button>
-          <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Настройки">
+          <Button x:Name="SettingsNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Дополнительно">
             <StackPanel Orientation="Horizontal">
               <Grid Width="26" Height="26" Margin="-4,0,8,0">
                 <TextBlock x:Name="SettingsNavFallback" Text="⚙" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 <Image x:Name="SettingsNavIcon" Width="26" Height="26"/>
               </Grid>
-              <TextBlock Text="Настройки" VerticalAlignment="Center"/>
+              <TextBlock Text="Дополнительно" VerticalAlignment="Center"/>
             </StackPanel>
           </Button>
         </StackPanel>
@@ -737,6 +719,43 @@
       <TextBlock Grid.Row="4" Text="Настройки и диагностика локальны. Вход в аккаунт сохраняется." Foreground="#647F9D" FontSize="10" Margin="2,9,0,0" />
       <ScrollViewer x:Name="SettingsPage" Grid.Row="1" Grid.RowSpan="3" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,0,12,20">
+          <WrapPanel Margin="0,0,0,12">
+          <Button x:Name="MonitorNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Мониторинг">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="26" Height="26" Margin="-4,0,8,0">
+                <TextBlock x:Name="MonitorNavFallback" Text="▥" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="MonitorNavIcon" Width="26" Height="26"/>
+              </Grid>
+              <TextBlock Text="Мониторинг" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          <Button x:Name="JournalNavButton" Style="{StaticResource NavButton}" AutomationProperties.Name="Журнал">
+            <StackPanel Orientation="Horizontal">
+              <Grid Width="26" Height="26" Margin="-4,0,8,0">
+                <TextBlock x:Name="JournalNavFallback" Text="≡" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <Image x:Name="JournalNavIcon" Width="26" Height="26"/>
+              </Grid>
+              <TextBlock Text="Журнал" VerticalAlignment="Center"/>
+            </StackPanel>
+          </Button>
+          </WrapPanel>
+          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
+            <StackPanel>
+              <TextBlock Text="WARP для GeoHide" FontSize="18" FontWeight="SemiBold"/>
+              <TextBlock Text="Не нужен для прямого подключения. Туннель применяется к адресам узлов GeoHide, включая адреса мониторинга. Остальной интернет использует прежний маршрут." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,9,0,14"/>
+              <TextBlock x:Name="WarpStatus" FontSize="16" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite"/>
+              <TextBlock x:Name="WarpDetail" TextWrapping="Wrap" Foreground="#9CAEC4" Margin="0,8,0,14"/>
+              <WrapPanel>
+                <Button x:Name="WarpInstallButton" Content="Установить WARP…" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/>
+                <Button x:Name="WarpPowerButton" Content="Подключить WARP" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/>
+                <Button x:Name="WarpLogsButton" Content="Журнал WARP" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/>
+                <Button x:Name="WarpRemoveButton" Content="Удалить компонент WARP…" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/>
+              </WrapPanel>
+              <CheckBox x:Name="WarpAutoConnect" Style="{StaticResource SettingsToggle}" Content="Подключать автоматически при запуске Windows"/>
+              <TextBlock Text="Служба остаётся в Windows даже после удаления portable-папки. Она удаляется отдельной кнопкой выше. Автоподключение выключено по умолчанию." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="0,10,0,12"/>
+
+            </StackPanel>
+          </Border>
           <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
             <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="95"/></Grid.ColumnDefinitions>
               <StackPanel VerticalAlignment="Center">
@@ -753,19 +772,6 @@
               <CheckBox x:Name="StartWithWindows" Style="{StaticResource SettingsToggle}" Content="Открывать GeoRoute в трее при входе в Windows" ToolTip="Запускать менеджер в трее после входа в Windows"/>
               <CheckBox x:Name="ReducedMotion" Style="{StaticResource SettingsToggle}" Content="Уменьшить анимации" AutomationProperties.Name="Уменьшить движение интерфейса" ToolTip="Также учитываются системные настройки анимаций Windows"/>
               <TextBlock Text="Закрытие окна сворачивает GeoRoute в трей. Полный выход останавливает мониторинг, а применённые адреса сохраняются в Windows." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="2,13,2,0"/>
-            </StackPanel>
-          </Border>
-          <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
-            <StackPanel>
-              <TextBlock Text="WARP для GeoHide" FontSize="18" FontWeight="SemiBold"/>
-              <TextBlock Text="Помогает открыть GeoHide через туннель Cloudflare. Через него идут только адреса выбранных узлов GeoHide; общий маршрут интернета не меняется." TextWrapping="Wrap" Foreground="#A4B7CE" Margin="0,9,0,14"/>
-              <TextBlock x:Name="WarpStatus" FontSize="16" FontWeight="SemiBold" AutomationProperties.LiveSetting="Polite"/>
-              <TextBlock x:Name="WarpDetail" TextWrapping="Wrap" Foreground="#9CAEC4" Margin="0,8,0,14"/>
-              <WrapPanel><Button x:Name="WarpInstallButton" Content="Установить компонент…" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/><Button x:Name="WarpPowerButton" Content="Подключить WARP" Style="{StaticResource ActionButton}" Margin="0,0,8,8"/><Button x:Name="WarpLogsButton" Content="Журнал ↗" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/><Button x:Name="WarpRemoveButton" Content="Удалить компонент…" Style="{StaticResource QuietButton}" Margin="0,0,8,8"/></WrapPanel>
-              <CheckBox x:Name="WarpAutoConnect" Style="{StaticResource SettingsToggle}" Content="Подключать автоматически при запуске Windows"/>
-              <CheckBox x:Name="WarpPreferred" Style="{StaticResource SettingsToggle}" Content="Использовать WARP для кнопки подключения GeoHide"/>
-              <TextBlock Text="Служба работает без открытого окна. Автоподключение выключено по умолчанию. Мониторинг проверяет HTTPS; полный ответ Gemini зависит также от ограничений Google." TextWrapping="Wrap" Foreground="#9CAEC4" FontSize="12" Margin="0,10,0,12"/>
-
             </StackPanel>
           </Border>
           <Border Style="{StaticResource PageCard}" Margin="0,0,0,16">
@@ -876,25 +882,40 @@
         </Border>
       </Grid>
       <Grid x:Name="HomePage" Grid.Row="1" Grid.RowSpan="3">
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Center">
-        <StackPanel MaxWidth="570" HorizontalAlignment="Center" Margin="24,24,24,36">
-          <TextBlock x:Name="HomeTitle" Text="Выключено" FontSize="30" FontWeight="SemiBold" TextAlignment="Center" Margin="0,0,0,22"/>
-          <Button x:Name="HomeToggle" Width="136" Height="136" Cursor="Hand" Foreground="#91F2D2" HorizontalAlignment="Center" AutomationProperties.Name="Включить или выключить выбранное подключение">
-            <Button.Template><ControlTemplate TargetType="Button">
-              <Border x:Name="PowerSurface" Background="#20312F" BorderBrush="{TemplateBinding Foreground}" BorderThickness="2" CornerRadius="68"><TextBlock Text="" FontFamily="Segoe MDL2 Assets" FontSize="50" Foreground="{TemplateBinding Foreground}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
-              <ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="PowerSurface" Property="Background" Value="#2C4540"/></Trigger><Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="PowerSurface" Property="BorderThickness" Value="4"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="PowerSurface" Property="Opacity" Value="0.45"/></Trigger></ControlTemplate.Triggers>
-            </ControlTemplate></Button.Template>
-          </Button>
-          <TextBlock x:Name="HomeToggleCaption" Text="Включить" FontSize="19" FontWeight="SemiBold" TextAlignment="Center" Margin="0,14,0,20"/>
-          <Border Background="#1C222A" BorderBrush="#303A45" BorderThickness="1" CornerRadius="12" Padding="20,17">
-            <StackPanel><TextBlock x:Name="HomeRoute" Text="Выберите профиль" Foreground="#E0E9F1" FontSize="15" TextAlignment="Center" TextWrapping="Wrap"/><TextBlock x:Name="HomeDetail" Text="Проверяю настройки…" Foreground="#ACBAC8" FontSize="13" LineHeight="21" TextWrapping="Wrap" TextAlignment="Center" Margin="0,9,0,0"/>
-            <Button x:Name="HomeServersButton" Content="Выбрать сервер" Style="{StaticResource QuietButton}" HorizontalAlignment="Center" Foreground="#91F2D2" Margin="0,10,0,0"/>
-            </StackPanel>
-          </Border>
-          <TextBlock x:Name="HomeDnsSummary" Text="Другие сайты: DNS выключен" Foreground="#9CAEC4" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,16,0,0"/>
-          <TextBlock x:Name="HomePermissionText" Text="Для изменения адресов Windows запросит администратора." Foreground="#9CAEC4" FontSize="12" TextWrapping="Wrap" TextAlignment="Center" Margin="0,12,0,0"/>
-          <Button x:Name="HomeGuideButton" Content="Как настроить GeoRoute" Style="{StaticResource QuietButton}" HorizontalAlignment="Center" Margin="0,14,0,0"/>
-        </StackPanel>
+        <ScrollViewer x:Name="HomeScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Center" Focusable="False">
+          <Grid MinHeight="{Binding ViewportHeight, ElementName=HomeScroll}">
+          <StackPanel MaxWidth="590" Margin="14,12,14,20" HorizontalAlignment="Stretch" VerticalAlignment="Center">
+            <Border Background="#1C232B" BorderBrush="#34424F" BorderThickness="1" CornerRadius="18" Padding="26,22">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <Ellipse x:Name="HomeIndicator" Width="8" Height="8" Fill="#B7D6EF" Margin="0,1,9,0"/>
+                  <TextBlock x:Name="HomeLabel" Text="ПОДКЛЮЧЕНИЕ" Foreground="#B7D6EF" FontWeight="SemiBold" FontSize="11"/>
+                </StackPanel>
+                <TextBlock x:Name="HomeTitle" Text="Готово к подключению" FontWeight="SemiBold" FontSize="28" TextWrapping="Wrap" Margin="0,9,0,0" AutomationProperties.LiveSetting="Polite"/>
+                <TextBlock x:Name="HomeDetail" Text="Сначала проверим выбранный сервер напрямую." Foreground="#C3D0DC" FontSize="15" LineHeight="22" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                <Border Background="#151B21" BorderBrush="#303A45" BorderThickness="1" CornerRadius="10" Margin="0,17,0,0" Padding="13,10">
+                  <Grid>
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,8,0">
+                      <TextBlock x:Name="HomeRouteCaption" Text="Выбранный профиль" Foreground="#A7B7C8" FontSize="12"/>
+                      <TextBlock x:Name="HomeRoute" Text="Профиль не выбран" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                    </StackPanel>
+                    <Button x:Name="HomeServersButton" Grid.Column="1" Content="Изменить" AutomationProperties.Name="Изменить профиль" Style="{StaticResource QuietButton}" Foreground="#A3DBCF" VerticalAlignment="Center" KeyboardNavigation.TabIndex="3"/>
+                  </Grid>
+                </Border>
+                <TextBlock x:Name="HomePermissionText" Foreground="#B0C0CE" FontSize="13" LineHeight="19" TextWrapping="Wrap" Margin="0,12,0,0"/>
+                <WrapPanel Margin="0,16,0,0">
+                  <Button x:Name="HomeToggle" Content="Подключиться" Background="#91F2D2" Foreground="#142B24" BorderBrush="#91F2D2" Style="{StaticResource ActionButton}" Padding="18,10" MinHeight="42" Margin="0,2,8,2" KeyboardNavigation.TabIndex="0"/>
+                  <Button x:Name="HomeSecondary" Style="{StaticResource ActionButton}" MinHeight="42" Margin="0,2,0,2" Visibility="Collapsed" KeyboardNavigation.TabIndex="1"/>
+                </WrapPanel>
+              </StackPanel>
+            </Border>
+            <DockPanel Margin="5,8,0,0">
+              <Button x:Name="HomeGuideButton" DockPanel.Dock="Right" Content="Как настроить GeoRoute" Style="{StaticResource QuietButton}" KeyboardNavigation.TabIndex="4"/>
+              <TextBlock x:Name="HomeDnsSummary" Foreground="#A4B7CE" FontSize="12" TextWrapping="Wrap" VerticalAlignment="Center"/>
+            </DockPanel>
+          </StackPanel>
+          </Grid>
         </ScrollViewer>
       </Grid>
     </Grid>

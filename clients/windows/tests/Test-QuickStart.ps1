@@ -25,7 +25,7 @@ try{
  Click $window.FindName('GuideNext');Assert ($window.Tag.Index -eq 1 -and $window.FindName('GuideCounter').Text -eq '2 из 4') 'Next updates the visible step'
  Click $window.FindName('GuideBack');Assert ($window.Tag.Index -eq 0) 'Back returns to previous step'
  for($index=0;$index -lt 4;$index++){Click $window.FindName('GuideNext')}
- Assert ($window.Tag.Target -eq 'Servers') 'Guide finishes at server selection, without connecting or changing settings'
+ Assert ($window.Tag.Target -eq 'Home') 'Guide returns to the connection screen without connecting or changing settings'
  $allText=(@($window.Tag.Steps|ForEach-Object {$_.Title;$_.Summary;$_.Tasks;$_.Note}) -join ' ')
  Assert ($allText -match 'WARP' -and $allText -match 'Автоподключение' -and $allText -match 'Сайты и DNS' -and $allText -match 'GeoRoute.cmd') 'Portable, opt-in WARP, selected sites and launch are explained'
  Write-Output 'Quick start: four real WPF steps, next/back, compact layout and navigation-only completion passed; no windows displayed or network changes.'

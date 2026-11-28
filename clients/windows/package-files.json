@@ -63,6 +63,8 @@
   "profiles/ru-primary.hosts",
   "GeoProfileUI.ps1",
   "Home.ps1",
+  "HomeFlow.ps1",
+  "HomeCheck.ps1",
   "GeoServices.ps1",
   "GeoProbe.ps1",
   "GeoMonitorState.ps1",

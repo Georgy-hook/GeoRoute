@@ -16,13 +16,9 @@ function Get-GeoProfileRegion($Profile) {
     switch([string]$Profile.id){primary{return 'US'}alternate{return 'US'}eu-primary{return 'EU'}eu-alternate{return 'EU'}ru-primary{return 'RU'}}
     return ''
 }
-function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
-    $catalog=Get-Content -LiteralPath (Join-Path $Root 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
-    $profile=@($catalog.Profiles|Where-Object id -eq $Id|Select-Object -First 1)
-    if(-not $profile.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль отсутствует';State='missing'}}
-    $region=Get-GeoProfileRegion $profile[0]
-    if(-not $region){return [pscustomobject]@{Ready=$true;Managed=$false;Reason='Пользовательский профиль · проверяется отдельно';State='custom'}}
-    $path=[IO.Path]::GetFullPath((Join-Path $Root $profile[0].hostsFile))
+function Get-GeoProfileNeeds([string]$Root,$Profile) {
+    $region=Get-GeoProfileRegion $Profile
+    $path=[IO.Path]::GetFullPath((Join-Path $Root $Profile.hostsFile))
     if(-not $path.StartsWith(([IO.Path]::GetFullPath($Root).TrimEnd('\')+'\'),[StringComparison]::OrdinalIgnoreCase)){throw 'Profile path outside application.'}
     $requirements=@{}
     foreach($line in (Get-Content -LiteralPath $path -Encoding UTF8)){
@@ -37,8 +33,16 @@ function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
             if($files){$requirements[$key].Files=$true}
         }
     }
-    if(-not $requirements.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль пуст';State='empty'}}
-    return (Test-GeoRequirements @($requirements.Values) $Report)
+    return @($requirements.Values)
+}
+function Get-GeoProfileAvailability([string]$Root,[string]$Id,$Report) {
+    $catalog=Get-Content -LiteralPath (Join-Path $Root 'profiles.json') -Raw -Encoding UTF8|ConvertFrom-Json
+    $profile=@($catalog.Profiles|Where-Object id -eq $Id|Select-Object -First 1)
+    if(-not $profile.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль отсутствует';State='missing'}}
+    if(-not (Get-GeoProfileRegion $profile[0])){return [pscustomobject]@{Ready=$true;Managed=$false;Reason='Пользовательский профиль · проверяется отдельно';State='custom'}}
+    $needs=@(Get-GeoProfileNeeds $Root $profile[0])
+    if(-not $needs.Count){return [pscustomobject]@{Ready=$false;Managed=$true;Reason='Профиль пуст';State='empty'}}
+    return (Test-GeoRequirements $needs $Report)
 }
 function Get-GeoPairAvailability([string]$US,[string]$EU,$Report) {
     return (Test-GeoRequirements @([pscustomobject]@{Role='US';Address=$US;Files=$false},[pscustomobject]@{Role='EU';Address=$EU;Files=$true},[pscustomobject]@{Role='EU';Address=$EU;Files=$false;Service='Gemini'}) $Report)

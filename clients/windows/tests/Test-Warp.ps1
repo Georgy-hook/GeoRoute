@@ -60,13 +60,13 @@ try{
  [IO.File]::WriteAllText((Join-Path $temp 'GUI-settings.json'),'{"WarpPreferred":true}')
  $state=[pscustomobject]@{Installed=$true;CanControl=$true;Connected=$false;Requested=$false;State='off';ProfileName='Saved route'}
  $warpHome=Get-WarpHomeState $temp '' $state
- Assert ($warpHome.CanConnect -and -not $warpHome.On) 'Home can connect saved WARP route even without physical monitor results'
+ Assert ($null -eq $warpHome) 'An old preference must not replace the direct-first action'
  $state.Requested=$true;$state.State='retrying'
  Assert ((Get-WarpHomeState $temp '' $state).On) 'Retrying remains switchable off'
- Assert ($null -eq (Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`nnormal profile" $state)) 'An independently applied normal profile retains its own controls'
+ Assert (-not (Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`nnormal profile" $state).CanCheck) 'A pending tunnel and unrelated hosts cannot claim a verified connection'
  [IO.File]::WriteAllText((Join-Path $temp 'GUI-settings.json'),'{"WarpPreferred":false}')
  $state.Connected=$true;$state.State='connected'
- Assert ((Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`n# Transport: GeoRouteWARP" $state).State -eq 'ready') 'A fresh portable folder still displays the globally active owned WARP connection'
+ Assert ((Get-WarpHomeState $temp "# BEGIN CHATGPT-US-WINDOWS`n# Transport: GeoRouteWARP" $state).State -eq 'checking') 'A fresh portable folder sees the active owned tunnel but has no verified server response'
  function Get-WarpState {return $script:fakeWarpState}
  $script:fakeWarpState=[pscustomobject]@{Connected=$true;RouteAddresses=@('37.221.93.141')}
  $node=[pscustomobject]@{Address='37.221.93.141';Transport='Warp'}

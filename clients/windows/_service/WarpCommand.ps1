@@ -8,6 +8,12 @@ $result=@{Status='error';Mode=[string]$request.Mode;At=[DateTimeOffset]::Now.ToS
 try{
  switch($request.Mode){
   Install {
+   $existing = Get-WarpState
+   if ($existing.Installed) {
+       if (-not $existing.CanControl) { throw 'Компонент уже установлен, но недоступен этой учётной записи.' }
+       $result.Message = 'Компонент уже установлен. Повторная установка не нужна.'
+       break
+   }
    $runtime=Initialize-WarpRuntime $PSScriptRoot
    $setupResult=Join-Path (Split-Path $RequestPath -Parent) ('warp-'+[guid]::NewGuid().ToString('N')+'.setup.json')
    $setupArguments=@('-NoLogo','-NoProfile','-NonInteractive','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',('"'+(Join-Path $PSScriptRoot 'WarpSetup.ps1')+'"'),'-ExpectedUserSid',[Security.Principal.WindowsIdentity]::GetCurrent().User.Value,'-RuntimeDirectory',('"'+$runtime+'"'),'-ResultPath',('"'+$setupResult+'"'))
@@ -28,8 +34,12 @@ try{
   }
   Connect {
    $profile=if($request.ProfileId){Get-WarpProfile $PSScriptRoot $request.ProfileId}else{$null}
+   if ($request.ExpectedMapKey) {
+       $actualMap = @($profile.map | ForEach-Object { $_.address + ' ' + $_.domain } | Sort-Object) -join "`n"
+       if ($actualMap -cne $request.ExpectedMapKey) { throw 'Профиль изменился после прямой проверки. Туннель не запускался.' }
+   }
    $null=Invoke-WarpControl Connect $profile
-   $result.Message='Подключено через WARP и GeoHide.'
+   $result.Message='Туннель WARP включён. Ответ сервера проверяется отдельно.'
   }
   Disconnect {$null=Invoke-WarpControl Disconnect;$result.Message='Подключение WARP выключено.'}
   AutoOn {$null=Invoke-WarpControl AutoOn;$result.Message='WARP будет подключаться при запуске Windows.'}

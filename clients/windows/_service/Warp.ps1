@@ -20,9 +20,6 @@ function Get-WarpState {
  }catch{$state.Connected=$false;$state.State='unknown';$state.Error='status_unavailable'}
  [pscustomobject]$state
 }
-function Test-WarpPreferred([string]$Root){
- try{$settings=Get-Content -Raw -LiteralPath (Join-Path $Root 'GUI-settings.json') -Encoding UTF8|ConvertFrom-Json;return $settings.WarpPreferred -eq $true}catch{return $false}
-}
 function Test-WarpObservationContext($Node){
  if(-not $script:warpObservationState -or ((Get-Date)-$script:warpObservationAt).TotalSeconds -ge 2){$script:warpObservationState=Get-WarpState;$script:warpObservationAt=Get-Date}
  $state=$script:warpObservationState
@@ -89,7 +86,7 @@ function Invoke-WarpControl {
 }
 function Get-WarpTitle($State){
  switch($State.State){
-  connected{'Подключено через WARP'}connecting{'Подключаю WARP…'}retrying{'Восстанавливаю подключение…'}disconnecting{'Отключаю WARP…'}off{'WARP выключен'}'not-installed'{'WARP ещё не установлен'}'controller-stopped'{'Контроллер WARP остановлен'}'cleanup-required'{'Нужно восстановление WARP'}default{'Состояние WARP недоступно'}
+  connected{'Туннель WARP включён'}connecting{'Подключаю WARP…'}retrying{'Восстанавливаю подключение…'}disconnecting{'Отключаю WARP…'}off{'WARP выключен'}'not-installed'{'WARP ещё не установлен'}'controller-stopped'{'Контроллер WARP остановлен'}'cleanup-required'{'Нужно восстановление WARP'}default{'Состояние WARP недоступно'}
  }
 }
 function Get-WarpProblem([string]$Code){
